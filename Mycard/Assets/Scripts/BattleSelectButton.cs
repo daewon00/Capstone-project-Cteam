@@ -1,9 +1,9 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-//ÀÌ ½ºÅ©¸³Æ® ÀÚÃ¼´Â ³ªÁß¿¡ ¸Ê ¼±ÅÃÀ¸·Î º¯ÇÒ ¿¹Á¤ Áß¿äÇÑ ºÎºĞÀÌ ¾Æ´Ï´Ù.
+//ì´ ìŠ¤í¬ë¦½íŠ¸ ìì²´ëŠ” ë‚˜ì¤‘ì— ë§µ ì„ íƒìœ¼ë¡œ ë³€í•  ì˜ˆì • ì¤‘ìš”í•œ ë¶€ë¶„ì´ ì•„ë‹ˆë‹¤.
 public class BattleSelectButton : MonoBehaviour
 {
     public string levelToLoad;
