@@ -65,18 +65,18 @@ public class BattleController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //테스트용 코드 T를 누르면 강제로 턴 진행
+        //테스트용 코드 T를 누르면 강제로 턴 진행 *나중에 꼭 삭제*
         if(Input.GetKeyDown(KeyCode.T))
         {
             AdvanceTurn();
         }
     }
-
+    // 플레이어의 마나를 amountToSpend만큼 소모
     public void SpendPlayerMana(int amountToSpend)
     {
         playerMana = playerMana - amountToSpend;
 
-
+        // 음수가 되면 0으로 애초에 음수가 안되야 될텐데 *수정*
         if(playerMana < 0) 
         {
             playerMana = 0;
@@ -85,12 +85,15 @@ public class BattleController : MonoBehaviour
         UIController.instance.SetPlayerManaText(playerMana);
     }
 
+    //플레이어의 마나를 최대치까지 채움
     public void FillPlayerMana()
     {
         //playerMana = startingMana;
         playerMana = currentPlayerMaxMana;
         UIController.instance.SetPlayerManaText(playerMana);
     }
+
+    // 적의 마나를 소모 *필요한가? 음수도 조정*
     public void SpendEnemyrMana(int amountToSpend)
     {
         enemyMana -= amountToSpend;
@@ -104,6 +107,7 @@ public class BattleController : MonoBehaviour
         UIController.instance.SetEnemyManaText(enemyMana);
     }
 
+    //적의 마나를 최대치까지 채움
     public void FillEnemyMana()
     {
         
@@ -111,40 +115,42 @@ public class BattleController : MonoBehaviour
         UIController.instance.SetEnemyManaText(enemyMana);
     }
 
+    //턴 진행
     public void AdvanceTurn()
     {
-        if (battleEnded == false)
+        if (battleEnded == false)   //배틀이 끝나지 않았을때
         {
             currentPhase++;
 
             if ((int)currentPhase >= System.Enum.GetValues(typeof(TurnOrder)).Length)
             {
-                currentPhase = 0;
+                currentPhase = 0;   // 턴 단계 다 끝나면 턴 단계 초기화
             }
 
-            switch (currentPhase)
+            
+            switch (currentPhase)   //턴 단계에 따라 실행
             {
                 case TurnOrder.playerActive:
-                    CameraController.instance.MoveTo(CameraController.instance.homeTransform);
-                    UIController.instance.endTurnButton.SetActive(true);
-                    UIController.instance.drawCardButton.SetActive(true);
+                    CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
+                    UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
+                    UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
 
-                    if (currentPlayerMaxMana < maxMana)
+                    if (currentPlayerMaxMana < maxMana) // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
                     {
                         currentPlayerMaxMana++;
                     }
 
-                    FillPlayerMana();
+                    FillPlayerMana();   //마나를 가득 채움
 
-                    DeckController.instance.DrawMulitpleCards(cardToDrawPerTurn);
+                    DeckController.instance.DrawMulitpleCards(cardToDrawPerTurn);   //정해준 변수만큼 카드 드로우
 
                     break;
 
-                case TurnOrder.playerCardAttacks:
+                case TurnOrder.playerCardAttacks:   //플레이어 공격
 
                     //Debug.Log("Skipping player card attacks");
                     //AdvanceTurn();
-                    CardPointsController.instance.PlayerAttack();
+                    CardPointsController.instance.PlayerAttack();   //CardPointsController에 PlayerAttack함수 실행(플레이어 공격 매커니즘)
 
                     break;
 
@@ -153,22 +159,22 @@ public class BattleController : MonoBehaviour
                     //Debug.Log("Skipping enemy actions");
                     //AdvanceTurn();
                     
-                    if (currentEnemyMaxMana < maxMana)
+                    if (currentEnemyMaxMana < maxMana)  // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
                     {
                         currentEnemyMaxMana++;
                     }
 
-                    FillEnemyMana();
+                    FillEnemyMana();    //적 마나를 채운다
 
-                    EnemyController.instance.StartAction();
+                    EnemyController.instance.StartAction(); //EnemyController에 StartAction함수 실행(적 플레이 매커니즘)
 
                     break;
 
-                case TurnOrder.enemyCardAttacks:
+                case TurnOrder.enemyCardAttacks:    //적 공격
 
                     //Debug.Log("Skipping enemy card attacks");
                     //AdvanceTurn();
-                    CardPointsController.instance.EnemyAttack();
+                    CardPointsController.instance.EnemyAttack();    ////CardPointsController에 EnemyAttack함수 실행(적 공격 매커니즘)
 
                     break;
 
@@ -176,38 +182,40 @@ public class BattleController : MonoBehaviour
         }
     }
 
-    public void EndPlayerTurn()
+    public void EndPlayerTurn() //턴 종료 눌리면 버튼 비활성화 하고 턴 진행
     {
         UIController.instance.endTurnButton.SetActive(false);
         UIController.instance.drawCardButton.SetActive(false);
         AdvanceTurn();
     }
 
+    //플레이어에게 데미지를 주는 함수
     public void DamagePlayer(int damageAmount)
     {
         if (playerHealth > 0 || !battleEnded)
         {
             playerHealth -= damageAmount;
 
-            if(playerHealth <= 0)
+            if(playerHealth <= 0)   //체력이 0이하가 되면 배틀 종료
             {
                 playerHealth = 0;
 
-                //END BATTLe
-                EndBattle();
+                EndBattle();    //END BATTLE
             }
 
 
-            UIController.instance.setPlayerHealthText(playerHealth);
+            UIController.instance.setPlayerHealthText(playerHealth);    //UI 체력 갱신
 
+            //데미지 숫자 표시
             UIDamageIndicator damageClone = Instantiate(UIController.instance.playerDamage, UIController.instance.playerDamage.transform.parent);
             damageClone.damageText.text = damageAmount.ToString();
             damageClone.gameObject.SetActive(true);
 
-            AudioManager.instance.PlaySFX(6);
+            AudioManager.instance.PlaySFX(6);   //6번 효과음 재생
         }
     }
 
+    //적에게 데미지를 주는 함수
     public void DamageEnemy(int damageAmount)
     {
         if (enemyHealth > 0 || battleEnded == false)
@@ -218,8 +226,7 @@ public class BattleController : MonoBehaviour
             {
                 enemyHealth = 0;
 
-                //END BATTLe
-                EndBattle();
+                EndBattle();    //END BATTLE
             }
 
             UIController.instance.setEnemyHealthText(enemyHealth);
@@ -228,17 +235,18 @@ public class BattleController : MonoBehaviour
             damageClone.damageText.text = damageAmount.ToString();
             damageClone.gameObject.SetActive(true);
 
-            AudioManager.instance.PlaySFX(5);
+            AudioManager.instance.PlaySFX(5);   //5번 효과음 재생
         }
     }
 
+    //전투 종료
     void EndBattle()
     {
         battleEnded = true;
 
-        HandController.instance.EmptyHand();
+        HandController.instance.EmptyHand();    //핸드 제거
 
-        if(enemyHealth <= 0)
+        if(enemyHealth <= 0)    // 적 체력 0 이하 승리시
         {
             UIController.instance.battleResultText.text = "You Won!";
 
@@ -250,7 +258,7 @@ public class BattleController : MonoBehaviour
                 }
             }
         }
-        else
+        else // 패배시 *필드에 남아있는 카드 제거 하는거 꼭 해야되는거면 패배 승리 상관 없이 전부 해야되는거 아닌가?*
         {
             UIController.instance.battleResultText.text = "You Lose!";
 
@@ -264,13 +272,13 @@ public class BattleController : MonoBehaviour
         }
 
 
-        StartCoroutine(ShowResultCo());
+        StartCoroutine(ShowResultCo()); //결과 화면 
     }
 
     IEnumerator ShowResultCo()
     {
-        yield return new WaitForSeconds(resultScreenDelayTime);
+        yield return new WaitForSeconds(resultScreenDelayTime); // 지연 시키고
 
-        UIController.instance.battleEndScreen.SetActive(true);
+        UIController.instance.battleEndScreen.SetActive(true);  // 결과 UI 표시
     }
 }

@@ -1,29 +1,29 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using DG.Tweening;
 
 /// <summary>
-/// Ä«µå ¼±ÅÃ µî ¿ÜºÎ È£Ãâ·Î Ä«¸Ş¶ó¸¦ ºÎµå·´°Ô ÀÌµ¿/È¸Àü½ÃÅ°°í,
-/// ÇÊ¿ä ½Ã ¿øÀ§Ä¡·Î º¹±Í½ÃÅ°´Â ½Ì±ÛÅæ ±â¹İ ÄÁÆ®·Ñ·¯ÀÔ´Ï´Ù.
+/// ì¹´ë“œ ì„ íƒ ë“± ì™¸ë¶€ í˜¸ì¶œë¡œ ì¹´ë©”ë¼ë¥¼ ë¶€ë“œëŸ½ê²Œ ì´ë™/íšŒì „ì‹œí‚¤ê³ ,
+/// í•„ìš” ì‹œ ì›ìœ„ì¹˜ë¡œ ë³µê·€ì‹œí‚¤ëŠ” ì‹±ê¸€í†¤ ê¸°ë°˜ ì»¨íŠ¸ë¡¤ëŸ¬ì…ë‹ˆë‹¤.
 /// </summary>
 public class CameraController : MonoBehaviour
 {
     public static CameraController instance;
 
-    [Tooltip("ÁÖ Ä«¸Ş¶ó(transform) (ºñ¿öµÎ¸é Camera.main ÀÚµ¿ ÇÒ´ç)")]
+    [Tooltip("ì£¼ ì¹´ë©”ë¼(transform) (ë¹„ì›Œë‘ë©´ Camera.main ìë™ í• ë‹¹)")]
     public Camera mainCamera;
-    [Tooltip("Ä«¸Ş¶ó º¹±Í À§Ä¡/È¸Àü¿ë Transform")]
+    [Tooltip("ì¹´ë©”ë¼ ë³µê·€ ìœ„ì¹˜/íšŒì „ìš© Transform")]
     public Transform homeTransform;
-    [Tooltip("Ä«¸Ş¶ó À§Ä¡/È¸Àü¿ë Transform")]
+    [Tooltip("ì¹´ë©”ë¼ ìœ„ì¹˜/íšŒì „ìš© Transform")]
     public Transform battleTransform;
     public Transform handTransform;
-    [Tooltip("ÀÌµ¿ ¹× È¸Àü ½Ã°£ (ÃÊ)")]
+    [Tooltip("ì´ë™ ë° íšŒì „ ì‹œê°„ (ì´ˆ)")]
     public float moveDuration = 1f;
-    [Tooltip("ÀÌÂ¡ °î¼± ¼³Á¤(DOTween Ease)")]
+    [Tooltip("ì´ì§• ê³¡ì„  ì„¤ì •(DOTween Ease)")]
     public Ease easeType = Ease.InOutSine;
 
     private void Awake()
     {
-        // ½Ì±ÛÅæ ÀÎ½ºÅÏ½º ÇÒ´ç
+        // ì‹±ê¸€í†¤ ì¸ìŠ¤í„´ìŠ¤ í• ë‹¹
         if (instance == null)
             instance = this;
         else
@@ -34,18 +34,18 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// ÁöÁ¤µÈ Transform À§Ä¡¿Í È¸ÀüÀ¸·Î Ä«¸Ş¶ó¸¦ ºÎµå·´°Ô ÀÌµ¿/È¸Àü½ÃÅµ´Ï´Ù.
+    /// ì§€ì •ëœ Transform ìœ„ì¹˜ì™€ íšŒì „ìœ¼ë¡œ ì¹´ë©”ë¼ë¥¼ ë¶€ë“œëŸ½ê²Œ ì´ë™/íšŒì „ì‹œí‚µë‹ˆë‹¤.
     /// </summary>
-    /// <param name="target">ÀÌµ¿/È¸Àü ¸ñÇ¥ Transform</param>
+    /// <param name="target">ì´ë™/íšŒì „ ëª©í‘œ Transform</param>
     public void MoveTo(Transform target)
     {
         if (mainCamera == null) return;
         Transform cam = mainCamera.transform;
 
         cam.DOKill();
-        // À§Ä¡
+        // ìœ„ì¹˜
         cam.DOMove(target.position, moveDuration).SetEase(easeType);
-        // È¸Àü
+        // íšŒì „
         cam.DORotateQuaternion(target.rotation, moveDuration).SetEase(easeType);
     }
 
