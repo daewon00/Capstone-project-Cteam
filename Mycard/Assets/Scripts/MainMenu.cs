@@ -1,11 +1,11 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    public string battleSelectScene;
+    public string battleSelectScene;    //현재 맵이랑 연결되어 있음 나중에는 튜토선택이나 동료선택이 될듯
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
