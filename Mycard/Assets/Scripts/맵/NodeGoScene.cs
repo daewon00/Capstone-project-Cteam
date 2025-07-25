@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class MapNode : MonoBehaviour
+public class NodeGoScene : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
