@@ -111,8 +111,7 @@ public class Card : MonoBehaviour
 
                             if (assignedPlace.cameraFocusPoint != null)
                                 CameraController.instance.MoveTo(assignedPlace.cameraFocusPoint);
-                            else
-                                Debug.LogWarning("CardPlacePoint.cameraFocusPoint is not set!", assignedPlace);
+                           
 
                             MoveToPoint(selectedPoint.transform.position, transform.rotation);
 
@@ -158,7 +157,7 @@ public class Card : MonoBehaviour
     private void OnMouseOver()
     {
         if (inHand && isPlayer && !BattleController.instance.battleEnded)
-            MoveToPoint(theHC.cardPositions[handPosition] + new Vector3(0f, 1f, .5f), Quaternion.identity);
+            MoveToPoint(theHC.cardPositions[handPosition] + new Vector3(0f, .1f, .5f), transform.rotation);
 
     }
 
