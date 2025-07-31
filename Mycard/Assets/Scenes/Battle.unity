@@ -2561,12 +2561,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78507fc1bdc586046b8b521d7b92bdbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startingMana: 4
-  maxMana: 12
-  playerMana: 50
-  enemyMana: 50
-  startingcardAmount: 2
-  cardToDrawPerTurn: 2
+  startingMana: 3
+  maxMana: 3
+  playerMana: 3
+  enemyMana: 3
+  startingcardAmount: 3
+  cardToDrawPerTurn: 1
   currentPhase: 0
   discardPoint: {fileID: 1871911612}
   playerHealth: 100
