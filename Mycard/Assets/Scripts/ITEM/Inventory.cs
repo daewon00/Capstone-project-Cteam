@@ -9,6 +9,11 @@ public class Inventory : MonoBehaviour
     public Slot[] itemSlots;
     public static Inventory Instance;
 
+    private void Awake()
+    {
+        Instance = this;  // ΩÃ±€≈Ê √ ±‚»≠
+    }
+
     public void AddItem(Item item)
     {
         if(itemSlots != null)
@@ -20,6 +25,8 @@ public class Inventory : MonoBehaviour
                     Item newItem = Instantiate(item);
 
                     itemSlots[i].SetSlot(newItem, true);
+
+                    Debug.Log("newItem In");
                     return;
                 }
             }

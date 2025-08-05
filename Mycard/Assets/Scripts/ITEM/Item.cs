@@ -13,7 +13,7 @@ public class Item : MonoBehaviour
     protected Sprite ItemSprite;
     protected int get_Count = 0;
     protected bool isget = false;
-
+    
     public int getItemNumber()
     {
         return this.getItemNumber();
@@ -59,5 +59,12 @@ public class Item : MonoBehaviour
     {
         this.ItemSprite = itemSprite;
     }
+
+    public void Use_effect()
+    {
+        Debug.Log("아이템추가");
+    }
+
+
 }
 //이코드를 상속해서 아이템 만들기
