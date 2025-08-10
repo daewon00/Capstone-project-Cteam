@@ -5,6 +5,19 @@ using UnityEngine.SceneManagement;
 
 public class NodeGoScene : MonoBehaviour
 {
+    // --- 버튼이 로드할 씬 이름들 (씬이 아직 없어도 있다고 가정하고 필드만 만들어 둡니다) ---
+    [SerializeField] private string battleSceneName = "Battle";          // 일반 전투
+    [SerializeField] private string eliteSceneName = "Elite";            // 엘리트 전투
+    [SerializeField] private string bossSceneName = "Boss";              // 보스 전투
+    [SerializeField] private string eventSceneName = "EventScene";       // 이벤트
+    [SerializeField] private string shopSceneName = "ShopScene";         // 상점
+    [SerializeField] private string restSceneName = "Rest";              // 휴식
+    [SerializeField] private string cardRemoveSceneName = "CardRemove";  // 카드 제거
+    [SerializeField] private string mapSceneName = "Map Scene";          // 맵으로 돌아가기
+
+    // MapGenerator가 주입할 노드 타입 (수동 설정 제거)
+    private NodeType assignedNodeType = NodeType.Battle;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -16,21 +29,52 @@ public class NodeGoScene : MonoBehaviour
     {
         
     }
-    // 전투 노드 버튼이 호출할 함수
-    public void GoToBattleScene()
+    // MapGenerator가 노드 타입을 주입할 때 호출
+    public void SetNodeType(NodeType type)
     {
-        SceneManager.LoadScene("Battle");
+        assignedNodeType = type;
     }
 
-    // 상점 노드 버튼이 호출할 함수 아직 씬 완성 안됨
-    public void GoToShopScene()
+    // 버튼에서 이 함수 하나만 연결하면 됨
+    public void GoToAssignedScene()
     {
-        SceneManager.LoadScene("ShopScene");
+        string sceneToLoad = ResolveSceneName(assignedNodeType);
+        LoadSceneWithCommonHooks(sceneToLoad);
     }
 
-    // 이벤트 노드 버튼이 호출할 함수 아직 씬 완성 안됨
-    public void GoToEventScene()
+    private string ResolveSceneName(NodeType type)
     {
-        SceneManager.LoadScene("EventScene");
+        switch (type)
+        {
+            case NodeType.Battle:      return battleSceneName;
+            //엘리트 배틀씬이 완성이 되어있지 않다면 일반 배틀씬으로 이동
+            case NodeType.Elite:       return string.IsNullOrWhiteSpace(eliteSceneName) ? battleSceneName : eliteSceneName;
+            case NodeType.Boss:        return bossSceneName;
+            case NodeType.Event:       return eventSceneName;
+            case NodeType.Shop:        return shopSceneName;
+            case NodeType.Rest:        return restSceneName;
+            case NodeType.CardRemove:  return cardRemoveSceneName;
+            default:                   return mapSceneName;
+        }
+    }
+
+    private void LoadSceneWithCommonHooks(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+        {
+            Debug.LogWarning("로드할 씬 이름이 비어있습니다. 인스펙터에서 씬 이름을 설정하세요.");
+            return;
+        }
+        SafePlayClickSfx();
+        SceneManager.LoadScene(sceneName);
+    }
+
+    // 공통 클릭 사운드 (AudioManager 없거나 미설정인 씬에서도 안전하게 호출)
+    private void SafePlayClickSfx()
+    {
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.PlaySFX(0);
+        }
     }
 }

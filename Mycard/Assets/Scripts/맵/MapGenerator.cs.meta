@@ -7,11 +7,13 @@ MonoImporter:
   - BattleNodePrefab: {fileID: 7979546354665463859, guid: da530fd92916a7341be559265424cfaa, type: 3}
   - EliteNodePrefab: {fileID: 3507689831388598870, guid: 7b021dae2bb1e704aad90c02dd078894, type: 3}
   - BossNodePrefab: {fileID: 3962871020779404124, guid: 0bc5712f31e223a469920b23ffaf6cd5, type: 3}
-  - EventNodePrefab: {instanceID: 0}
+  - EventNodePrefab: {fileID: 8022843236611968522, guid: 1aae8e69a93ed5443af2a2424bc86968, type: 3}
   - ShopNodePrefab: {fileID: 1456691848793292037, guid: 5b11db10aad3ed74c93a3f34fdb8f656, type: 3}
   - RestNodePrefab: {fileID: 8874871054482377051, guid: c7656667aa04bf64692b27441fd6fbe8, type: 3}
   - CardRemoveNodePrefab: {fileID: 3946135866715240567, guid: c8d37092d7ffb8044a82e0f2207e5969, type: 3}
-  - pathLinePrefab: {instanceID: 0}
+  - pathLinePrefab: {fileID: 7606208774802673517, guid: 4589f3c9203b2734fa33da890e06092b, type: 3}
+  - nodesRoot: {instanceID: 0}
+  - pathsRoot: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

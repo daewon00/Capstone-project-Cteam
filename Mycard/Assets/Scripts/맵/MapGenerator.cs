@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using UnityEngine.UI;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -38,11 +39,15 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private GameObject RestNodePrefab;
     [SerializeField] private GameObject CardRemoveNodePrefab;
     [SerializeField] private LineRenderer pathLinePrefab;
+    [SerializeField] private Transform nodesRoot;
+    [SerializeField] private Transform pathsRoot;
 
     
     private List<List<MapDataNode>> mapData = new List<List<MapDataNode>>(); // 생성된 모든 맵 노드 데이터를 저장할 리스트입니다.
 
     private List<GameObject> nodeObjects = new List<GameObject>(); // 생성된 실제 노드 오브젝트들을 저장하여 선을 그릴 때 사용합니다.
+    private readonly List<LineRenderer> pathLines = new List<LineRenderer>();
+    private readonly Dictionary<MapDataNode, Transform> nodeToTransform = new Dictionary<MapDataNode, Transform>();
 
     // 인스펙터에서 실수로 최소 요구사항을 깨뜨리는 것을 방지하기 위한 클램프
     private void OnValidate()
@@ -118,8 +123,8 @@ public class MapGenerator : MonoBehaviour
         // 3단계: 노드 타입 결정 (나중에 추가할 함수)
         SetNodeTypes();
 
-        // 4단계: 화면에 실제 오브젝트 생성 (나중에 추가할 함수)
-        // InstantiateMapObjects();
+        // 4단계: 화면에 실제 오브젝트 생성 (중앙 함수로 자동 배치/배선)
+        InstantiateMapObjects();
     }
 
     // 주어진 위치에 가장 가까운 노드를 선형 스캔으로 찾습니다. (제곱거리 비교로 sqrt 회피)
@@ -605,8 +610,140 @@ public class MapGenerator : MonoBehaviour
     #region 4단계: 화면에 실제 오브젝트 생성
     void InstantiateMapObjects()
     {
-        // 이 함수는 마지막에 채워나갈 부분입니다.
         Debug.Log("4단계: 실제 맵 오브젝트를 생성합니다.");
+
+        // 이전 실행 결과가 씬에 남아있다면 정리
+        foreach (var go in nodeObjects)
+        {
+            if (go != null)
+            {
+                Destroy(go);
+            }
+        }
+        nodeObjects.Clear();
+        // 이전 선 렌더러들도 정리
+        foreach (var lr in pathLines)
+        {
+            if (lr != null)
+            {
+                Destroy(lr.gameObject);
+            }
+        }
+        pathLines.Clear();
+        // 매핑 초기화
+        nodeToTransform.Clear();
+
+        // 모든 노드를 순회하며 타입에 맞는 프리팹을 생성하고, 좌표를 배치합니다.
+        for (int layerIndex = 0; layerIndex < mapData.Count; layerIndex++)
+        {
+            foreach (var node in mapData[layerIndex])
+            {
+                GameObject prefab = GetPrefabFor(node.nodeType);
+                if (prefab == null)
+                {
+                    Debug.LogWarning($"프리팹이 설정되지 않은 노드 타입입니다: {node.nodeType}");
+                    continue;
+                }
+
+                var nodeParent = nodesRoot != null ? nodesRoot : transform;
+                GameObject go = Instantiate(prefab, nodeParent);
+                go.name = $"{node.nodeType}_L{node.layerIndex}";
+
+                // 로컬 좌표계 기준으로 배치 (Gizmos와 동일 좌표 사용)
+                go.transform.localPosition = new Vector3(node.position.x, node.position.y, 0f);
+                // 매핑 저장 (선 그리기에 사용)
+                nodeToTransform[node] = go.transform;
+
+                // 런타임 자동 배선: NodeGoScene에 타입 주입 + 버튼 클릭 연결
+                var nodeGo = go.GetComponent<NodeGoScene>();
+                if (nodeGo == null)
+                {
+                    nodeGo = go.AddComponent<NodeGoScene>();
+                }
+
+                nodeGo.SetNodeType(node.nodeType);
+
+                var button = go.GetComponent<Button>();
+                if (button != null)
+                {
+                    // 중복 연결 방지 후 리스너 등록
+                    button.onClick.RemoveAllListeners();
+                    button.onClick.AddListener(nodeGo.GoToAssignedScene);
+                }
+
+                nodeObjects.Add(go);
+            }
+        }
+
+        // 모든 노드 생성 후 경로(선) 그리기
+        DrawPaths();
+    }
+
+    private GameObject GetPrefabFor(NodeType type)
+    {
+        switch (type)
+        {
+            case NodeType.Battle:     return BattleNodePrefab;
+            case NodeType.Elite:      return EliteNodePrefab;
+            case NodeType.Boss:       return BossNodePrefab;
+            case NodeType.Event:      return EventNodePrefab;
+            case NodeType.Shop:       return ShopNodePrefab;
+            case NodeType.Rest:       return RestNodePrefab;
+            case NodeType.CardRemove: return CardRemoveNodePrefab;
+            default: return null;
+        }
+    }
+    
+    private void DrawPaths()
+    {
+        // 기존 선 정리(안전)
+        foreach (var lr in pathLines)
+        {
+            if (lr != null)
+            {
+                Destroy(lr.gameObject);
+            }
+        }
+        pathLines.Clear();
+
+        if (pathLinePrefab == null)
+        {
+            Debug.LogWarning("pathLinePrefab이 설정되지 않아 경로를 그릴 수 없습니다.");
+            return;
+        }
+
+        var lineParent = pathsRoot != null ? pathsRoot : transform;
+
+        // 모든 부모-자식 연결을 따라 선 생성
+        foreach (var layer in mapData)
+        {
+            foreach (var parentNode in layer)
+            {
+                if (!nodeToTransform.TryGetValue(parentNode, out var parentTf) || parentTf == null)
+                {
+                    continue;
+                }
+                foreach (var child in parentNode.children)
+                {
+                    if (child == null) continue;
+                    if (!nodeToTransform.TryGetValue(child, out var childTf) || childTf == null)
+                    {
+                        continue;
+                    }
+
+                    // 라인 생성 및 설정 (월드 좌표 사용)
+                    var lr = Instantiate(pathLinePrefab, lineParent);
+                    lr.useWorldSpace = true;
+                    lr.positionCount = 2;
+                    Vector3 a = parentTf.position;
+                    Vector3 b = childTf.position;
+                    a.z = b.z = 0f;
+                    lr.SetPosition(0, a);
+                    lr.SetPosition(1, b);
+                    pathLines.Add(lr);
+                }
+            }
+        }
     }
     #endregion
 
