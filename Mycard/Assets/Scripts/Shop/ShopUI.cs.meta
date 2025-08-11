@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3e1b3ed3929aa0b488d0b287cbeebe6c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - panel: {instanceID: 0}
+  - dimmerButton: {instanceID: 0}
+  - closeButton: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
