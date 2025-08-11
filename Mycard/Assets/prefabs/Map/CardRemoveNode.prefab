@@ -122,8 +122,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 7541756653628943502}
-        m_TargetAssemblyTypeName: MapNode, Assembly-CSharp
-        m_MethodName: GoToEventScene
+        m_TargetAssemblyTypeName: NodeGoScene, Assembly-CSharp
+        m_MethodName: GoToAssignedScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -145,3 +145,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02fc3f03653c7fa4dbfce8b42bac8dcd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  battleSceneName: Battle
+  eliteSceneName: Elite
+  bossSceneName: Boss
+  eventSceneName: EventScene
+  shopSceneName: ShopScene
+  restSceneName: Rest
+  cardRemoveSceneName: CardRemove
+  mapSceneName: Map Scene

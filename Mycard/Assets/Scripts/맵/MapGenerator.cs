@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using UnityEngine.UI;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -38,11 +39,23 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private GameObject RestNodePrefab;
     [SerializeField] private GameObject CardRemoveNodePrefab;
     [SerializeField] private LineRenderer pathLinePrefab;
+    [SerializeField] private Transform nodesRoot;
+    [SerializeField] private Transform pathsRoot;
+
+    [Header("배치 정책")]
+    [SerializeField] private int minEliteLayerPolicy = 1; // 엘리트 최소 레이어 정책(기본 1층)
+
+    [Header("레이아웃 정리(교차선 감소)")]
+    [SerializeField] private bool enableBarycenterOrdering = true; // 배리센터 정렬 적용 여부
+    [SerializeField] private int barycenterPasses = 2; // 상하 왕복 패스 수
+    [SerializeField] [Range(0f, 1f)] private float barycenterLerpAlpha = 0.5f; // 스냅 대신 Lerp 비율
 
     
     private List<List<MapDataNode>> mapData = new List<List<MapDataNode>>(); // 생성된 모든 맵 노드 데이터를 저장할 리스트입니다.
 
     private List<GameObject> nodeObjects = new List<GameObject>(); // 생성된 실제 노드 오브젝트들을 저장하여 선을 그릴 때 사용합니다.
+    private readonly List<LineRenderer> pathLines = new List<LineRenderer>();
+    private readonly Dictionary<MapDataNode, Transform> nodeToTransform = new Dictionary<MapDataNode, Transform>();
 
     // 인스펙터에서 실수로 최소 요구사항을 깨뜨리는 것을 방지하기 위한 클램프
     private void OnValidate()
@@ -59,6 +72,16 @@ public class MapGenerator : MonoBehaviour
         {
             maxNodesPerLayer = minNodesPerLayer;
         }
+        if (minEliteLayerPolicy < 1)
+        {
+            minEliteLayerPolicy = 1;
+        }
+        if (barycenterPasses < 1)
+        {
+            barycenterPasses = 1;
+        }
+        if (barycenterLerpAlpha < 0f) barycenterLerpAlpha = 0f;
+        if (barycenterLerpAlpha > 1f) barycenterLerpAlpha = 1f;
     }
 
     // 부모-자식 링크를 중복 없이 추가하는 헬퍼
@@ -115,11 +138,14 @@ public class MapGenerator : MonoBehaviour
         // 2단계: 경로 생성 
         CreatePaths(); 
 
+        // 2.5단계: 교차선 감소를 위한 배리센터 정렬(옵션)
+        ApplyBarycenterOrdering();
+
         // 3단계: 노드 타입 결정 (나중에 추가할 함수)
         SetNodeTypes();
 
-        // 4단계: 화면에 실제 오브젝트 생성 (나중에 추가할 함수)
-        // InstantiateMapObjects();
+        // 4단계: 화면에 실제 오브젝트 생성 (중앙 함수로 자동 배치/배선)
+        InstantiateMapObjects();
     }
 
     // 주어진 위치에 가장 가까운 노드를 선형 스캔으로 찾습니다. (제곱거리 비교로 sqrt 회피)
@@ -172,7 +198,7 @@ public class MapGenerator : MonoBehaviour
             int nodesInThisLayer = random.Next(minNodesPerLayer, maxNodesPerLayer + 1);
 
             // 6층과 7층은 규칙에 따라 노드가 1개만 있도록 강제합니다.
-            if (i == FinalRestLayerIndex || i == BossLayerIndex)
+            if (i == 0 || i == FinalRestLayerIndex || i == BossLayerIndex)
             {
                 nodesInThisLayer = 1;
             }
@@ -313,6 +339,119 @@ public class MapGenerator : MonoBehaviour
     }
     #endregion
 
+    /// <summary>
+    /// 배리센터(인접 레이어의 평균 x) 휴리스틱으로 레이어 내 노드 순서를 정리하여 교차선을 줄입니다.
+    /// 위에서 아래로(부모 기준) 정렬 후, 아래에서 위로(자식 기준) 정렬을 왕복하며 적용합니다.
+    /// </summary>
+    private void ApplyBarycenterOrdering()
+    {
+        if (!enableBarycenterOrdering || mapData == null || mapData.Count == 0)
+        {
+            return;
+        }
+
+        float Median(List<float> values)
+        {
+            if (values == null || values.Count == 0) return 0f;
+            values.Sort();
+            int count = values.Count;
+            int mid = count / 2;
+            if ((count % 2) == 1)
+            {
+                return values[mid];
+            }
+            else
+            {
+                return (values[mid - 1] + values[mid]) * 0.5f;
+            }
+        }
+
+        float MedianOfParents(MapDataNode node)
+        {
+            if (node.parents != null && node.parents.Count > 0)
+            {
+                var xs = new List<float>(node.parents.Count);
+                for (int i = 0; i < node.parents.Count; i++) xs.Add(node.parents[i].position.x);
+                return Median(xs);
+            }
+            return node.position.x;
+        }
+
+        float MedianOfChildren(MapDataNode node)
+        {
+            if (node.children != null && node.children.Count > 0)
+            {
+                var xs = new List<float>(node.children.Count);
+                for (int i = 0; i < node.children.Count; i++) xs.Add(node.children[i].position.x);
+                return Median(xs);
+            }
+            return node.position.x;
+        }
+
+        for (int pass = 0; pass < barycenterPasses; pass++)
+        {
+            // Top-down: 부모 평균 x 기준으로 1층부터 마지막층까지 정렬
+            for (int layerIndex = 1; layerIndex < mapData.Count; layerIndex++)
+            {
+                // 핀 고정: 최종 휴식/보스 레이어는 제외
+                if (layerIndex == FinalRestLayerIndex || layerIndex == BossLayerIndex) continue;
+                var layer = mapData[layerIndex];
+                if (layer == null || layer.Count <= 1) continue;
+
+                var bary = new Dictionary<MapDataNode, float>(layer.Count);
+                foreach (var node in layer)
+                {
+                    bary[node] = MedianOfParents(node);
+                }
+
+                layer.Sort((a, b) =>
+                {
+                    int cmp = bary[a].CompareTo(bary[b]);
+                    if (cmp != 0) return cmp;
+                    return a.position.x.CompareTo(b.position.x);
+                });
+
+                for (int i = 0; i < layer.Count; i++)
+                {
+                    float targetX = (i - (layer.Count - 1) / 2f) * nodeSpacing;
+                    var pos = layer[i].position;
+                    float smoothedX = Mathf.Lerp(pos.x, targetX, barycenterLerpAlpha);
+                    layer[i].position = new Vector2(smoothedX, pos.y);
+                }
+            }
+
+            // Bottom-up: 자식 평균 x 기준으로 마지막-1층부터 0층까지 정렬
+            for (int layerIndex = mapData.Count - 2; layerIndex >= 0; layerIndex--)
+            {
+                // 핀 고정: 시작/최종 휴식/보스 레이어는 제외
+                if (layerIndex == 0 || layerIndex == FinalRestLayerIndex || layerIndex == BossLayerIndex) continue;
+                var layer = mapData[layerIndex];
+                if (layer == null || layer.Count <= 1) continue;
+
+                var bary = new Dictionary<MapDataNode, float>(layer.Count);
+                foreach (var node in layer)
+                {
+                    bary[node] = MedianOfChildren(node);
+                }
+
+                layer.Sort((a, b) =>
+                {
+                    int cmp = bary[a].CompareTo(bary[b]);
+                    if (cmp != 0) return cmp;
+                    return a.position.x.CompareTo(b.position.x);
+                });
+
+                for (int i = 0; i < layer.Count; i++)
+                {
+                    float targetX = (i - (layer.Count - 1) / 2f) * nodeSpacing;
+                    var pos = layer[i].position;
+                    float smoothedX = Mathf.Lerp(pos.x, targetX, barycenterLerpAlpha);
+                    layer[i].position = new Vector2(smoothedX, pos.y);
+                }
+            }
+        }
+    }
+
     #region 3단계: 노드 타입 결정 (아이콘 정하기)
     void SetNodeTypes()
     {
@@ -389,7 +528,7 @@ public class MapGenerator : MonoBehaviour
     private void PlaceElitesAndDependencies(List<MapDataNode> availableNodes)
     {
         // 유효한 엘리트 배치 가능 레이어: 1층 ~ 최종휴식-2 층 (엘리트 다음 휴식, 그 다음 상점 고려)
-        int minEliteLayer = Mathf.Clamp(1, 1, Mathf.Max(1, FinalRestLayerIndex - 2));
+        int minEliteLayer = Mathf.Max(1, minEliteLayerPolicy);
         int maxEliteLayer = Mathf.Max(minEliteLayer, FinalRestLayerIndex - 2);
 
         // 타겟 레이어 헬퍼 (선호 레이어가 없으면 범위 전체에서 폴백)
@@ -605,8 +744,140 @@ public class MapGenerator : MonoBehaviour
     #region 4단계: 화면에 실제 오브젝트 생성
     void InstantiateMapObjects()
     {
-        // 이 함수는 마지막에 채워나갈 부분입니다.
         Debug.Log("4단계: 실제 맵 오브젝트를 생성합니다.");
+
+        // 이전 실행 결과가 씬에 남아있다면 정리
+        foreach (var go in nodeObjects)
+        {
+            if (go != null)
+            {
+                Destroy(go);
+            }
+        }
+        nodeObjects.Clear();
+        // 이전 선 렌더러들도 정리
+        foreach (var lr in pathLines)
+        {
+            if (lr != null)
+            {
+                Destroy(lr.gameObject);
+            }
+        }
+        pathLines.Clear();
+        // 매핑 초기화
+        nodeToTransform.Clear();
+
+        // 모든 노드를 순회하며 타입에 맞는 프리팹을 생성하고, 좌표를 배치합니다.
+        for (int layerIndex = 0; layerIndex < mapData.Count; layerIndex++)
+        {
+            foreach (var node in mapData[layerIndex])
+            {
+                GameObject prefab = GetPrefabFor(node.nodeType);
+                if (prefab == null)
+                {
+                    Debug.LogWarning($"프리팹이 설정되지 않은 노드 타입입니다: {node.nodeType}");
+                    continue;
+                }
+
+                var nodeParent = nodesRoot != null ? nodesRoot : transform;
+                GameObject go = Instantiate(prefab, nodeParent);
+                go.name = $"{node.nodeType}_L{node.layerIndex}";
+
+                // 로컬 좌표계 기준으로 배치 (Gizmos와 동일 좌표 사용)
+                go.transform.localPosition = new Vector3(node.position.x, node.position.y, 0f);
+                // 매핑 저장 (선 그리기에 사용)
+                nodeToTransform[node] = go.transform;
+
+                // 런타임 자동 배선: NodeGoScene에 타입 주입 + 버튼 클릭 연결
+                var nodeGo = go.GetComponent<NodeGoScene>();
+                if (nodeGo == null)
+                {
+                    nodeGo = go.AddComponent<NodeGoScene>();
+                }
+
+                nodeGo.SetNodeType(node.nodeType);
+
+                var button = go.GetComponent<Button>();
+                if (button != null)
+                {
+                    // 중복 연결 방지 후 리스너 등록
+                    button.onClick.RemoveAllListeners();
+                    button.onClick.AddListener(nodeGo.GoToAssignedScene);
+                }
+
+                nodeObjects.Add(go);
+            }
+        }
+
+        // 모든 노드 생성 후 경로(선) 그리기
+        DrawPaths();
+    }
+
+    private GameObject GetPrefabFor(NodeType type)
+    {
+        switch (type)
+        {
+            case NodeType.Battle:     return BattleNodePrefab;
+            case NodeType.Elite:      return EliteNodePrefab;
+            case NodeType.Boss:       return BossNodePrefab;
+            case NodeType.Event:      return EventNodePrefab;
+            case NodeType.Shop:       return ShopNodePrefab;
+            case NodeType.Rest:       return RestNodePrefab;
+            case NodeType.CardRemove: return CardRemoveNodePrefab;
+            default: return null;
+        }
+    }
+    
+    private void DrawPaths()
+    {
+        // 기존 선 정리(안전)
+        foreach (var lr in pathLines)
+        {
+            if (lr != null)
+            {
+                Destroy(lr.gameObject);
+            }
+        }
+        pathLines.Clear();
+
+        if (pathLinePrefab == null)
+        {
+            Debug.LogWarning("pathLinePrefab이 설정되지 않아 경로를 그릴 수 없습니다.");
+            return;
+        }
+
+        var lineParent = pathsRoot != null ? pathsRoot : transform;
+
+        // 모든 부모-자식 연결을 따라 선 생성
+        foreach (var layer in mapData)
+        {
+            foreach (var parentNode in layer)
+            {
+                if (!nodeToTransform.TryGetValue(parentNode, out var parentTf) || parentTf == null)
+                {
+                    continue;
+                }
+                foreach (var child in parentNode.children)
+                {
+                    if (child == null) continue;
+                    if (!nodeToTransform.TryGetValue(child, out var childTf) || childTf == null)
+                    {
+                        continue;
+                    }
+
+                    // 라인 생성 및 설정 (월드 좌표 사용)
+                    var lr = Instantiate(pathLinePrefab, lineParent);
+                    lr.useWorldSpace = true;
+                    lr.positionCount = 2;
+                    Vector3 a = parentTf.position;
+                    Vector3 b = childTf.position;
+                    a.z = b.z = 0f;
+                    lr.SetPosition(0, a);
+                    lr.SetPosition(1, b);
+                    pathLines.Add(lr);
+                }
+            }
+        }
     }
     #endregion
 
