@@ -96,6 +96,7 @@ public class UIController : MonoBehaviour
         GameObject bananaObject = new GameObject("BananaItem"); //아이템 오브젝트를 새로 만들어줍니다
         Banana bananaItem = bananaObject.AddComponent<Banana>(); //아이템 스크립트를 불러와요
         Inventory.Instance.AddItem(bananaItem);
+        bananaItem.OnAddItem();
     }
 
     public void MainMenu()

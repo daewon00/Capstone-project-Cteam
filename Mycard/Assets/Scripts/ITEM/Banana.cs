@@ -18,7 +18,16 @@ public class Banana : Item
         this.isget = true;
 
     }
+    public virtual void OnAddItem() //아이템에서 얻은 수치를 적용합니다
+    {
+       
 
+        BattleController.instance.playerHealth += 10;
+
+        UIController.instance.setPlayerHealthText(BattleController.instance.playerHealth);
+        
+        
+    }
     
     
 }

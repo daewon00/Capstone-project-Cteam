@@ -59,11 +59,8 @@ public class Item : MonoBehaviour
     {
         this.ItemSprite = itemSprite;
     }
-
-    public void Use_effect()
-    {
-        Debug.Log("아이템추가");
-    }
+    //추가되면 작동
+   public virtual void OnAddItem(GameObject owner) { }
 
 
 }

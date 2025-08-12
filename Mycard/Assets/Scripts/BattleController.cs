@@ -13,7 +13,7 @@ public class BattleController : MonoBehaviour
     }
 
     // --- 전투 기본 설정 변수들 ---
-    public int startingMana = 4, maxMana = 12;  //시작마나, 최대 마나
+    public int startingMana = 3, maxMana = 3;  //시작마나, 최대 마나
     public int playerMana, enemyMana;   //플레이어 마나, 적 마나
     private int currentPlayerMaxMana, currentEnemyMaxMana;  // 플레이어와 적의 현재 턴의 최대 마나 (턴마다 1씩 증가)
 
