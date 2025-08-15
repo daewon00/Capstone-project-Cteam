@@ -15,8 +15,8 @@ MonoBehaviour:
   cardName: 
   actionDescription: 
   cardLore: 
-  currentHealth: 7
-  attackPower: 8
-  manaCost: 4
+  currentHealth: 2
+  attackPower: 2
+  manaCost: 2
   characterSprite: {fileID: 21300000, guid: b7ae2cc239ca7dd4eb45ac845d2fa034, type: 3}
   bgSprite: {fileID: 21300000, guid: e3d89e19a761a504ba8b8e785d1a420e, type: 3}

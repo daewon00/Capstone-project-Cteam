@@ -12,7 +12,7 @@ public class Banana : Item
     {
         this.ItemNumber = 1;
         this.ItemName = "¹Ù³ª³ª";
-        this.ItemSprite = Resources.Load<Sprite>("Sprites/38_Banana");
+        this.ItemSprite = Resources.Load<Sprite>("Sprites/2_Banana");
         this.ItemImage = new GameObject("BananaImage").AddComponent<Image>();
         this.get_Count = 1;
         this.isget = true;

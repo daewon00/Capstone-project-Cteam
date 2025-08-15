@@ -25,27 +25,29 @@ public class UIController : MonoBehaviour
     public string mainMenuScene, battleSelectScene;
 
     public GameObject PauseScreen;
+    public GameObject FieldShowButton;
+    public GameObject FieldBackButton;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(manawarningCounter > 0)
+        if (manawarningCounter > 0)
         {
             manawarningCounter -= Time.deltaTime;
 
-            if(manawarningCounter <= 0)
+            if (manawarningCounter <= 0)
             {
                 manawarning.SetActive(false);
             }
         }
 
-        if(Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
             PauseUnPause();
         }
@@ -95,9 +97,40 @@ public class UIController : MonoBehaviour
     {
         GameObject bananaObject = new GameObject("BananaItem"); //아이템 오브젝트를 새로 만들어줍니다
         Banana bananaItem = bananaObject.AddComponent<Banana>(); //아이템 스크립트를 불러와요
-        Inventory.Instance.AddItem(bananaItem); 
+        Inventory.Instance.AddItem(bananaItem);
         bananaItem.OnAddItem();
     }
+
+    public void AddSword()
+    {
+        GameObject SwordObject = new GameObject("SwordItem"); //아이템 오브젝트를 새로 만들어줍니다
+        Sword SwordItem = SwordObject.AddComponent<Sword>(); //아이템 스크립트를 불러와요
+        Inventory.Instance.AddItem(SwordItem);
+        SwordItem.OnAddItem();
+    }
+
+    public void FieldButton()
+    {
+        if (FieldBackButton.activeSelf == false)
+        {
+            CameraController.instance.MoveTo(CameraController.instance.battleTransform);
+            FieldShowButton.SetActive(false);
+            FieldBackButton.SetActive(true);
+
+        }
+    }
+
+    public void FieldBack()
+    {
+        if (FieldShowButton.activeSelf == false)
+        {
+            CameraController.instance.MoveTo(CameraController.instance.homeTransform);
+            FieldBackButton.SetActive(false);
+            FieldShowButton.SetActive(true);
+            
+        }
+    }
+
 
     public void MainMenu()
     {

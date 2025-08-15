@@ -15,8 +15,8 @@ MonoBehaviour:
   cardName: carzy
   actionDescription: 
   cardLore: 
-  currentHealth: 4
-  attackPower: 5
+  currentHealth: 5
+  attackPower: 3
   manaCost: 3
   characterSprite: {fileID: 21300000, guid: 004257126f8f47a4a98a9d521d09bdcc, type: 3}
   bgSprite: {fileID: 21300000, guid: 1aec4ea55e483344eb21c36b5dcabfd8, type: 3}

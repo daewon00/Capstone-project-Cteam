@@ -13,7 +13,7 @@ public class BattleController : MonoBehaviour
     }
 
     // --- 전투 기본 설정 변수들 ---
-    public int startingMana = 3, maxMana = 3;  //시작마나, 최대 마나
+    public int startingMana = 3, playermaxMana = 3, enemymaxMana = 3;  //시작마나, 최대 마나
     public int playerMana, enemyMana;   //플레이어 마나, 적 마나
     private int currentPlayerMaxMana, currentEnemyMaxMana;  // 플레이어와 적의 현재 턴의 최대 마나 (턴마다 1씩 증가)
 
@@ -135,7 +135,7 @@ public class BattleController : MonoBehaviour
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
 
-                    if (currentPlayerMaxMana < maxMana) // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
+                    if (currentPlayerMaxMana < playermaxMana) // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
                     {
                         currentPlayerMaxMana++;
                     }
@@ -159,7 +159,7 @@ public class BattleController : MonoBehaviour
                     //Debug.Log("Skipping enemy actions");
                     //AdvanceTurn();
                     
-                    if (currentEnemyMaxMana < maxMana)  // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
+                    if (currentEnemyMaxMana < enemymaxMana)  // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
                     {
                         currentEnemyMaxMana++;
                     }

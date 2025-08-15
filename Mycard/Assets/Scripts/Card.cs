@@ -8,6 +8,8 @@ public class Card : MonoBehaviour
 {
     public CardScriptableObject cardSO; //카드 설계도
 
+    public static Card instance;
+
     public bool isPlayer;   //플레이어 카드인지 참 거짓
 
     public int currentHealth;   //카드 체력
@@ -37,9 +39,12 @@ public class Card : MonoBehaviour
     public Animator anim;// 카드 애니메이션
 
     public LayerMask whatIsDesktop, whatIsPlacement;    //카드 내려놓을 레이어
-    
 
-    
+    void Awake()
+    {
+        instance = this; 
+    }
+
 
     void Start()
     {
