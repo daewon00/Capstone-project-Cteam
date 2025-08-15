@@ -2967,8 +2967,8 @@ MonoBehaviour:
   cardToDrawPerTurn: 1
   currentPhase: 0
   discardPoint: {fileID: 1871911612}
-  playerHealth: 100
-  enemyHealth: 100
+  playerHealth: 50
+  enemyHealth: 50
   battleEnded: 0
   resultScreenDelayTime: 1
   playerFirstChance: 0.516
