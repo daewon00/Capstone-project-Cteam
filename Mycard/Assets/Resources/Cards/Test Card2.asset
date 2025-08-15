@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
-  m_Name: Test Card1
+  m_Name: Test Card2
   m_EditorClassIdentifier: 
-  cardName: test1
-  actionDescription: test card 1
-  cardLore: this is test
+  cardName: carzy
+  actionDescription: 
+  cardLore: 
   currentHealth: 3
-  attackPower: 5
+  attackPower: 3
   manaCost: 3
-  characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
-  bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
+  characterSprite: {fileID: 21300000, guid: 004257126f8f47a4a98a9d521d09bdcc, type: 3}
+  bgSprite: {fileID: 21300000, guid: 1aec4ea55e483344eb21c36b5dcabfd8, type: 3}
