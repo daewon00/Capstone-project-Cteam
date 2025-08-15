@@ -7487,7 +7487,7 @@ PrefabInstance:
       objectReference: {fileID: 1872309680}
     - target: {fileID: 3771161169442518613, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: AddBanana
+      value: AddWarBanner
       objectReference: {fileID: 0}
     - target: {fileID: 3864319518386103243, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_Name

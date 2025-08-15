@@ -109,6 +109,14 @@ public class UIController : MonoBehaviour
         SwordItem.OnAddItem();
     }
 
+    public void AddWarBanner()
+    {
+        GameObject WarBannerObject = new GameObject("WarBannerItem");
+        WarBanner banner = WarBannerObject.AddComponent<WarBanner>();
+        Inventory.Instance.AddItem(banner);
+        banner.OnAddItem();
+    }
+
     public void FieldButton()
     {
         if (FieldBackButton.activeSelf == false)

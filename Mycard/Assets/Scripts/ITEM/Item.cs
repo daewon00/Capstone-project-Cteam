@@ -60,9 +60,9 @@ public class Item : MonoBehaviour
         this.ItemSprite = itemSprite;
     }
     //추가되면 작동
-   public virtual void OnAddItem(GameObject owner) { }
+    public virtual void OnAddItem() { }
 
-   public virtual void OnPlayerCardPlaced(Card card) { }
+    public virtual void OnPlayerCardPlaced(Card card) { }
 
 }
 //이코드를 상속해서 아이템 만들기
