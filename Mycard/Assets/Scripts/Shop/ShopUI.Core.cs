@@ -37,6 +37,13 @@ public partial class ShopUI : MonoBehaviour
     [SerializeField] private List<CardScriptableObject> cardPool = new List<CardScriptableObject>();
     private CardScriptableObject[] _cardSources = new CardScriptableObject[3];
 
+    [Header("Reroll (Cooldown)")]
+    [SerializeField, Tooltip("Seconds to lock reroll button after a reroll")]
+    private float rerollCooldownSec = 0.20f;   // 리롤 쿨타임
+    private bool _isRerollCooling = false;     // 버튼 락 상태
+
+
+    [SerializeField] private bool verboseLogs = false; //디버그 활성화
     
 
     // 내부 상태
@@ -63,18 +70,31 @@ public partial class ShopUI : MonoBehaviour
         get => testGold;
         set {
             testGold = Mathf.Max(0, value);
-            if (goldText) goldText.text = testGold.ToString("N0");
+            goldText?.SetText("{0:#,0}", testGold);
             }
     }
 
     private void Awake()
     {
-        Debug.Log("[ShopUI] Awake running", this);
+        VLog("[ShopUI] Awake running");
         LoadAllCardData();
         if (dimmerButton) dimmerButton.onClick.AddListener(Close);
         if (closeButton)  closeButton.onClick.AddListener(Close);
         if (rerollButton) rerollButton.onClick.AddListener(OnReroll);
         HideImmediate();
+    }
+
+    /// <summary>
+    /// verboseLogs가 true일 때만 Debug.Log를 출력하는 헬퍼 함수입니다.
+    /// </summary>
+    /// <param name="message">출력할 메시지</param>
+    private void VLog(string message)
+    {
+        // 스위치가 꺼져있으면(false) 여기서 즉시 함수가 종료됩니다.
+        if (!verboseLogs) return;
+
+        // 스위치가 켜져있을 때만 아래 코드가 실행됩니다.
+        Debug.Log(message, this);
     }
 
 

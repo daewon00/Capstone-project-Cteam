@@ -2251,6 +2251,8 @@ MonoBehaviour:
   maxDeals: 2
   dealDiscount: 0.2
   cardPool: []
+  rerollCooldownSec: 0.2
+  verboseLogs: 1
 --- !u!1 &1692489624
 GameObject:
   m_ObjectHideFlags: 0
