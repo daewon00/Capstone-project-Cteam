@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 public partial class ShopUI : MonoBehaviour
 {
@@ -15,7 +16,7 @@ public partial class ShopUI : MonoBehaviour
                 if (c != null && !set.Contains(c))
                     cardPool.Add(c);
         }
-        Debug.Log($"[ShopUI] cardPool merged count = {cardPool.Count}");
+        VLog($"[ShopUI] cardPool merged count = {cardPool.Count}");
         if (cardPool.Count == 0)
             Debug.LogWarning($"[ShopUI] No cards found in inspector or Resources/{CardsPath}");
     }
@@ -120,11 +121,14 @@ public partial class ShopUI : MonoBehaviour
         return candidates[idx];
     }
 
-        private void OnReroll()
+    private void OnReroll()
     {
+        if (_isRerollCooling) return;
+
         int cost = CurrentRerollCost();
         if (Gold < cost) return;
 
+        _isRerollCooling = true;
         if (rerollButton) rerollButton.interactable = false;
 
         Gold -= cost;
@@ -156,6 +160,25 @@ public partial class ShopUI : MonoBehaviour
         ApplyDeals();
         RefreshViews();
         RefreshTopbar();
+        _isRerollCooling = true;
+        StartCoroutine(RerollCooldown());
+    }
+
+    // 쿨다운 코루틴
+    private IEnumerator RerollCooldown()
+    {
+        VLog($"[ShopUI] Reroll cooldown start ({rerollCooldownSec}s)");
+        // UI는 보통 TimeScale 0에서도 동작해야 하니 unscaled 사용
+        float t = 0f;
+        while (t < rerollCooldownSec)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        _isRerollCooling = false; // 락 해제
+        RefreshTopbar();          // 조건(돈/후보) 맞으면 자동 재활성
+        VLog("[ShopUI] Reroll cooldown end");
     }
     
 }
