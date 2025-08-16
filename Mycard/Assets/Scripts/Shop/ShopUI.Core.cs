@@ -67,5 +67,15 @@ public partial class ShopUI : MonoBehaviour
             }
     }
 
+    private void Awake()
+    {
+        Debug.Log("[ShopUI] Awake running", this);
+        LoadAllCardData();
+        if (dimmerButton) dimmerButton.onClick.AddListener(Close);
+        if (closeButton)  closeButton.onClick.AddListener(Close);
+        if (rerollButton) rerollButton.onClick.AddListener(OnReroll);
+        HideImmediate();
+    }
+
 
 }
