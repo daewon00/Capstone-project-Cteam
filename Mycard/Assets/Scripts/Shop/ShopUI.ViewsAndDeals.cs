@@ -78,8 +78,14 @@ public partial class ShopUI : MonoBehaviour
     private void RefreshTopbar()
     {
         int cost = CurrentRerollCost();
-        if (rerollPriceText) rerollPriceText.text = cost.ToString("N0");
-        if (rerollButton) rerollButton.interactable = (Gold >= cost);
+        rerollPriceText?.SetText("{0:#,0}", cost);
+        
+        if (rerollButton)
+        {
+            bool canAfford = Gold >= cost;
+            // 쿨다운 중엔 강제로 비활성
+            rerollButton.interactable = !_isRerollCooling && canAfford;
+        }
     }
 
     private int CurrentRerollCost()

@@ -32,8 +32,8 @@ public class ShopSlotView : MonoBehaviour
         if (!button) button = GetComponent<Button>();
 
         // 2) 텍스트/아이콘 표시
-        if (titleText)  titleText.text  = vm.title ?? "";
-        if (detailText) detailText.text = vm.detail ?? "";
+        titleText?.SetText(vm.title ?? "");
+        detailText?.SetText(vm.detail ?? "");
         if (icon)
         {
             icon.sprite  = vm.icon;                  // ← 무조건 덮어쓰기
@@ -45,7 +45,7 @@ public class ShopSlotView : MonoBehaviour
             ? Mathf.Max(1, Mathf.CeilToInt(vm.price * (1f - dealDiscountVisual)))
             : vm.price;
 
-        if (priceText) priceText.text = finalPrice.ToString("N0");
+        priceText?.SetText("{0:#,0}", finalPrice);
 
         // 4) 원가/배지 표시
         if (originalPriceText)
@@ -53,7 +53,7 @@ public class ShopSlotView : MonoBehaviour
             bool showOrig = vm.isDeal;
             originalPriceText.gameObject.SetActive(showOrig);
             if (showOrig)
-                originalPriceText.text = $"<s>{vm.price.ToString("N0")}</s>"; // Rich Text ON 필수
+                originalPriceText.SetText("<s>{0:#,0}</s>", vm.price); // Rich Text ON 필수
         }
         if (dealBadge) dealBadge.SetActive(vm.isDeal);
 
@@ -70,6 +70,7 @@ public class ShopSlotView : MonoBehaviour
         button.onClick.AddListener(() =>
         {
             if (vm.soldOut || !canBuy) return;
+            button.interactable = false;   // 즉시 잠금(더블클릭 방지)
             onClick?.Invoke();
         });
         }
