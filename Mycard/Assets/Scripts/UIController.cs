@@ -28,6 +28,8 @@ public class UIController : MonoBehaviour
     public GameObject FieldShowButton;
     public GameObject FieldBackButton;
 
+
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -139,6 +141,23 @@ public class UIController : MonoBehaviour
         }
     }
 
+    public void ChAdd()
+    {
+        // 1) Resources/Characters 폴더 안의 "Cat.asset" 파일 불러오기
+        CharacterSO newChar = Resources.Load<CharacterSO>("Characters/Cat");
+
+        if (newChar != null)
+        {
+            // 2) PortraitInventory에 캐릭터 추가
+            PortraitInventory.instance.AddCharacter(newChar);
+
+            Debug.Log(newChar.characterName + " 추가됨!");
+        }
+        else
+        {
+            Debug.LogError("캐릭터 ScriptableObject를 찾을 수 없습니다!");
+        }
+    }
 
     public void MainMenu()
     {

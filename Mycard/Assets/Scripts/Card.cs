@@ -64,6 +64,10 @@ public class Card : MonoBehaviour
     {
         currentHealth = cardSO.currentHealth;
         attackPower = cardSO.attackPower;
+        if (isPlayer && PlayerBuffs.instance != null)
+        {
+            attackPower += PlayerBuffs.instance.attackBonus;
+        }
         manaCost = cardSO.manaCost;
 
         UpdateCardDisplay();
@@ -74,6 +78,7 @@ public class Card : MonoBehaviour
 
         characterArt.sprite = cardSO.characterSprite;
         bgArt.sprite = cardSO.bgSprite;
+        ApplyAttackBuffOutline(isPlayer && PlayerBuffs.instance != null && PlayerBuffs.instance.attackBonus > 0);
     }
 
     void Update()
@@ -221,5 +226,28 @@ public class Card : MonoBehaviour
         healthText.text = currentHealth.ToString();
         attackText.text = attackPower.ToString();
         costText.text = manaCost.ToString();
+    }
+    public void ApplyAttackBuffOutline(bool on)
+    {
+        // TextMeshProUGUI는 outlineWidth/outlineColor 제공
+        var tmp = attackText; // TMP_Text
+        if (on)
+        {
+            // 공유 머티리얼에 직접 쓰면 다른 카드에도 퍼질 수 있으니 인스턴스화 권장
+            if (!ReferenceEquals(tmp.fontMaterial, tmp.fontSharedMaterial))
+                ; // 이미 인스턴스 재료면 그대로 사용
+            else
+                tmp.fontMaterial = new Material(tmp.fontSharedMaterial);
+
+            tmp.outlineWidth = 0.2f;          // 필요 시 조절
+            tmp.outlineColor = Color.green;   // 요구사항: 초록색 외곽선
+        }
+        else
+        {
+            if (!ReferenceEquals(tmp.fontMaterial, tmp.fontSharedMaterial))
+                tmp.fontMaterial = new Material(tmp.fontSharedMaterial);
+            tmp.outlineWidth = 0f;
+            // 색상은 굳이 초기화 안 해도 됨
+        }
     }
 }
