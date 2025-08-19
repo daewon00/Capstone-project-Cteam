@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    public string battleSelectScene;    //현재 맵이랑 연결되어 있음 나중에는 튜토선택이나 동료선택이 될듯
+    public string CompanionSelectScene;    //동료선택
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -21,7 +21,7 @@ public class MainMenu : MonoBehaviour
 
     public void StartGame()
     {
-        SceneManager.LoadScene(battleSelectScene);
+        SceneManager.LoadScene(CompanionSelectScene);
 
         AudioManager.instance.PlaySFX(0);
     }

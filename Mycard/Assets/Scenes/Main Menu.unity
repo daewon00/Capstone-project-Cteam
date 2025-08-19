@@ -826,7 +826,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e456be12d5030004baeff892fcc42ffd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  battleSelectScene: Map Scene
+  CompanionSelectScene: CompanionSelectScene
 --- !u!1 &1525144614
 GameObject:
   m_ObjectHideFlags: 0
@@ -837,6 +837,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1525144616}
   - component: {fileID: 1525144617}
+  - component: {fileID: 1525144618}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -871,6 +872,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e6af1655e2eec48ace2312bfd54799, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1525144618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525144614}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5724fa3048e3cb40af3273d105451b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ProfileId: P1
+  RunId: 
+  SelectedCompanionId: 
 --- !u!1001 &2067095308
 PrefabInstance:
   m_ObjectHideFlags: 0

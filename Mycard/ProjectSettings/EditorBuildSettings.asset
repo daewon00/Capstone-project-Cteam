@@ -14,4 +14,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Battle.unity
     guid: 497a576b22705d14388d4ac5a72e67a6
+  - enabled: 1
+    path: Assets/Scenes/CompanionSelectScene.unity
+    guid: ee3c65afa2e03a447b248b34a5171415
   m_configObjects: {}

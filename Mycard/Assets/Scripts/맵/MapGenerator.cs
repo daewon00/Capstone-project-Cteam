@@ -181,6 +181,12 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    public void RegenerateWithSeed(int seed)
+    {
+        this.mapSeed = seed;
+        GenerateMap();
+    }
+
     #region --- 1단계: 맵 뼈대 생성 함수 ---
     void CreateNodePositions()
     {
