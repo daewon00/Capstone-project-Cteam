@@ -1052,6 +1052,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c630480ad90be784085570f01f9baddd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mapScene: Map Scene
   gridParent: {fileID: 1919773344}
   cardPrefab: {fileID: 7972371679779699361, guid: b81162c88641e0c45bf35cfb89e55b3f, type: 3}
   startButton: {fileID: 1479247938}

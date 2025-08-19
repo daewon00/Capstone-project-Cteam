@@ -4,9 +4,12 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using Game.Save;
+using System.Collections.Generic;
 
 public class CompanionSelectController : MonoBehaviour
 {
+    [SerializeField] private string mapScene = "Map Scene";
+    
     [Header("UI")]
     public Transform gridParent;
     public CompanionCardView cardPrefab;
@@ -48,42 +51,59 @@ public class CompanionSelectController : MonoBehaviour
         if (selectedLabel) selectedLabel.text = _selected ? $"선택: {_selected.DisplayName}" : "동료를 선택하세요";
     }
 
-    public void OnClickStart()
-{
-    if (_selected == null) return;
+    void OnClickStart()
+    {
+        if (_selected == null) return;
 
-    DatabaseManager.Instance.Connect();
+        DatabaseManager.Instance.Connect();
 
-    var runId = System.Guid.NewGuid().ToString("N");
-    PlayerPrefs.SetString("lastRunId", runId);
-    PlayerPrefs.SetString("selectedCompanionId", _selected.CompanionId);
-    PlayerPrefs.Save();
+        // 1. 새 게임을 위한 고유 ID와 정보를 생성합니다.
+        var runId = System.Guid.NewGuid().ToString("N");
+        PlayerPrefs.SetString("lastRunId", runId);
+        PlayerPrefs.SetString("selectedCompanionId", _selected.CompanionId);
+        PlayerPrefs.Save();
 
-    var run = new CurrentRun {
-        RunId = runId, ProfileId = "P1",
-        Act = 1, Floor = 0, NodeIndex = 0,
-        Gold = 99 + _selected.GoldBonus,
-        CurrentHp = 70 + _selected.MaxHpBonus,
-        MaxHpBase = 80 + _selected.MaxHpBonus,
-        EnergyMax = 3 + _selected.EnergyMaxBonus,
-        CreatedAtUtc = System.DateTime.UtcNow.ToString("o"),
-        UpdatedAtUtc = System.DateTime.UtcNow.ToString("o"),
-        ContentCatalogVersion = "content-1",
-        AppVersion = Application.version
-    };
+        var run = new CurrentRun {
+            RunId = runId, ProfileId = "P1", // ProfileId는 나중에 로그인 시스템과 연동
+            Act = 1, Floor = 0, NodeIndex = 0,
+            Gold = 99 + _selected.GoldBonus,
+            CurrentHp = 80 + _selected.MaxHpBonus,
+            MaxHpBase = 80 + _selected.MaxHpBonus,
+            EnergyMax = 3 + _selected.EnergyMaxBonus,
+            CreatedAtUtc = System.DateTime.UtcNow.ToString("o"),
+            UpdatedAtUtc = System.DateTime.UtcNow.ToString("o"),
+        };
 
-    // 일단 카드/유물/포션/노드 없이 저장 (맵 씬에서 덱 채우고 다시 저장)
-    DatabaseManager.Instance.SaveCurrentRun(
-        run,
-        cards:   new System.Collections.Generic.List<CardInDeck>(),
-        relics:  new System.Collections.Generic.List<RelicInPossession>(),
-        potions: new System.Collections.Generic.List<PotionInPossession>(),
-        nodes:   new System.Collections.Generic.List<MapNodeState>(),
-        rngStates:new System.Collections.Generic.List<RngState>()
-    );
+        // 2. 시작 덱과 유물을 '저장용 데이터' 형태로 완벽하게 만듭니다.
+        int counter = 0;
+        string NewId() => $"{runId}-{(++counter):X8}";
 
-    UnityEngine.SceneManagement.SceneManager.LoadScene("Map Scene");
-}
+        var cards = new List<CardInDeck>();
+        // 기본 덱
+        cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_STRIKE", IsUpgraded = false });
+        cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_STRIKE", IsUpgraded = false });
+        cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_DEFEND", IsUpgraded = false });
+        // 동료 전용 카드
+        foreach (var cid in _selected.StartingCardIds)
+            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = cid, IsUpgraded = false });
+
+        var relics = _selected.StartingRelicIds
+            .Select(id => new RelicInPossession { RunId = runId, RelicId = id, Stacks = 1, UsesLeft = -1 })
+            .ToList();
+        // 동료 자체를 '특별 유물'로 저장
+        relics.Add(new RelicInPossession { RunId = runId, RelicId = "COMP_" + _selected.CompanionId, Stacks = 1, UsesLeft = -1 });
+
+        var potions = _selected.StartingPotionIds
+            .Select(id => new PotionInPossession { RunId = runId, PotionId = id, Charges = 1 })
+            .ToList();
+
+        // 3. 완성된 '첫 번째 세이브 파일'을 DB에 저장합니다.
+        DatabaseManager.Instance.SaveCurrentRun(run, cards, relics, potions,
+            nodes: new List<MapNodeState>(), rngStates: new List<RngState>());
+
+        // 4. 맵 씬으로 이동합니다.
+        SceneManager.LoadScene(mapScene);
+    }
 
     void StartNewRunWithCompanion(CompanionDefinition comp)
     {
