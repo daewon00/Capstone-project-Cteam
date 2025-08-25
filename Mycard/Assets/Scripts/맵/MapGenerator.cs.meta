@@ -14,7 +14,7 @@ MonoImporter:
   - pathLinePrefab: {fileID: 7606208774802673517, guid: 4589f3c9203b2734fa33da890e06092b, type: 3}
   - nodesRoot: {instanceID: 0}
   - pathsRoot: {instanceID: 0}
-  executionOrder: 0
+  executionOrder: -10
   icon: {instanceID: 0}
   userData: 
   assetBundleName: 

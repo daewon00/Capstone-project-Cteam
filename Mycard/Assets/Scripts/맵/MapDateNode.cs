@@ -13,7 +13,7 @@ using UnityEngine;
     // 데이터만 담는 설계도
     public class MapDataNode
     {
-        public NodeType nodeType; // 이 노드의 종류 (전투, 상점 등)
+        public NodeType nodeType;  // 이 노드의 종류 (전투, 상점 등)
         public Vector2 position;  // 맵 상의 좌표 (화면에 표시될 위치)
         public int layerIndex = -1; // 이 노드가 속한 층 인덱스 (생성 시 설정)
 
