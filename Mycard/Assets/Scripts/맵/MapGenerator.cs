@@ -10,6 +10,10 @@ using UnityEngine.UI;
 
 public class MapGenerator : MonoBehaviour
 {
+    private bool _isMapBuilt = false; // 맵 생성 여부
+    // 맵 완성 보고를 위한 신호
+    public event System.Action OnMapGenerationComplete;
+
     private int BossLayerIndex => Mathf.Max(0, numberOfLayers - 1); // 보스층은 마지막 층
     private int FinalRestLayerIndex => Mathf.Max(0, numberOfLayers - 2); // 최종 휴식층은 마지막-1 층
     // 노드가 자체적으로 layerIndex를 보유하므로 별도 캐시는 사용하지 않습니다.
@@ -97,15 +101,20 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    /*
     // 게임이 시작될 때 맵을 생성합니다.
     void Start()
     {
         GenerateMap();
     }
+    */
 
     // 맵 생성의 전체 과정을 지휘하는 메인 함수입니다.
-    void GenerateMap()
+    public void GenerateMap()
     {
+        Debug.Log($"[MapGen] 맵 생성이 {Time.frameCount} 프레임에서 시작됩니다.");
+        
+
         // 파라미터 유효성 검사
         if (numberOfLayers < 8)
         {
@@ -183,6 +192,9 @@ public class MapGenerator : MonoBehaviour
 
     public void RegenerateWithSeed(int seed)
     {
+        if (_isMapBuilt) return; // 이미 맵이 만들어졌다면, 아무것도 하지 않고 즉시 퇴장!
+        _isMapBuilt = true;      // 맵을 이제 막 만들기 시작했다고 기록.
+
         this.mapSeed = seed;
         GenerateMap();
     }
@@ -773,11 +785,17 @@ public class MapGenerator : MonoBehaviour
         // 매핑 초기화
         nodeToTransform.Clear();
 
-        // 모든 노드를 순회하며 타입에 맞는 프리팹을 생성하고, 좌표를 배치합니다.
+        // MapDataNode → NodeGoScene 매핑(2패스용)
+        var nodeToGo = new Dictionary<MapDataNode, NodeGoScene>();
+
+        // === 1패스: 프리팹 생성 + 타입/주소 주입 ===
         for (int layerIndex = 0; layerIndex < mapData.Count; layerIndex++)
         {
-            foreach (var node in mapData[layerIndex])
+            var layer = mapData[layerIndex];
+            for (int j = 0; j < layer.Count; j++)
             {
+                var node = layer[j];
+
                 GameObject prefab = GetPrefabFor(node.nodeType);
                 if (prefab == null)
                 {
@@ -787,31 +805,53 @@ public class MapGenerator : MonoBehaviour
 
                 var nodeParent = nodesRoot != null ? nodesRoot : transform;
                 GameObject go = Instantiate(prefab, nodeParent);
-                go.name = $"{node.nodeType}_L{node.layerIndex}";
+                go.name = $"{node.nodeType}_L{node.layerIndex}_I{j}";
 
                 // 로컬 좌표계 기준으로 배치 (Gizmos와 동일 좌표 사용)
                 go.transform.localPosition = new Vector3(node.position.x, node.position.y, 0f);
+
                 // 매핑 저장 (선 그리기에 사용)
                 nodeToTransform[node] = go.transform;
 
-                // 런타임 자동 배선: NodeGoScene에 타입 주입 + 버튼 클릭 연결
+                // NodeGoScene 준비
                 var nodeGo = go.GetComponent<NodeGoScene>();
-                if (nodeGo == null)
-                {
-                    nodeGo = go.AddComponent<NodeGoScene>();
-                }
+                if (nodeGo == null) nodeGo = go.AddComponent<NodeGoScene>();
 
+                // 타입/주소 주입
                 nodeGo.SetNodeType(node.nodeType);
+                // InitAddress 메서드를 만들어두었다면 해도 되고, 없으면 아래 두 줄처럼 직접 대입:
+                nodeGo.floor = node.layerIndex;
+                nodeGo.index = j;
 
+                // 버튼은 '총괄'에게 이동 요청하도록 연결 (직접 씬 이동 X)
                 var button = go.GetComponent<Button>();
                 if (button != null)
                 {
-                    // 중복 연결 방지 후 리스너 등록
                     button.onClick.RemoveAllListeners();
-                    button.onClick.AddListener(nodeGo.GoToAssignedScene);
+                    button.onClick.AddListener(nodeGo.OnClicked); // ← 기존 GoToAssignedScene에서 변경
                 }
 
+                nodeToGo[node] = nodeGo;
                 nodeObjects.Add(go);
+            }
+        }
+
+        // === 2패스: 런타임 children 링크 연결 ===
+        foreach (var layer in mapData)
+        {
+            foreach (var parentNode in layer)
+            {
+                if (!nodeToGo.TryGetValue(parentNode, out var parentGo)) continue;
+
+                parentGo.children.Clear();
+                foreach (var child in parentNode.children)
+                {  
+                    if (child != null && nodeToGo.TryGetValue(child, out var childGo))
+                    {
+                        parentGo.children.Add(childGo);
+                    }
+                
+                }
             }
         }
 

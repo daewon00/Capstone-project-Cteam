@@ -1,55 +1,57 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+
+[RequireComponent(typeof(RawImage))]
 public class BackGroundScroller : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    [Tooltip("½ºÅ©·Ñ ¼Óµµ¸¦ Á¶ÀıÇÕ´Ï´Ù.")]
+    [Tooltip("ìŠ¤í¬ë¡¤ ì†ë„ë¥¼ ì¡°ì ˆí•©ë‹ˆë‹¤.")]
     public float scrollSpeed = 0.5f;
 
-    // UI RawImage ÄÄÆ÷³ÍÆ®¸¦ ´ãÀ» º¯¼ö
+    // UI RawImage ì»´í¬ë„ŒíŠ¸ë¥¼ ë‹´ì„ ë³€ìˆ˜
     private RawImage backgroundImage;
-    // µå·¡±× ½ÃÀÛ ½ÃÀÇ ¸¶¿ì½º À§Ä¡
+    // ë“œë˜ê·¸ ì‹œì‘ ì‹œì˜ ë§ˆìš°ìŠ¤ ìœ„ì¹˜
     private Vector2 dragStartPosition;
 
     void Awake()
     {
-        // ÀÌ ½ºÅ©¸³Æ®°¡ ºÙ¾îÀÖ´Â ¿ÀºêÁ§Æ®ÀÇ RawImage ÄÄÆ÷³ÍÆ®¸¦ °¡Á®¿É´Ï´Ù.
+        // ì´ ìŠ¤í¬ë¦½íŠ¸ê°€ ë¶™ì–´ìˆëŠ” ì˜¤ë¸Œì íŠ¸ì˜ RawImage ì»´í¬ë„ŒíŠ¸ë¥¼ ê°€ì ¸ì˜µë‹ˆë‹¤.
         backgroundImage = GetComponent<RawImage>();
     }
 
-    // µå·¡±×°¡ ½ÃÀÛµÉ ¶§ È£ÃâµÇ´Â ÇÔ¼ö
+    // ë“œë˜ê·¸ê°€ ì‹œì‘ë  ë•Œ í˜¸ì¶œë˜ëŠ” í•¨ìˆ˜
     public void OnBeginDrag(PointerEventData eventData)
     {
-        // ÇöÀç ¸¶¿ì½º À§Ä¡¸¦ ±â·ÏÇÕ´Ï´Ù.
+        // í˜„ì¬ ë§ˆìš°ìŠ¤ ìœ„ì¹˜ë¥¼ ê¸°ë¡í•©ë‹ˆë‹¤.
         dragStartPosition = eventData.position;
     }
 
-    // µå·¡±×ÇÏ´Â µ¿¾È °è¼ÓÇØ¼­ È£ÃâµÇ´Â ÇÔ¼ö
+    // ë“œë˜ê·¸í•˜ëŠ” ë™ì•ˆ ê³„ì†í•´ì„œ í˜¸ì¶œë˜ëŠ” í•¨ìˆ˜
     public void OnDrag(PointerEventData eventData)
     {
-        // ½ÃÀÛ À§Ä¡¿Í ÇöÀç À§Ä¡ÀÇ Â÷ÀÌ¸¦ °è»êÇÕ´Ï´Ù.
+        // ì‹œì‘ ìœ„ì¹˜ì™€ í˜„ì¬ ìœ„ì¹˜ì˜ ì°¨ì´ë¥¼ ê³„ì‚°í•©ë‹ˆë‹¤.
         Vector2 delta = eventData.position - dragStartPosition;
 
-        // yÃà(¼¼·Î)À¸·Î ¾ó¸¶³ª ¿òÁ÷¿´´ÂÁö °è»êÇÕ´Ï´Ù.
-        // È­¸é ³ôÀÌ·Î ³ª´²ÁÖ¾î, È­¸é Å©±â¿Í »ó°ü¾øÀÌ ÀÏÁ¤ÇÑ ¼Óµµ·Î ¿òÁ÷ÀÌ°Ô ÇÕ´Ï´Ù.
+        // yì¶•(ì„¸ë¡œ)ìœ¼ë¡œ ì–¼ë§ˆë‚˜ ì›€ì§ì˜€ëŠ”ì§€ ê³„ì‚°í•©ë‹ˆë‹¤.
+        // í™”ë©´ ë†’ì´ë¡œ ë‚˜ëˆ ì£¼ì–´, í™”ë©´ í¬ê¸°ì™€ ìƒê´€ì—†ì´ ì¼ì •í•œ ì†ë„ë¡œ ì›€ì§ì´ê²Œ í•©ë‹ˆë‹¤.
         float moveY = delta.y / Screen.height * scrollSpeed;
 
-        // RawImageÀÇ uvRect¸¦ Á¶ÀıÇÏ¿© ÅØ½ºÃ³¸¦ ¿òÁ÷ÀÔ´Ï´Ù.
-        // ÀÌ°ÍÀÌ ¹Ù·Î ¹è°æÀÌ ½ºÅ©·ÑµÇ´Â °ÍÃ³·³ º¸ÀÌ°Ô ÇÏ´Â ÇÙ½É ·ÎÁ÷ÀÔ´Ï´Ù.
+        // RawImageì˜ uvRectë¥¼ ì¡°ì ˆí•˜ì—¬ í…ìŠ¤ì²˜ë¥¼ ì›€ì§ì…ë‹ˆë‹¤.
+        // ì´ê²ƒì´ ë°”ë¡œ ë°°ê²½ì´ ìŠ¤í¬ë¡¤ë˜ëŠ” ê²ƒì²˜ëŸ¼ ë³´ì´ê²Œ í•˜ëŠ” í•µì‹¬ ë¡œì§ì…ë‹ˆë‹¤.
         Rect currentRect = backgroundImage.uvRect;
         currentRect.y += moveY;
         backgroundImage.uvRect = currentRect;
 
-        // ´ÙÀ½ °è»êÀ» À§ÇØ ÇöÀç À§Ä¡¸¦ ´Ù½Ã ½ÃÀÛ À§Ä¡·Î ¾÷µ¥ÀÌÆ®ÇÕ´Ï´Ù.
+        // ë‹¤ìŒ ê³„ì‚°ì„ ìœ„í•´ í˜„ì¬ ìœ„ì¹˜ë¥¼ ë‹¤ì‹œ ì‹œì‘ ìœ„ì¹˜ë¡œ ì—…ë°ì´íŠ¸í•©ë‹ˆë‹¤.
         dragStartPosition = eventData.position;
     }
 
-    // µå·¡±×°¡ ³¡³µÀ» ¶§ È£ÃâµÇ´Â ÇÔ¼ö (Áö±İÀº ºñ¿öµÓ´Ï´Ù)
+    // ë“œë˜ê·¸ê°€ ëë‚¬ì„ ë•Œ í˜¸ì¶œë˜ëŠ” í•¨ìˆ˜ (ì§€ê¸ˆì€ ë¹„ì›Œë‘¡ë‹ˆë‹¤)
     public void OnEndDrag(PointerEventData eventData)
     {
-        // ÇÊ¿äÇÏ´Ù¸é µå·¡±×°¡ ³¡³µÀ» ¶§ÀÇ ·ÎÁ÷À» ¿©±â¿¡ Ãß°¡ÇÒ ¼ö ÀÖ½À´Ï´Ù.
+        // í•„ìš”í•˜ë‹¤ë©´ ë“œë˜ê·¸ê°€ ëë‚¬ì„ ë•Œì˜ ë¡œì§ì„ ì—¬ê¸°ì— ì¶”ê°€í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
     }
 }
