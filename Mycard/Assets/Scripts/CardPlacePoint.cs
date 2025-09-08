@@ -18,6 +18,7 @@ public class CardPlacePoint : MonoBehaviour
     [SerializeField] private GameObject highlightEffect; // 프리팹 자식의 하이라이트 오브젝트
     [SerializeField] private Color allowedColor = new Color(0.35f, 1f, 0.35f, 1f);
     [SerializeField] private Color blockedColor = new Color(1f, 0.35f, 0.35f, 1f);
+    [SerializeField] private HighlightVisual highlightVisual; // 신규 하이라이트 시스템(있으면 우선 사용)
 
     private HighlightState _highlightState = HighlightState.Off;
     private Renderer _highlightRenderer;
@@ -26,6 +27,15 @@ public class CardPlacePoint : MonoBehaviour
     {
         if (highlightEffect != null)
             _highlightRenderer = highlightEffect.GetComponentInChildren<Renderer>(true);
+
+        // 신규 하이라이트 시각화 컴포넌트 자동 탐색(있으면 위임)
+        if (highlightVisual == null)
+        {
+            if (highlightEffect != null)
+                highlightVisual = highlightEffect.GetComponentInChildren<HighlightVisual>(true);
+            if (highlightVisual == null)
+                highlightVisual = GetComponentInChildren<HighlightVisual>(true);
+        }
         // 기본은 꺼둔다
         ApplyState(HighlightState.Off);
     }
@@ -39,20 +49,41 @@ public class CardPlacePoint : MonoBehaviour
     private void ApplyState(HighlightState state)
     {
         _highlightState = state;
+        // On/Off 가시성은 기존 오브젝트 토글 유지(레거시 호환)
+        if (highlightEffect != null)
+        {
+            switch (state)
+            {
+                case HighlightState.Off:
+                    if (highlightEffect.activeSelf) highlightEffect.SetActive(false);
+                    break;
+                case HighlightState.Allowed:
+                case HighlightState.Blocked:
+                    if (!highlightEffect.activeSelf) highlightEffect.SetActive(true);
+                    break;
+            }
+        }
+
+        // 신규 시스템이 있으면 우선 사용
+        if (highlightVisual != null)
+        {
+            var mapped = HighlightProfile.HighlightStateType.Off;
+            if (state == HighlightState.Allowed) mapped = HighlightProfile.HighlightStateType.Allowed;
+            else if (state == HighlightState.Blocked) mapped = HighlightProfile.HighlightStateType.Blocked;
+            highlightVisual.SetState(mapped);
+            return; // 신규 경로 사용 시 레거시 색 지정은 생략
+        }
+
+        // 폴백: 레거시 색상 지정
         if (highlightEffect == null)
             return;
 
         switch (state)
         {
-            case HighlightState.Off:
-                if (highlightEffect.activeSelf) highlightEffect.SetActive(false);
-                break;
             case HighlightState.Allowed:
-                if (!highlightEffect.activeSelf) highlightEffect.SetActive(true);
                 TrySetColor(allowedColor);
                 break;
             case HighlightState.Blocked:
-                if (!highlightEffect.activeSelf) highlightEffect.SetActive(true);
                 TrySetColor(blockedColor);
                 break;
         }

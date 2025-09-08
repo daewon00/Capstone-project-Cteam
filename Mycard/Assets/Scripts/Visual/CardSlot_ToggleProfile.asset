@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcfbbf1dcfbaa5a4cb751a2bdddb9c5d, type: 3}
+  m_Name: CardSlot_ToggleProfile
+  m_EditorClassIdentifier: 
+  applyMode: 2
+  colorPropertyNames:
+  - _Color
+  - _BaseColor
+  - _TintColor
+  - _EmissionColor
+  useMaterialPropertyBlock: 1
+  off:
+    applyColor: 1
+    color: {r: 1, g: 1, b: 1, a: 0}
+    applyMaterial: 0
+    material: {fileID: 0}
+    toggleObjects: 0
+    objectsToEnable: []
+    objectsToDisable: []
+  allowed:
+    applyColor: 1
+    color: {r: 0.35, g: 1, b: 0.35, a: 1}
+    applyMaterial: 0
+    material: {fileID: 2100000, guid: 993fa0553c6b7b7468c74a9d2dc39350, type: 2}
+    toggleObjects: 0
+    objectsToEnable:
+    - {fileID: 0}
+    objectsToDisable: []
+  blocked:
+    applyColor: 1
+    color: {r: 1, g: 0.35, b: 0.35, a: 1}
+    applyMaterial: 0
+    material: {fileID: 2100000, guid: 993fa0553c6b7b7468c74a9d2dc39350, type: 2}
+    toggleObjects: 0
+    objectsToEnable:
+    - {fileID: 0}
+    objectsToDisable: []
