@@ -164,6 +164,7 @@ public class CompanionSelectController : MonoBehaviour
             .Select(id => new PotionInPossession { RunId = runId, PotionId = id, Charges = 1 })
             .ToList();
 
+
         // 맵/이벤트/RNG 초기값은 빈 리스트로 시작 (세분화된 API 사용)
         var db = ServiceRegistry.GetRequired<IDatabase>();
         db.UpsertCurrentRun(run);

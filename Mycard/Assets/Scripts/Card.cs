@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 using DG.Tweening;
 using UnityEngine.EventSystems;
 
-public class Card : MonoBehaviour, IPointerClickHandler
+public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerUpHandler
 {
     public CardScriptableObject cardSO; //카드 설계도
 
@@ -29,11 +29,8 @@ public class Card : MonoBehaviour, IPointerClickHandler
     public int handPosition; //핸드 위치
 
     private HandController theHC;   //핸드 전체를 관리하는 스크립트
-
-    private bool isSelected;    //선택한 카드 참 거짓
     public Collider theCol; //카드 충돌 영역
 
-    private bool justPressed;   //누린 직후 참 거짓(중복 클릭 방지)
 
     public CardPlacePoint assignedPlace;    //카드 필드 위치
 
@@ -46,8 +43,26 @@ public class Card : MonoBehaviour, IPointerClickHandler
     private IDeckService _deckService;
     private bool _isInteractable = true;
 
+    // 이벤트 기반 입력 상태(탭/드래그 구분)
+    private bool _isDragging;
+    private Vector2 _dragStartScreenPos;
+    private float _dragStartTime;
+    private const float TapTimeThreshold = 0.2f;      // 초
+    private const float TapDistanceThreshold = 10f;   // 스크린 픽셀
+
+    // --- 카드 누르기(Press) 피드백 ---
+    // 살짝 들어 올리고(위/앞) 스케일을 키워 입력 피드백 제공
+    private Vector3 _pressPositionOffset = new Vector3(0f, 0.12f, 0.4f);
+    private Vector3 _pressScaleMultiplier = new Vector3(1.06f, 1.06f, 1.06f);
+    private float _pressAnimationTime = 0.1f;
+    private Vector3 _originalScale;
+
+    // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
+    private CardPlacePoint _currentHoveredSlot;
+
     void Awake()
     {
+        _originalScale = transform.localScale;
         instance = this; 
     }
 
@@ -91,119 +106,13 @@ public class Card : MonoBehaviour, IPointerClickHandler
     {
         transform.position = Vector3.Lerp(transform.position, targetPoint, moveSpeed * Time.deltaTime);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotateSpeed * Time.deltaTime);
-
-        //카드가 선택되고 배틀이 진행중이라면 Y축 2 증가해서 든다
-        // 손에 들고 있는(inHand) 카드일 때만 선택/배치 루프 실행
-        if (isSelected && inHand && !BattleController.instance.battleEnded && Time.timeScale != 0f)
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
-            if (Physics.Raycast(ray, out hit, 100f, whatIsDesktop))
-                MoveToPoint(hit.point + new Vector3(0f, 2f, 0f), Quaternion.identity);
-
-            //우클릭시 핸드로 다시 돌림
-            if (Input.GetMouseButtonDown(1))
-                ReturnToHand();
-
-            //좌클릭을 텀을 두고 다시 눌렀을 경우 카드를 놓을 수 있다면(빈칸, 마나) 놓는다
-            if (Input.GetMouseButtonDown(0) && !justPressed)
-            {
-                if (Physics.Raycast(ray, out hit, 100f, whatIsPlacement)
-                    && BattleController.instance.currentPhase == BattleController.TurnOrder.playerActive)
-                {
-                    CardPlacePoint selectedPoint = hit.collider.GetComponent<CardPlacePoint>();
-
-                    if (selectedPoint.activeCard == null && selectedPoint.isPlayerPoint)
-                    {
-                        // 1) 보드 배치 상태를 먼저 표기하여 OnCardPlayed 이벤트 처리 시 풀반납을 방지
-                        selectedPoint.activeCard = this;
-                        assignedPlace = selectedPoint;
-                        inHand = false;
-                        isSelected = false;
-
-                        // 2) 서비스 경로 일원화: BattleController 관문을 통해 사용 시도
-                        bool success = BattleController.instance.AttemptPlayCard(this);
-                        if (success)
-                        {
-                            GameEvents.OnCardPlayed?.Invoke(this);
-                            AudioManager.instance.PlaySFX(4);
-
-                            if (assignedPlace.cameraFocusPoint != null)
-                                CameraController.instance.MoveTo(assignedPlace.cameraFocusPoint);
-
-                            // 보드 컨테이너로 부모 변경(핸드 재정렬의 간섭 차단)
-                            transform.SetParent(selectedPoint.transform, true);
-                            MoveToPoint(selectedPoint.transform.position, transform.rotation);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                            Debug.Log($"[Card] Placed: instance={InstanceId}, parent={(transform.parent != null ? transform.parent.name : "<none>")}, pos={transform.position}");
-#endif
-
-                            // 보드에 올라간 카드는 상호작용을 끈다(재선택/우클릭 방지)
-                            SetInteractable(false);
-
-                            CameraController.instance.MoveTo(CameraController.instance.homeTransform);  // 카메라를 다시 기본 시점으로
-                        }
-                        else
-                        {
-                            // 3) 실패 시 원복 및 손으로 복귀(경고는 AttemptPlayCard에서 표시됨)
-                            selectedPoint.activeCard = null;
-                            assignedPlace = null;
-                            inHand = true;
-                            ReturnToHand();
-                        }
-                    }
-                    else // 놓을 빈칸이 아니라면
-                    {
-                        ReturnToHand();
-                    }
-                }
-                else // 허공에 클릭했다면
-                {
-                    ReturnToHand();
-                }
-            }
-        }
-
-        justPressed = false;    // 다음 클릭 준비
     }
 
     // UI 이벤트 시스템 클릭 처리: 카드 선택 전용(사용은 배치 시 BattleController 경유)
     public void OnPointerClick(PointerEventData eventData)
     {
-        // 이미 손을 떠난 카드(보드 배치/사용 중)는 클릭 무시
-        if (!_isInteractable || !inHand || assignedPlace != null) return;
-
-        // 즉시 소프트 체크: 지금 이 카드를 사용할 수 없는 상태면 경고만 표시하고 선택/카메라 전환을 막는다
-        var bc = BattleController.instance;
-        if (bc != null)
-        {
-            var playable = bc.EvaluatePlayability(this);
-            if (playable != BattleController.Playability.Ok)
-            {
-                UIController.instance?.ShowManaWarning();
-                return;
-            }
-        }
-        // 클릭 시 즉시 사용(Discard)하지 않고 '선택' 상태로 전환하여 드래그/배치를 유도합니다.
-        // 기존 드래그/배치 로직(Update 내 Raycast 처리)을 통해 사용 여부를 결정합니다.
-        isSelected = true;
-        justPressed = true; // 중복 클릭 방지 플래그 유지
-
-        // 전장 뷰로 카메라 이동만 수행(버튼 UI 토글은 건드리지 않음)
-        if (CameraController.instance != null && CameraController.instance.battleTransform != null)
-        {
-            CameraController.instance.MoveTo(CameraController.instance.battleTransform);
-        }
-        else
-        {
-            Debug.LogWarning("[Card] 카메라 이동 불가: CameraController 초기화 전", this);
-        }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] Click select: instance={InstanceId}, go={name}, parent={(transform.parent != null ? transform.parent.name : "<none>")}, layer={gameObject.layer}, active={gameObject.activeSelf}");
-        Debug.Log($"[Card] Click camera move done: instance={InstanceId}");
-#endif
+        // 이벤트 기반 드래그로 대체. 필요 시 탭 동작을 OnPointerUp에서 처리.
+        return;
     }
 
     // 서비스/식별자/데이터를 주입하는 초기화 진입점
@@ -228,21 +137,20 @@ public class Card : MonoBehaviour, IPointerClickHandler
         if (theCol != null) theCol.enabled = value;
     }
 
-    //카드 위에 마우스가 있을시 1프레임 띄워서 보여줌
+    // 에디터에서만 호버 효과 유지(모바일 비활성)
+#if !(UNITY_ANDROID || UNITY_IOS)
     private void OnMouseOver()
     {
         if (inHand && isPlayer && !BattleController.instance.battleEnded)
             MoveToPoint(theHC.cardPositions[handPosition] + new Vector3(0f, .1f, .5f), transform.rotation);
-
     }
 
-    //카드 위에 마우스가  벗어날시 원상태로
     private void OnMouseExit()
     {
         if (inHand && isPlayer && !BattleController.instance.battleEnded)
             MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
-
     }
+#endif
 
 
     //카드를 지정된 위치와 회전값으로 이동을 위해 변수 설정
@@ -255,7 +163,7 @@ public class Card : MonoBehaviour, IPointerClickHandler
     //핸드로 되돌림
     public void ReturnToHand()
     {
-        isSelected = false;
+        ClearHoverHighlight();
         theCol.enabled = true;
         MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
 
@@ -319,6 +227,230 @@ public class Card : MonoBehaviour, IPointerClickHandler
     {
         if (RelicSystem.Instance != null)
             RelicSystem.Instance.RelicsChanged -= UpdateCardDisplay;
+
+        // 비활성화 시 하이라이트 잔상 제거
+        ClearHoverHighlight();
+    }
+
+    // =============================
+    // 이벤트 기반 입력 핸들러 구현
+    // =============================
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (!_isInteractable || assignedPlace != null || BattleController.instance == null) return;
+        _dragStartScreenPos = eventData.position;
+        _dragStartTime = Time.time;
+
+        // Press 피드백: 스케일 업 + 살짝 들어 올리기
+        transform.DOKill(false);
+        transform.DOScale(_pressScaleMultiplier, _pressAnimationTime).SetEase(Ease.OutQuad);
+        if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
+        {
+            MoveToPoint(theHC.cardPositions[handPosition] + _pressPositionOffset, transform.rotation);
+        }
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (!_isInteractable || !inHand || assignedPlace != null) return;
+        if (BattleController.instance == null || BattleController.instance.battleEnded) return;
+
+        _isDragging = true;
+
+        if (theCol != null) theCol.enabled = false; // 자기 자신 레이캐스트 방지
+
+        if (CameraController.instance != null && CameraController.instance.battleTransform != null)
+            CameraController.instance.MoveTo(CameraController.instance.battleTransform);
+
+        // 드래그 중에는 레이아웃 재정렬에서 제외
+        if (theHC != null) theHC.SuspendLayoutFor(this);
+
+        // 프레스 트윈 잔여 제거(드래그로 자연 전환)
+        transform.DOKill(false);
+
+        // 드래그 시작: 전장 집중을 위해 일부 UI 숨김(CanvasGroup 기반)
+        UIController.instance?.SetDragModeUIVisibility(false);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!_isDragging || BattleController.instance == null || BattleController.instance.battleEnded) return;
+
+        Ray ray = Camera.main.ScreenPointToRay(eventData.position);
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit, 100f, whatIsDesktop))
+        {
+            MoveToPoint(hit.point + new Vector3(0f, 2f, 0f), Quaternion.identity);
+        }
+
+        // 드롭 포인트 하이라이트(슬롯 변화 시에만 업데이트)
+        UpdateHoverHighlight(ray);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (!_isDragging) return;
+        _isDragging = false;
+
+        if (theCol != null) theCol.enabled = true;
+
+        // 프레스/드래그 시각 효과 원복
+        transform.DOKill(false);
+        transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+
+        // 드래그 종료 시 하이라이트 정리
+        ClearHoverHighlight();
+
+        // 1) 유효한 배치 포인트 검사 + 플레이 가능성 선검사
+        Ray ray = Camera.main.ScreenPointToRay(eventData.position);
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit, 100f, whatIsPlacement))
+        {
+            var selectedPoint = hit.collider.GetComponent<CardPlacePoint>();
+            if (selectedPoint != null && selectedPoint.activeCard == null && selectedPoint.isPlayerPoint)
+            {
+                // 플레이 가능성(턴/마나) 선검사
+                var playable = BattleController.instance.EvaluatePlayability(this);
+                if (playable != BattleController.Playability.Ok)
+                {
+                    UIController.instance?.ShowManaWarning();
+                    if (theHC != null) theHC.ResumeLayoutFor(this);
+                    UIController.instance?.SetDragModeUIVisibility(true);
+                    ReturnToHand();
+                    return;
+                }
+
+                // 2) 보드 표기 선반영으로 풀반납 방지
+                selectedPoint.activeCard = this;
+                assignedPlace = selectedPoint;
+                inHand = false;
+
+                bool success = BattleController.instance.AttemptPlayCard(this);
+                if (success)
+                {
+                    GameEvents.OnCardPlayed?.Invoke(this);
+                    AudioManager.instance.PlaySFX(4);
+
+                    if (assignedPlace.cameraFocusPoint != null)
+                        CameraController.instance.MoveTo(assignedPlace.cameraFocusPoint);
+
+                    // 보드 컨테이너로 부모 변경(핸드 재정렬의 간섭 차단)
+                    transform.SetParent(selectedPoint.transform, true);
+                    MoveToPoint(selectedPoint.transform.position, transform.rotation);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log($"[Card] Placed: instance={InstanceId}, parent={(transform.parent != null ? transform.parent.name : "<none>")}, pos={transform.position}");
+#endif
+                    SetInteractable(false);
+                    CameraController.instance.MoveTo(CameraController.instance.homeTransform);
+                    if (theHC != null) theHC.ResumeLayoutFor(this);
+                    UIController.instance?.SetDragModeUIVisibility(true);
+                    return;
+                }
+
+                // 3) 실패 시 원복
+                selectedPoint.activeCard = null;
+                assignedPlace = null;
+                inHand = true;
+                if (theHC != null) theHC.ResumeLayoutFor(this);
+                UIController.instance?.SetDragModeUIVisibility(true);
+                ReturnToHand();
+                return;
+            }
+        }
+
+        // 2) 슬롯 미적중: (선택) UI 위 드롭 차단
+        if (EventSystem.current != null)
+        {
+            // 마우스/터치 분기(마우스는 파라미터 없는 버전이 더 일관적)
+            bool overUI = false;
+#if UNITY_STANDALONE || UNITY_EDITOR
+            overUI = EventSystem.current.IsPointerOverGameObject();
+#else
+            overUI = EventSystem.current.IsPointerOverGameObject(eventData.pointerId);
+#endif
+            if (overUI)
+            {
+                if (theHC != null) theHC.ResumeLayoutFor(this);
+                UIController.instance?.SetDragModeUIVisibility(true);
+                ReturnToHand();
+                return;
+            }
+        }
+
+        // 3) 일반 미스: 핸드 복귀
+        if (theHC != null) theHC.ResumeLayoutFor(this);
+        UIController.instance?.SetDragModeUIVisibility(true);
+        ReturnToHand();
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (_isDragging) return; // 드래그 종료에서 처리됨
+        float duration = Time.time - _dragStartTime;
+        float dist = Vector2.Distance(eventData.position, _dragStartScreenPos);
+        if (duration < TapTimeThreshold && dist < TapDistanceThreshold)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Card] Tapped: instance={InstanceId}, name={cardSO?.cardName}");
+#endif
+            // TODO: 카드 상세보기 등 탭 행동 연결 가능
+        }
+
+        // 탭/클릭 종료 시 비주얼 원복
+        transform.DOKill(false);
+        transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+        if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
+        {
+            MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
+        }
+    }
+
+    private void UpdateHoverHighlight(Ray pointerRay)
+    {
+        RaycastHit slotHit;
+        CardPlacePoint next = null;
+        if (Physics.Raycast(pointerRay, out slotHit, 100f, whatIsPlacement))
+        {
+            next = slotHit.collider.GetComponent<CardPlacePoint>()
+                   ?? slotHit.collider.GetComponentInParent<CardPlacePoint>();
+        }
+
+        if (next == _currentHoveredSlot)
+        {
+            // 같은 슬롯이면 추가 판정 불필요(깜빡임 방지)
+            return;
+        }
+
+        // 이전 슬롯 하이라이트 해제
+        if (_currentHoveredSlot != null)
+        {
+            _currentHoveredSlot.SetHighlightState(CardPlacePoint.HighlightState.Off);
+            _currentHoveredSlot = null;
+        }
+
+        // 신규 슬롯 반영
+        if (next != null)
+        {
+            var allowed = false;
+            if (next.activeCard == null && next.isPlayerPoint)
+            {
+                var playable = BattleController.instance.EvaluatePlayability(this);
+                allowed = (playable == BattleController.Playability.Ok);
+            }
+
+            _currentHoveredSlot = next;
+            _currentHoveredSlot.SetHighlightState(
+                allowed ? CardPlacePoint.HighlightState.Allowed : CardPlacePoint.HighlightState.Blocked);
+        }
+    }
+
+    private void ClearHoverHighlight()
+    {
+        if (_currentHoveredSlot != null)
+        {
+            _currentHoveredSlot.SetHighlightState(CardPlacePoint.HighlightState.Off);
+            _currentHoveredSlot = null;
+        }
     }
     /*public void ApplyAttackBuffOutline(bool on)
     {

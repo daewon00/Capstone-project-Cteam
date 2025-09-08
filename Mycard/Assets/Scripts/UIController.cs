@@ -30,6 +30,12 @@ public class UIController : MonoBehaviour
 
     public GameObject EnemyUI;
 
+    // 드래그 중 임시로 숨길 UI 그룹들(CanvasGroup 사용 권장)
+    [Header("Drag Hide UI Groups (CanvasGroup)")]
+    [SerializeField] private CanvasGroup _enemyUIGroup;       // EnemyUI 루트에 CanvasGroup 부착 권장
+    [SerializeField] private CanvasGroup _playerActionGroup;  // end/draw 버튼을 감싼 부모에 CanvasGroup 부착 권장
+    private int _dragHideRefCount = 0;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -145,6 +151,41 @@ public class UIController : MonoBehaviour
     void EnableEnemyUI()
     {
         EnemyUI.SetActive(true);
+    }
+
+    /// <summary>
+    /// 카드 드래그 중 UI를 임시로 숨기거나 복원합니다.
+    /// SetActive 대신 CanvasGroup으로 투명/상호작용 차단만 적용하여 다른 로직과 충돌을 피합니다.
+    /// 여러 곳에서 동시에 호출해도 안전하도록 참조 카운트로 관리합니다.
+    /// </summary>
+    public void SetDragModeUIVisibility(bool visible)
+    {
+        if (!visible)
+        {
+            _dragHideRefCount++;
+            if (_dragHideRefCount == 1)
+            {
+                ApplyGroupVisible(_enemyUIGroup, false);
+                ApplyGroupVisible(_playerActionGroup, false);
+            }
+        }
+        else
+        {
+            _dragHideRefCount = Mathf.Max(0, _dragHideRefCount - 1);
+            if (_dragHideRefCount == 0)
+            {
+                ApplyGroupVisible(_enemyUIGroup, true);
+                ApplyGroupVisible(_playerActionGroup, true);
+            }
+        }
+    }
+
+    private static void ApplyGroupVisible(CanvasGroup group, bool visible)
+    {
+        if (group == null) return;
+        group.alpha = visible ? 1f : 0f;
+        group.interactable = visible;
+        group.blocksRaycasts = visible;
     }
 
     public void ChAdd()
