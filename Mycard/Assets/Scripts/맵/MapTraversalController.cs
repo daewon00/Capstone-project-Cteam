@@ -45,6 +45,18 @@ public class MapTraversalController : MonoBehaviour
         // 초기 표시
         PlaceMarker(_run.Floor, _run.NodeIndex);
         UpdateReachable(_run.Floor, _run.NodeIndex);
+
+        // --- 전투 보상 처리: 현재 노드에 RewardsJson이 있으면 보상 UI를 트리거합니다. ---
+        try
+        {
+            var currentNode = data.Nodes?.FirstOrDefault(n =>
+                n.Act == _run.Act && n.Floor == _run.Floor && n.NodeIndex == _run.NodeIndex);
+            TriggerRewardUIIfNeeded(currentNode);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[MapTraversalController] 보상 처리 중 오류: {e.Message}");
+        }
     }
 
 
@@ -266,6 +278,66 @@ public class MapTraversalController : MonoBehaviour
             {
                 curNode.SetReachable(true);
             }
+        }
+    }
+
+    private void TriggerRewardUIIfNeeded(Game.Save.MapNodeState currentNode)
+    {
+        if (currentNode == null) return;
+        if (string.IsNullOrEmpty(currentNode.RewardsJson)) return;
+
+        try
+        {
+            var rewards = JsonUtility.FromJson<RewardContainer>(currentNode.RewardsJson);
+            Debug.Log("[MapTraversal] Pending rewards found. Showing reward UI...");
+
+            // 보상 UI 컨트롤러를 찾아 호출합니다. (씬에 구현체가 없으면 경고 후 종료)
+            IRewardUI rewardUI = null;
+            var monos = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var m in monos)
+            {
+                if (m is IRewardUI ui) { rewardUI = ui; break; }
+            }
+
+            if (rewardUI == null)
+            {
+                Debug.LogWarning("[MapTraversal] IRewardUI 구현체를 찾지 못했습니다. 보상을 자동 적용하거나 UI를 추가하세요.");
+                return;
+            }
+
+            rewardUI.Show(rewards, () =>
+            {
+                Debug.Log("[MapTraversal] Reward claimed. Applying and clearing...");
+
+                // 1) 보상 적용: 골드 합산 → 월렛에 반영(DB 업데이트 + UI 브로드캐스트)
+                try
+                {
+                    var wallet = ServiceRegistry.Get<IWalletService>();
+                    if (wallet != null && rewards != null && rewards.Items != null)
+                    {
+                        int goldSum = 0;
+                        foreach (var it in rewards.Items)
+                        {
+                            if (it == null) continue;
+                            if (it.Type == "Gold" && it.Amount > 0) goldSum += it.Amount;
+                        }
+                        if (goldSum > 0) wallet.Add(goldSum);
+                    }
+                }
+                catch (System.Exception applyEx)
+                {
+                    Debug.LogWarning($"[MapTraversal] 보상 적용 중 오류: {applyEx.Message}");
+                }
+
+                // 2) RewardsJson 비우고 저장(중복 수령 방지)
+                currentNode.RewardsJson = string.Empty;
+                var db = ServiceRegistry.Get<IDatabase>();
+                db?.UpsertNodeState(currentNode);
+            });
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[MapTraversal] RewardsJson 파싱 실패: {ex.Message}");
         }
     }
 }

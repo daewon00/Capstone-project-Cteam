@@ -7,6 +7,7 @@ public class BattleController : MonoBehaviour
 {
 
     public static BattleController instance;
+    private IRunService _runService; // 전투 결과 보고 대상
 
     [Header("Dependencies")]
 
@@ -81,6 +82,8 @@ public class BattleController : MonoBehaviour
     // 첫 프레임 시작 전에 호출
     void Start()
     {
+        // 런 서비스 참조 확보(있지 않으면 null 허용)
+        _runService = ServiceRegistry.Get<IRunService>();
         GameEvents.OnBattleStart?.Invoke(); // 추가 +++
         //playerMana = startingMana;
         //UIController.instance.SetPlayerManaText(playerMana);
@@ -447,6 +450,18 @@ public class BattleController : MonoBehaviour
         }
         
         UIController.instance.EnemyUI.SetActive(false);
+
+        // 전투 결과를 런 서비스에 보고하여 DB/라우팅을 위임합니다.
+        try
+        {
+            var result = (enemyHealth <= 0) ? CombatResult.Victory : CombatResult.Defeat;
+            _runService?.ReportCombatEnded(result);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[BattleController] ReportCombatEnded 실패: {e.Message}");
+        }
+
         StartCoroutine(ShowResultCo()); //결과 화면 
     }
 

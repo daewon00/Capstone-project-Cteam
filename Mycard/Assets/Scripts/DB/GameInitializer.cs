@@ -44,8 +44,26 @@ public class GameInitializer : MonoBehaviour
         _db = dbFacade;
 
         // 3. 러닝 컨텍스트(runId) 확보
-        // 런 ID가 비어있어도, EventManager 내부에서 안전하게 처리할 것입니다.
+        // 런 ID가 DB에 실제로 존재하는지 sanity 체크까지 수행합니다.
         var runId = PlayerPrefs.GetString("lastRunId", "");
+        if (!string.IsNullOrEmpty(runId))
+        {
+            try
+            {
+                var sanity = DatabaseManager.Instance.LoadCurrentRun(runId);
+                if (sanity == null || sanity.Run == null)
+                {
+                    Debug.LogWarning($"[GameInitializer] lastRunId에 해당하는 CurrentRun이 없어 초기화합니다: {runId}");
+                    PlayerPrefs.DeleteKey("lastRunId");
+                    PlayerPrefs.Save();
+                    runId = string.Empty;
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[GameInitializer] lastRunId 확인 중 오류: {e.Message}");
+            }
+        }
 
         // 4. RNG 서비스 등록: 기존 상태를 불러오고, 필수 도메인 시드가 없으면 RunId 기반으로 보정
         var loadedRngStates = string.IsNullOrEmpty(runId) ? null : _db.LoadRngStates(runId);
@@ -72,6 +90,14 @@ public class GameInitializer : MonoBehaviour
         var deckService = new DeckService(dbFacade, rngService);
         deckService.LoadAndPrepareDeck(runId);
         ServiceRegistry.Register<IDeckService>(deckService);
+
+        // 7.5. 런 서비스 등록: 전투 결과 커밋/라우팅 담당
+        var runService = new RunService(dbFacade, _rng);
+        ServiceRegistry.Register<IRunService>(runService);
+        if (!string.IsNullOrEmpty(runId))
+        {
+            runService.RebindRun(runId);
+        }
 
         // 8. 초기화 과정 중 변경되었을 수 있는 RNG 상태를 한 번 더 저장하여 정합성 보장
         if (!string.IsNullOrEmpty(runId) && rngService != null)

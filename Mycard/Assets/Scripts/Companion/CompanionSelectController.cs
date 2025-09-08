@@ -111,6 +111,9 @@ public class CompanionSelectController : MonoBehaviour
         // 3.6. 덱 서비스에 신규 런을 로드/준비시켜 캐시 및 RNG 동기화
         ServiceRegistry.Get<IDeckService>()?.LoadAndPrepareDeck(runId);
 
+        // 3.7. 런 서비스에도 컨텍스트를 주입해 전투 결과 보고가 정확히 동작하도록 합니다.
+        ServiceRegistry.Get<IRunService>()?.RebindRun(runId);
+
         // 4. 맵 씬으로 이동합니다.
         SceneManager.LoadScene(mapScene);
     }
@@ -178,5 +181,6 @@ public class CompanionSelectController : MonoBehaviour
         // 월렛 재바인딩 + 덱 서비스 로드 (안전)
         ServiceRegistry.Get<IWalletService>()?.RebindRun(runId);
         ServiceRegistry.Get<IDeckService>()?.LoadAndPrepareDeck(runId);
+        ServiceRegistry.Get<IRunService>()?.RebindRun(runId);
     }
 }
