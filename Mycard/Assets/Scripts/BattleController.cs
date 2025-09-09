@@ -58,9 +58,9 @@ public class BattleController : MonoBehaviour
     }
 
     // --- 전투 기본 설정 변수들 ---
-    public int startingMana = 3, playermaxMana = 3, enemymaxMana = 3;  //시작마나, 최대 마나
+    public int startingMana = 3,playermaxMana = 3, enemymaxMana = 3, startingEnemeyMana = 3;  //시작마나, 최대 마나
     public int playerMana, enemyMana;   //플레이어 마나, 적 마나
-    private int currentPlayerMaxMana, currentEnemyMaxMana;  // 플레이어와 적의 현재 턴의 최대 마나 (턴마다 1씩 증가)
+    public int currentPlayerMaxMana, currentEnemyMaxMana;  // 플레이어와 적의 현재 턴의 최대 마나 (턴마다 1씩 증가)
 
 
     public int startingcardAmount = 5;  //첫 드로우 카드 수
@@ -97,7 +97,7 @@ public class BattleController : MonoBehaviour
         UIController.instance.setPlayerHealthText(playerHealth);    //플레이어 체력 UI 표기
         UIController.instance.setEnemyHealthText(enemyHealth);  //적 체력 UI 표기
 
-        currentEnemyMaxMana = startingMana; //적 마나 시작 마나값으로 초기화
+        currentEnemyMaxMana = startingEnemeyMana; //적 마나 시작 마나값으로 초기화
         FillEnemyMana();    //적 마나를 채운다
 
         if(Random.value > playerFirstChance) //랜덤턴 지우면 플레이어 선공임
@@ -478,4 +478,5 @@ public class BattleController : MonoBehaviour
             UIController.instance.battleEndScreen_lose.SetActive(true);
         }
     }
+
 }

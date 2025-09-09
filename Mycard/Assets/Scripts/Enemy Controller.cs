@@ -142,6 +142,7 @@ public class EnemyController : MonoBehaviour
 
                 selectedPoint.activeCard = newCard;
                 newCard.assignedPlace = selectedPoint;
+
             }
 
             break;
@@ -303,6 +304,7 @@ public class EnemyController : MonoBehaviour
 
     public void PlayCard(CardScriptableObject cardSO, CardPlacePoint placePoint)
     {
+
         Card newCard = Instantiate(cardToSpawn, cardSpawnPoint.position, cardSpawnPoint.rotation);
         newCard.cardSO = cardSO;
         
@@ -315,7 +317,7 @@ public class EnemyController : MonoBehaviour
         cardsInHand.Remove(cardSO);
 
         BattleController.instance.SpendEnemyrMana(cardSO.manaCost);
-
+        
         AudioManager.instance.PlaySFX(4);
     }
 
