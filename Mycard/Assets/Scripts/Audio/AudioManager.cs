@@ -4,6 +4,7 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager instance;
 
+
     private void Awake()
     {
         if (instance == null)
@@ -12,7 +13,7 @@ public class AudioManager : MonoBehaviour
             instance = this;
 
             DontDestroyOnLoad(gameObject);
-        } else if(instance != this)
+        } else if (instance != this)
         {
             Destroy(gameObject);
         }
@@ -29,18 +30,18 @@ public class AudioManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+
     }
 
     // 프레임 마다 호출 함수
     void Update()
     {
-        if(playingBGM)  //BGM 재생시
+        if (playingBGM)  //BGM 재생시
         {
             if (bgm[currentBGM].isPlaying == false) //BGM 인덱스 재생이 끝나면
             {
                 currentBGM++; //BGM 인덱스 증가, 마지막 곡을 넘기면 0번으로
-                if(currentBGM >= bgm.Length)
+                if (currentBGM >= bgm.Length)
                 {
                     currentBGM = 0;
                 }
@@ -55,7 +56,7 @@ public class AudioManager : MonoBehaviour
     {
         menuMusic.Stop();
         battleSelectMusic.Stop();
-        foreach(AudioSource track in bgm)
+        foreach (AudioSource track in bgm)
         {
             track.Stop();
         }
@@ -85,7 +86,7 @@ public class AudioManager : MonoBehaviour
     {
         StopMusic();
 
-        currentBGM = Random.Range(0,bgm.Length);
+        currentBGM = Random.Range(0, bgm.Length);
 
         bgm[currentBGM].Play();
         playingBGM = true;
@@ -97,4 +98,5 @@ public class AudioManager : MonoBehaviour
         sfx[sfxToPlay].Stop();
         sfx[sfxToPlay].Play();
     }
+
 }

@@ -17,6 +17,8 @@ public class MainMenu : MonoBehaviour
 
     void Start()
     {
+        AudioManager.instance.PlayMenuMusic();//노래 시작
+
         // DB에 연결하여 저장된 게임이 있는지 확인합니다.
         DatabaseManager.Instance.Connect();
 
