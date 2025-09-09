@@ -8,16 +8,18 @@ public class RunService : IRunService
 {
     private readonly IDatabase _database;
     private readonly IRngService _rngService;
+    private readonly ICardCatalog _cardCatalog;
 
     private string _runId;
     private bool _hasCommitted = false;
 
     public event Action OnRunEnded;
 
-    public RunService(IDatabase database, IRngService rngService)
+    public RunService(IDatabase database, IRngService rngService, ICardCatalog cardCatalog)
     {
         _database = database;
         _rngService = rngService;
+        _cardCatalog = cardCatalog;
     }
 
     public void RebindRun(string runId)
@@ -80,6 +82,28 @@ public class RunService : IRunService
         var container = new RewardContainer();
         int goldAmount = _rngService.NextInt("reward-generation", 80, 121);
         container.Items.Add(new RewardItem { Type = "Gold", Amount = goldAmount });
+
+        // v2.0: 카드 선택지 3장 생성(중복 방지)
+        try
+        {
+            var allIds = _cardCatalog?.GetAllCardIds();
+            if (allIds != null && allIds.Count > 0)
+            {
+                // 간단한 중복 방지: 목록 사본에서 무작위 pop
+                var pool = new System.Collections.Generic.List<string>(allIds);
+                for (int i = 0; i < 3 && pool.Count > 0; i++)
+                {
+                    int idx = _rngService.NextInt("reward-generation", 0, pool.Count);
+                    var id = pool[idx];
+                    pool.RemoveAt(idx);
+                    container.SelectableCards.Add(new RewardCardOption { CardId = id, IsUpgraded = false });
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[RunService] 카드 보상 생성 실패: {e.Message}");
+        }
         return container;
     }
 

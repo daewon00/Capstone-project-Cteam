@@ -301,43 +301,50 @@ public class MapTraversalController : MonoBehaviour
 
             if (rewardUI == null)
             {
-                Debug.LogWarning("[MapTraversal] IRewardUI 구현체를 찾지 못했습니다. 보상을 자동 적용하거나 UI를 추가하세요.");
+                Debug.LogWarning("[MapTraversal] IRewardUI 구현체를 찾지 못했습니다. 기본 보상(골드) 자동 적용 후 JSON을 정리합니다.");
+                ApplyNonCardRewards(rewards);
+                ClearRewardsJson(currentNode);
                 return;
             }
 
             rewardUI.Show(rewards, () =>
             {
-                Debug.Log("[MapTraversal] Reward claimed. Applying and clearing...");
-
-                // 1) 보상 적용: 골드 합산 → 월렛에 반영(DB 업데이트 + UI 브로드캐스트)
-                try
-                {
-                    var wallet = ServiceRegistry.Get<IWalletService>();
-                    if (wallet != null && rewards != null && rewards.Items != null)
-                    {
-                        int goldSum = 0;
-                        foreach (var it in rewards.Items)
-                        {
-                            if (it == null) continue;
-                            if (it.Type == "Gold" && it.Amount > 0) goldSum += it.Amount;
-                        }
-                        if (goldSum > 0) wallet.Add(goldSum);
-                    }
-                }
-                catch (System.Exception applyEx)
-                {
-                    Debug.LogWarning($"[MapTraversal] 보상 적용 중 오류: {applyEx.Message}");
-                }
-
-                // 2) RewardsJson 비우고 저장(중복 수령 방지)
-                currentNode.RewardsJson = string.Empty;
-                var db = ServiceRegistry.Get<IDatabase>();
-                db?.UpsertNodeState(currentNode);
+                Debug.Log("[MapTraversal] Reward UI closed. Applying non-card rewards and clearing JSON.");
+                ApplyNonCardRewards(rewards);
+                ClearRewardsJson(currentNode);
             });
         }
         catch (System.Exception ex)
         {
             Debug.LogWarning($"[MapTraversal] RewardsJson 파싱 실패: {ex.Message}");
         }
+    }
+
+    private static void ApplyNonCardRewards(RewardContainer rewards)
+    {
+        try
+        {
+            var wallet = ServiceRegistry.Get<IWalletService>();
+            if (wallet == null || rewards == null || rewards.Items == null) return;
+            int goldSum = 0;
+            foreach (var it in rewards.Items)
+            {
+                if (it == null) continue;
+                if (it.Type == "Gold" && it.Amount > 0) goldSum += it.Amount;
+            }
+            if (goldSum > 0) wallet.Add(goldSum);
+        }
+        catch (System.Exception applyEx)
+        {
+            Debug.LogWarning($"[MapTraversal] ApplyNonCardRewards 오류: {applyEx.Message}");
+        }
+    }
+
+    private static void ClearRewardsJson(Game.Save.MapNodeState node)
+    {
+        if (node == null) return;
+        node.RewardsJson = string.Empty;
+        var db = ServiceRegistry.Get<IDatabase>();
+        db?.UpsertNodeState(node);
     }
 }

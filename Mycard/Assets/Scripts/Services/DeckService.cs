@@ -180,6 +180,36 @@ public class DeckService : IDeckService
 
     public PileCounts GetPileCounts() => GetCurrentPileCounts();
 
+    public void AddCardToDeckById(string cardId, bool isUpgraded = false)
+    {
+        EnsureInitialized();
+        if (string.IsNullOrEmpty(cardId))
+            throw new System.ArgumentException("cardId must be non-empty", nameof(cardId));
+
+        // 신규 카드 인스턴스 생성: DiscardPile 상단으로 push
+        var instanceId = System.Guid.NewGuid().ToString("N");
+        var newCard = new CardRuntimeState
+        {
+            InstanceId = instanceId,
+            RunId = _currentRunId,
+            CardId = cardId,
+            Location = CardLocation.DiscardPile,
+            OrderInPile = 0,
+            ModifiersJson = string.Empty
+        };
+
+        // 내부 캐시에 반영
+        _cardsById[instanceId] = newCard;
+        if (!_nextOrderInPile.TryGetValue(CardLocation.DiscardPile, out var next)) next = 0;
+        newCard.OrderInPile = next;
+        _nextOrderInPile[CardLocation.DiscardPile] = next + 1;
+        _discardPileIds.Add(instanceId);
+
+        // 스냅샷 저장 + 방송
+        PersistAndBroadcast();
+        Debug.Log($"[DeckService] Card '{cardId}' added to deck (DiscardPile). counts={GetPileCounts().Discard}");
+    }
+
     private void TryEnsureSeeded(string domain)
     {
         try { _rng.NextUInt(domain); }

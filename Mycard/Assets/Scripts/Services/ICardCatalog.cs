@@ -17,6 +17,11 @@ public interface ICardCatalog
     /// 카탈로그에 로드된 전체 카드 데이터의 수입니다.
     /// </summary>
     int Count { get; }
+
+    /// <summary>
+    /// 카탈로그에 로드된 모든 카드 ID 목록을 반환합니다.
+    /// </summary>
+    System.Collections.Generic.IReadOnlyList<string> GetAllCardIds();
 }
 
 public sealed class CardCatalog : ICardCatalog
@@ -67,5 +72,8 @@ public sealed class CardCatalog : ICardCatalog
 
     public bool TryGetCardData(string cardId, out CardScriptableObject cardData)
         => _database.TryGetValue(cardId, out cardData);
+
+    public System.Collections.Generic.IReadOnlyList<string> GetAllCardIds()
+        => new System.Collections.Generic.List<string>(_database.Keys);
 }
 

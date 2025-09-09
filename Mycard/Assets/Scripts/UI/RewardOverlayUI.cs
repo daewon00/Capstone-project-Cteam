@@ -10,12 +10,18 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
     [SerializeField] private TextMeshProUGUI goldText;       // 골드 보상 표기
     [SerializeField] private Button closeButton;             // 확인/닫기 버튼
 
+    [Header("Card Reward Elements")]
+    [SerializeField] private GameObject cardChoiceArea;      // 카드 슬롯 부모
+    [SerializeField] private CardRewardSlot cardSlotPrefab;  // 카드 슬롯 프리팹
+
     private Action _onClosedCallback;
+    private IDeckService _deckService;
 
     private void Awake()
     {
         // 시작 시 비활성화 상태 권장
         if (rootPanel != null) rootPanel.SetActive(false);
+        _deckService = ServiceRegistry.Get<IDeckService>();
     }
 
     public void Show(RewardContainer rewards, Action onClosed)
@@ -37,6 +43,23 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
             }
         }
 
+        // 카드 선택지 표시
+        if (cardChoiceArea != null)
+        {
+            foreach (Transform t in cardChoiceArea.transform) Destroy(t.gameObject);
+            bool hasCards = rewards != null && rewards.SelectableCards != null && rewards.SelectableCards.Count > 0;
+            cardChoiceArea.SetActive(hasCards);
+            if (hasCards && cardSlotPrefab != null)
+            {
+                foreach (var option in rewards.SelectableCards)
+                {
+                    var slot = Instantiate(cardSlotPrefab, cardChoiceArea.transform);
+                    slot.Init(option);
+                    slot.OnCardSelected += HandleCardSelection;
+                }
+            }
+        }
+
         if (closeButton != null)
         {
             closeButton.onClick.RemoveAllListeners();
@@ -52,5 +75,17 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
         _onClosedCallback?.Invoke();
         _onClosedCallback = null;
     }
-}
 
+    private void HandleCardSelection(RewardCardOption selected)
+    {
+        if (_deckService == null)
+        {
+            Debug.LogWarning("[RewardOverlayUI] IDeckService not available; cannot add card.");
+        }
+        else if (selected != null && !string.IsNullOrEmpty(selected.CardId))
+        {
+            _deckService.AddCardToDeckById(selected.CardId, selected.IsUpgraded);
+        }
+        Close();
+    }
+}
