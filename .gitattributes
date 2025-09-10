@@ -1,0 +1,9 @@
+# Unity의 YAML 기반 에셋은 Smart Merge 사용
+*.unity      merge=unityyamlmerge
+*.prefab     merge=unityyamlmerge
+*.anim       merge=unityyamlmerge
+*.controller merge=unityyamlmerge
+*.mat        merge=unityyamlmerge
+
+# 메타 파일은 텍스트로 취급
+*.meta       text
