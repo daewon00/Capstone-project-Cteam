@@ -111,6 +111,7 @@ public class MapTraversalController : MonoBehaviour
 
 
             // 위치 이동에 따른 모든 상태 변경(DB 저장, 마커 이동 등)을 처리합니다.
+            int prevFloor = _run.Floor;
             _run.Floor = target.floor;
             _run.NodeIndex = target.index;
             _run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
@@ -124,6 +125,21 @@ public class MapTraversalController : MonoBehaviour
             var db = ServiceRegistry.GetRequired<IDatabase>();
             db.UpsertNodeState(visited);
             db.UpdateRunPosition(_run.RunId, _run.Act, _run.Floor, _run.NodeIndex);
+
+            // Broadcast floor reached when floor changes
+            if (prevFloor != target.floor)
+            {
+                try
+                {
+                    MetaEvents.RaiseFloorReached(new MetaEvents.FloorReachedPayload
+                    {
+                        RunId = _run.RunId,
+                        Act = _run.Act,
+                        Floor = _run.Floor
+                    });
+                }
+                catch { }
+            }
 
             PlaceMarker(target.floor, target.index);
             UpdateReachable(target.floor, target.index);
@@ -183,7 +199,34 @@ public class MapTraversalController : MonoBehaviour
         }
         else if (target.nodeType == NodeType.Battle)
         {
-            // 전투 씬의 이름을 직접 사용하여 씬을 로드합니다.
+            // 기본은 일반 전투로 태깅하되, assignedScene 이름을 힌트로 엘리트/보스를 추론합니다.
+            var kind = GameContext.BattleKind.Normal;
+            var hint = target.assignedScene;
+            if (!string.IsNullOrEmpty(hint))
+            {
+                var hl = hint.ToLowerInvariant();
+                if (hl.Contains("boss")) kind = GameContext.BattleKind.Boss;
+                else if (hl.Contains("elite")) kind = GameContext.BattleKind.Elite;
+            }
+            if (GameContext.I != null) GameContext.I.CurrentBattleKind = kind;
+            try { PlayerPrefs.SetInt("currentBattleKind", (int)kind); PlayerPrefs.Save(); } catch { }
+            Debug.Log($"[BossFlow][Map] Battle node click → kind={kind}, nodeType={target.nodeType}, assignedScene='{target.assignedScene}'");
+            SceneManager.LoadScene(battleSceneName);
+        }
+        else if (target.nodeType == NodeType.Elite)
+        {
+            // 엘리트 전투도 동일 씬 사용
+            if (GameContext.I != null) GameContext.I.CurrentBattleKind = GameContext.BattleKind.Elite;
+            try { PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Elite); PlayerPrefs.Save(); } catch { }
+            Debug.Log($"[BossFlow][Map] Elite node click → kind=Elite, assignedScene='{target.assignedScene}'");
+            SceneManager.LoadScene(battleSceneName);
+        }
+        else if (target.nodeType == NodeType.Boss)
+        {
+            // 보스 전투도 동일 씬 사용
+            if (GameContext.I != null) GameContext.I.CurrentBattleKind = GameContext.BattleKind.Boss;
+            try { PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Boss); PlayerPrefs.Save(); } catch { }
+            Debug.Log($"[BossFlow][Map] Boss node click → kind=Boss, assignedScene='{target.assignedScene}'");
             SceneManager.LoadScene(battleSceneName);
         }
         else if (isMoveToChild) // 상점이 아닌 다른 노드는, '이동'했을 때만 씬을 전환합니다.

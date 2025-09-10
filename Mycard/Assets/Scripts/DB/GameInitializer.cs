@@ -22,9 +22,15 @@ public class GameInitializer : MonoBehaviour
 
         // 새 게임을 시작하거나 씬을 다시 로드할 때를 대비해, 보관소를 항상 깨끗하게 비웁니다.
         ServiceRegistry.ClearAll();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("[BossFlow][GI] ServiceRegistry cleared. Bootstrapping...");
+#endif
 
         // 1. [기반 시스템 준비] 데이터베이스에 먼저 연결합니다.
         DatabaseManager.Instance.Connect();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("[BossFlow][GI] DB connected.");
+#endif
 
         // 1.5. 카드 카탈로그 서비스 등록 (Resources/Cards)
         var cardCatalog = new CardCatalog("Cards");
@@ -36,12 +42,18 @@ public class GameInitializer : MonoBehaviour
         Debug.Log($"[GameInitializer] CardCatalog load complete. count={cardCatalog.Count}");
 #endif
         ServiceRegistry.Register<ICardCatalog>(cardCatalog);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BossFlow][GI] Registered ICardCatalog (count={cardCatalog.Count}).");
+#endif
 
         // 2. [부품 생성] '가벽' 역할을 할 DatabaseFacade를 생성합니다.
         var dbFacade = new DatabaseFacade();
         //    '보관소'에 IDatabase라는 이름으로 등록하여, 다른 전문가들이 찾아 쓸 수 있게 합니다.
         ServiceRegistry.Register<IDatabase>(dbFacade);
         _db = dbFacade;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("[BossFlow][GI] Registered IDatabase.");
+#endif
 
         // 3. 러닝 컨텍스트(runId) 확보
         // 런 ID가 DB에 실제로 존재하는지 sanity 체크까지 수행합니다.
@@ -76,14 +88,73 @@ public class GameInitializer : MonoBehaviour
             }
         }
         ServiceRegistry.Register<IRngService>(_rng);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("[BossFlow][GI] Registered IRngService.");
+#endif
 
         // 5. 월렛(지갑) 서비스 등록: DB-우선 골드 관리 + 브로드캐스트
         var wallet = new WalletService(dbFacade, runId);
         ServiceRegistry.Register<IWalletService>(wallet);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BossFlow][GI] Registered IWalletService (runId='{runId}').");
+#endif
 
-        // 6. '이어하기'든 '새 게임'이든 상관없이 항상 EventManager를 등록합니다.
-        var eventManager = new EventManager(dbFacade, runId);
-        ServiceRegistry.Register<IEventManager>(eventManager);
+        // 5.5 특전/모디파이어/업적 서비스 등록
+        var perkService = new PerkService(dbFacade);
+        ServiceRegistry.Register<IPerkService>(perkService);
+        var modifierService = new ModifierService(dbFacade);
+        ServiceRegistry.Register<IModifierService>(modifierService);
+        modifierService.RebindRun(runId);
+        var achievementService = new AchievementService(dbFacade);
+        achievementService.RebindProfile(GameContext.I != null ? GameContext.I.ProfileId : "P1");
+        ServiceRegistry.Register<IAchievementService>(achievementService);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("[BossFlow][GI] Registered Perk/Modifier/Achievement services.");
+#endif
+
+        // 5.6 업적 이벤트 구독: 게임 이벤트 허브 → 업적 서비스
+        // 전투 승리: '첫 전투 승리' 진행도 증가 및 해금 시도
+        MetaEvents.OnCombatVictory += payload =>
+        {
+            try
+            {
+                var ach = ServiceRegistry.Get<IAchievementService>();
+                ach?.ReportProgress("ACH_FIRST_BATTLE", 1);
+                ach?.UnlockIfEligible("ACH_FIRST_BATTLE");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[BossFlow][GI] OnCombatVictory handler executed.");
+#endif
+            }
+            catch { }
+        };
+
+        // 런 종료: 클리어 시 '첫 승리' 진행+해금, 안전하게 Flush
+        MetaEvents.OnRunEnded += payload =>
+        {
+            try
+            {
+                var ach = ServiceRegistry.Get<IAchievementService>();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[BossFlow][GI] OnRunEnded handler: cleared={payload.Cleared}");
+#endif
+                if (payload.Cleared)
+                {
+                    ach?.ReportProgress("ACH_FIRST_WIN", 1);
+                    ach?.UnlockIfEligible("ACH_FIRST_WIN");
+                }
+                ach?.Flush();
+            }
+            catch { }
+        };
+
+        // 층 도달/골드 변경 등은 이후 확장 시 매핑을 추가합니다.
+
+        // 6. EventManager 등록: runId가 있을 때만 등록(클리어 직후 등 런이 없을 때는 건너뜀)
+        if (!string.IsNullOrEmpty(runId))
+        {
+            var eventManager = new EventManager(dbFacade, runId);
+            ServiceRegistry.Register<IEventManager>(eventManager);
+        }
 
         // 7. 덱 서비스 등록 + 현재 런 덱 준비(백필/초기 셔플 포함 가능)
         var rngService = ServiceRegistry.Get<IRngService>();
@@ -98,6 +169,9 @@ public class GameInitializer : MonoBehaviour
         {
             runService.RebindRun(runId);
         }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BossFlow][GI] Registered IRunService (runId='{runId}').");
+#endif
 
         // 8. 초기화 과정 중 변경되었을 수 있는 RNG 상태를 한 번 더 저장하여 정합성 보장
         if (!string.IsNullOrEmpty(runId) && rngService != null)
@@ -141,12 +215,17 @@ public class GameInitializer : MonoBehaviour
 
     private void OnApplicationPause(bool pause)
     {
-        if (pause) PersistRng();
+        if (pause)
+        {
+            PersistRng();
+            ServiceRegistry.Get<IAchievementService>()?.Flush();
+        }
     }
 
     private void OnApplicationQuit()
     {
         PersistRng();
+        ServiceRegistry.Get<IAchievementService>()?.Flush();
     }
 
     private void PersistRng()

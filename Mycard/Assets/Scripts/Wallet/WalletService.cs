@@ -62,6 +62,7 @@ public sealed class WalletService : IWalletService
     public bool Set(int amount)
     {
         int target = Mathf.Max(0, amount);
+        int delta = target - _gold;
         if (target == _gold) return true;
 
         if (!string.IsNullOrEmpty(_runId))
@@ -79,6 +80,20 @@ public sealed class WalletService : IWalletService
 
         _gold = target;
         OnGoldChanged?.Invoke(_gold);
+        // Broadcast gold change for achievements/progression hooks
+        try
+        {
+            if (!string.IsNullOrEmpty(_runId) && delta != 0)
+            {
+                MetaEvents.RaiseGoldChanged(new MetaEvents.GoldChangedPayload
+                {
+                    RunId = _runId,
+                    Delta = delta,
+                    After = _gold
+                });
+            }
+        }
+        catch { }
         return true;
     }
 }

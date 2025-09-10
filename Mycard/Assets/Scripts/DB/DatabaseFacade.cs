@@ -6,6 +6,9 @@ using Game.Save;
 // 기존의 DatabaseManager 싱글턴을 'IDatabase'라는 표준 규격에 맞게 감싸주는 어댑터 클래스입니다.
 public sealed class DatabaseFacade : IDatabase
 {
+    public PlayerProfile LoadProfile(string profileId)
+        => DatabaseManager.Instance.LoadProfile(profileId);
+
     public RunLoadResult LoadCurrentRun(string runId)
         => DatabaseManager.Instance.LoadCurrentRun(runId);
 
@@ -61,4 +64,29 @@ public sealed class DatabaseFacade : IDatabase
 
     public void EndRunAndSummarize(RunSummary summary)
         => DatabaseManager.Instance.EndRunAndSummarize(summary);
+
+    // v3.0 helpers
+    public void ReplaceRunPerkSnapshot(string runId, System.Collections.Generic.IEnumerable<RunPerkSnapshot> rows)
+        => DatabaseManager.Instance.ReplaceRunPerkSnapshot(runId, rows);
+
+    public System.Collections.Generic.List<RunPerkSnapshot> LoadRunPerkSnapshot(string runId)
+        => DatabaseManager.Instance.LoadRunPerkSnapshot(runId);
+
+    public AchievementProgress LoadAchievementProgress(string profileId, string achievementId)
+        => DatabaseManager.Instance.LoadAchievementProgress(profileId, achievementId);
+
+    public void UpsertAchievementProgress(AchievementProgress row)
+        => DatabaseManager.Instance.UpsertAchievementProgress(row);
+
+    public void AddPerkPoints(string profileId, int delta)
+        => DatabaseManager.Instance.AddPerkPoints(profileId, delta);
+
+    public System.Collections.Generic.List<PerkAllocation> LoadPerkAllocations(string profileId)
+        => DatabaseManager.Instance.LoadPerkAllocations(profileId);
+
+    public void SavePerkAllocations(string profileId, System.Collections.Generic.IEnumerable<PerkAllocation> perks)
+        => DatabaseManager.Instance.SavePerkAllocations(profileId, perks);
+
+    public void ApplyPerkAdjustments(string profileId, System.Collections.Generic.IEnumerable<PerkAllocation> perks, int pointsDelta)
+        => DatabaseManager.Instance.ApplyPerkAdjustments(profileId, perks, pointsDelta);
 }

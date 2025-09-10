@@ -471,11 +471,28 @@ public class BattleController : MonoBehaviour
 
         if (enemyHealth <= 0)
         {
-            UIController.instance.battleEndScreen_win.SetActive(true);  // 결과 UI 표시
+            // 보스전 승리 시에는 별도의 'RUN CLEARED!' 오버레이가 표시되므로 기본 승리 화면은 생략합니다.
+            var kind = GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal;
+            Debug.Log($"[BossFlow][BattleController] ShowResultCo victory, battleKind={kind}");
+            if (kind != GameContext.BattleKind.Boss)
+            {
+                UIController.instance.battleEndScreen_win.SetActive(true);  // 결과 UI 표시
+            }
         }
         else
         {
             UIController.instance.battleEndScreen_lose.SetActive(true);
         }
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    // 개발 빌드 전용: 버튼 OnClick에 연결하여 즉시 전투 승리를 트리거합니다.
+    public void DevForceWin()
+    {
+        if (battleEnded) return;
+        // 현재 남은 체력만큼 피해를 주어 정상 승리 경로(EndBattle)로 진입
+        int dmg = Mathf.Max(1, enemyHealth);
+        DamageEnemy(dmg);
+    }
+#endif
 }

@@ -62,6 +62,57 @@ public class RunService : IRunService
         }
 
         var run = lr.Run;
+
+        // 보스 전투 승리 시: 즉시 런 클리어 처리로 분기 (GameContext 없을 경우 PlayerPrefs 폴백)
+        var battleKind = GameContext.I != null
+            ? GameContext.I.CurrentBattleKind
+            : (GameContext.BattleKind)PlayerPrefs.GetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
+        Debug.Log($"[BossFlow][RunService] ProcessVictory: battleKind={battleKind}, runId={_runId}");
+        if (battleKind == GameContext.BattleKind.Boss)
+        {
+            // 전투 승리 방송(메타)
+            try
+            {
+                MetaEvents.RaiseCombatVictory(new MetaEvents.CombatVictoryPayload
+                {
+                    RunId = _runId,
+                    Act = run.Act,
+                    Floor = run.Floor,
+                    NodeIndex = run.NodeIndex
+                });
+            }
+            catch { }
+
+            // 런 종료 요약(클리어)
+            var summary = new RunSummary
+            {
+                RunId = _runId,
+                ProfileId = run.ProfileId ?? "default_profile",
+                Cleared = true,
+                EndedAtUtc = DateTime.UtcNow.ToString("o")
+            };
+            Debug.Log("[BossFlow][RunService] EndRunAndSummarize(Cleared=true)");
+            _database.EndRunAndSummarize(summary);
+
+            // 런 종료 방송(클리어)
+            try
+            {
+                MetaEvents.RaiseRunEnded(new MetaEvents.RunEndedPayload
+                {
+                    RunId = _runId,
+                    ProfileId = summary.ProfileId,
+                    Cleared = true,
+                    DurationSeconds = summary.DurationSeconds
+                });
+            }
+            catch { }
+
+            // 에디터 배치형 UGUI(씬의 RunClearedView)가 MetaEvents.OnRunEnded를 수신해 스스로 표시합니다.
+            Debug.Log("[BossFlow][RunService] Broadcast done. Expect RunClearedView in scene to activate.");
+            // 태그 정리
+            try { PlayerPrefs.DeleteKey("currentBattleKind"); PlayerPrefs.Save(); } catch { }
+            return;
+        }
         var nodeState = lr.Nodes?.FirstOrDefault(n =>
             n.Act == run.Act && n.Floor == run.Floor && n.NodeIndex == run.NodeIndex)
             ?? new MapNodeState { RunId = _runId, Act = run.Act, Floor = run.Floor, NodeIndex = run.NodeIndex };
@@ -72,6 +123,19 @@ public class RunService : IRunService
 
         _database.UpsertNodeState(nodeState);
         _database.UpsertRngStates(_runId, _rngService.GetStatesForSave());
+
+        // Broadcast a combat victory event for achievements/progression hooks.
+        try
+        {
+            MetaEvents.RaiseCombatVictory(new MetaEvents.CombatVictoryPayload
+            {
+                RunId = _runId,
+                Act = run.Act,
+                Floor = run.Floor,
+                NodeIndex = run.NodeIndex
+            });
+        }
+        catch { }
 
         Debug.Log("[RunService] Node cleared. Rewards saved. Transitioning to Map Scene.");
         SceneManager.LoadScene("Map Scene");
@@ -120,6 +184,19 @@ public class RunService : IRunService
             EndedAtUtc = DateTime.UtcNow.ToString("o")
         };
         _database.EndRunAndSummarize(summary);
+
+        // Broadcast run ended (defeat) for achievement hooks
+        try
+        {
+            MetaEvents.RaiseRunEnded(new MetaEvents.RunEndedPayload
+            {
+                RunId = _runId,
+                ProfileId = summary.ProfileId,
+                Cleared = false,
+                DurationSeconds = summary.DurationSeconds
+            });
+        }
+        catch { }
 
         Debug.Log($"[RunService] Run {_runId} ended. Firing OnRunEnded and transitioning to Main Menu.");
         OnRunEnded?.Invoke();

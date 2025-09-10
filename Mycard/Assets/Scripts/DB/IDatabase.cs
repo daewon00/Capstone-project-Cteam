@@ -7,6 +7,9 @@ using Game.Save;
 // 지금은 이벤트와 관련된 기능만 구현되어 있지만 확장 될 수 있습니다.
 public interface IDatabase
 {
+    // --- 프로필 ---
+    PlayerProfile LoadProfile(string profileId);
+
     // --- 런(Run) 기본 정보 ---
     RunLoadResult LoadCurrentRun(string runId);
     void UpdateRunGold(string runId, int newGold);
@@ -54,4 +57,14 @@ public interface IDatabase
     /// 특정 런의 특정 위치에 있는 카드들만 효율적으로 불러옵니다. OrderInPile 내림차순으로 정렬됩니다.
     /// </summary>
     List<CardRuntimeState> LoadCardRuntimeStates(string runId, CardLocation location);
+
+    // --- v3.0: Perk Snapshot & Achievements ---
+    void ReplaceRunPerkSnapshot(string runId, IEnumerable<RunPerkSnapshot> rows);
+    List<RunPerkSnapshot> LoadRunPerkSnapshot(string runId);
+    AchievementProgress LoadAchievementProgress(string profileId, string achievementId);
+    void UpsertAchievementProgress(AchievementProgress row);
+    void AddPerkPoints(string profileId, int delta);
+    List<PerkAllocation> LoadPerkAllocations(string profileId);
+    void SavePerkAllocations(string profileId, IEnumerable<PerkAllocation> perks);
+    void ApplyPerkAdjustments(string profileId, IEnumerable<PerkAllocation> perks, int pointsDelta);
 }

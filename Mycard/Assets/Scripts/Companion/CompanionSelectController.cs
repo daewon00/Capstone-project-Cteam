@@ -63,10 +63,21 @@ public class CompanionSelectController : MonoBehaviour
         PlayerPrefs.SetString("selectedCompanionId", _selected.CompanionId);
         PlayerPrefs.Save();
 
+        // v3.0: 특전 스냅샷 생성 및 모디파이어 적용으로 시작 골드 계산
+        var profileId = GameContext.I != null ? GameContext.I.ProfileId : "P1";
+        var perkSvc = ServiceRegistry.Get<IPerkService>();
+        var modSvc = ServiceRegistry.Get<IModifierService>();
+        // 1) 런 스냅샷 생성 및 모디파이어 런 바인딩
+        perkSvc?.ComputeRunSnapshotAndPersist(profileId, runId);
+        modSvc?.RebindRun(runId);
+        // 2) 시작 골드 계산: 기본값(300) + 동료 보너스 → 모디파이어 적용
+        float baseGold = 300 + _selected.GoldBonus;
+        float finalGold = modSvc != null ? modSvc.Apply("STARTING_GOLD", baseGold, ModifierScope.CurrentRun) : baseGold;
+
         var run = new CurrentRun {
-            RunId = runId, ProfileId = "P1", // ProfileId는 나중에 로그인 시스템과 연동
+            RunId = runId, ProfileId = profileId, // ProfileId는 나중에 로그인 시스템과 연동
             Act = 1, Floor = 0, NodeIndex = 0,
-            Gold = 300 + _selected.GoldBonus,
+            Gold = Mathf.RoundToInt(finalGold),
             CurrentHp = 80 + _selected.MaxHpBonus,
             MaxHpBase = 80 + _selected.MaxHpBonus,
             EnergyMax = 3 + _selected.EnergyMaxBonus,
@@ -113,6 +124,20 @@ public class CompanionSelectController : MonoBehaviour
 
         // 3.7. 런 서비스에도 컨텍스트를 주입해 전투 결과 보고가 정확히 동작하도록 합니다.
         ServiceRegistry.Get<IRunService>()?.RebindRun(runId);
+
+        // 3.8. 이벤트 매니저 등록(조건부): 런이 생성된 시점에 EventManager를 등록합니다.
+        try
+        {
+            var em = new EventManager(db, runId);
+            ServiceRegistry.Register<IEventManager>(em);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[BossFlow][CompanionSelect] Registered IEventManager for runId='{runId}'");
+#endif
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[CompanionSelect] EventManager registration failed: {e.Message}");
+        }
 
         // 4. 맵 씬으로 이동합니다.
         SceneManager.LoadScene(mapScene);

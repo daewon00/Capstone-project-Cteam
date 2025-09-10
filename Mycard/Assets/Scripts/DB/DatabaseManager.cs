@@ -79,6 +79,7 @@ public sealed class DatabaseManager
         _conn.CreateTable<UnlockedRelic>();
         _conn.CreateTable<UnlockedCompanion>();
         _conn.CreateTable<AchievementUnlocked>();
+        _conn.CreateTable<AchievementProgress>();
         _conn.CreateTable<RunSummary>();
 
         // ==== '이어하기'용 테이블 생성 ====
@@ -91,6 +92,7 @@ public sealed class DatabaseManager
         _conn.CreateTable<RngState>();
         _conn.CreateTable<ActiveShopSession>(); //db 상점
         _conn.CreateTable<ActiveEventSession>(); //db 이벤트
+        _conn.CreateTable<RunPerkSnapshot>();
 
         // ==== CardRuntimeState 핵심 인덱스 생성 ====
         try
@@ -111,6 +113,16 @@ public sealed class DatabaseManager
         {
             Debug.LogWarning($"[DB] CardRuntimeState 인덱스 생성 경고: {e.Message}");
         }
+
+        // ==== 무결성/성능 인덱스 및 유니크 제약 ====
+        try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_PerkAllocation ON PerkAllocation (ProfileId, PerkId)"); }
+        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_PerkAllocation 생성 경고: {e.Message}"); }
+
+        try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_AchievementProgress ON AchievementProgress (ProfileId, AchievementId)"); }
+        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_AchievementProgress 생성 경고: {e.Message}"); }
+
+        try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_RunPerkSnapshot ON RunPerkSnapshot (RunId, EffectKey)"); }
+        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_RunPerkSnapshot 생성 경고: {e.Message}"); }
     }
 
     /// <summary>
@@ -199,6 +211,60 @@ public sealed class DatabaseManager
         BackupDatabaseAtomic();
     }
 
+    /// <summary>
+    /// 특전 배분과 포인트 변화를 하나의 트랜잭션으로 원자적 적용합니다.
+    /// pointsDelta는 음수면 차감, 양수면 환급입니다.
+    /// </summary>
+    public void ApplyPerkAdjustments(string profileId, System.Collections.Generic.IEnumerable<PerkAllocation> perks, int pointsDelta)
+    {
+        if (string.IsNullOrEmpty(profileId)) return;
+        var list = perks?.ToList() ?? new System.Collections.Generic.List<PerkAllocation>();
+        InTx(conn =>
+        {
+            var profile = conn.Find<PlayerProfile>(profileId);
+            if (profile == null)
+            {
+                profile = new PlayerProfile
+                {
+                    ProfileId = profileId,
+                    SchemaVersion = 1,
+                    CreatedAtUtc = System.DateTime.UtcNow.ToString("o"),
+                    AppVersion = Application.version,
+                    UnspentPerkPoints = 0
+                };
+            }
+            int newPoints = profile.UnspentPerkPoints + pointsDelta;
+            if (newPoints < 0)
+                throw new System.InvalidOperationException("ApplyPerkAdjustments would result in negative perk points.");
+
+            profile.UnspentPerkPoints = newPoints;
+            profile.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
+            conn.InsertOrReplace(profile);
+
+            conn.Table<PerkAllocation>().Delete(p => p.ProfileId == profileId);
+            if (list.Count > 0)
+            {
+                foreach (var p in list)
+                {
+                    if (p == null) continue;
+                    p.ProfileId = profileId;
+                }
+                conn.InsertAll(list);
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var count = conn.Table<PerkAllocation>().Count(p => p.ProfileId == profileId);
+            Debug.Log($"[DB] ApplyPerkAdjustments committed: profile={profileId}, pointsDelta={pointsDelta}, allocCount={count}");
+#endif
+        });
+        BackupDatabaseAtomic();
+    }
+
+    public System.Collections.Generic.List<PerkAllocation> LoadPerkAllocations(string profileId)
+    {
+        if (string.IsNullOrEmpty(profileId)) return new System.Collections.Generic.List<PerkAllocation>();
+        return _conn.Table<PerkAllocation>().Where(p => p.ProfileId == profileId).ToList();
+    }
+
     // --- 런 메타(현재 위치/기본 정보) 업데이트 ---
     public void UpsertCurrentRun(CurrentRun run)
     {
@@ -255,16 +321,24 @@ public sealed class DatabaseManager
     {
         InTx(conn =>
         {
-            conn.Table<CardInDeck>().Delete(x => x.RunId == runId);
-            conn.Table<RelicInPossession>().Delete(x => x.RunId == runId);
-            conn.Table<PotionInPossession>().Delete(x => x.RunId == runId);
-            conn.Table<MapNodeState>().Delete(x => x.RunId == runId);
-            conn.Table<RngState>().Delete(x => x.RunId == runId);
-            conn.Table<CurrentRun>().Delete(x => x.RunId == runId);
+            DeleteCurrentRun_NoTx(conn, runId);
         });
 
         BackupDatabaseAtomic();
         Debug.Log($"[DB] 현재 런 삭제 완료: {runId}");
+    }
+
+    // 같은 트랜잭션 내에서 합성 호출을 가능하게 하기 위한 내부 헬퍼(별도 Begin/Commit 없음)
+    private static void DeleteCurrentRun_NoTx(SQLiteConnection conn, string runId)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+        conn.Table<CardInDeck>().Delete(x => x.RunId == runId);
+        conn.Table<RelicInPossession>().Delete(x => x.RunId == runId);
+        conn.Table<PotionInPossession>().Delete(x => x.RunId == runId);
+        conn.Table<MapNodeState>().Delete(x => x.RunId == runId);
+        conn.Table<RngState>().Delete(x => x.RunId == runId);
+        conn.Table<RunPerkSnapshot>().Delete(x => x.RunId == runId);
+        conn.Table<CurrentRun>().Delete(x => x.RunId == runId);
     }
 
     /// <summary>
@@ -275,8 +349,8 @@ public sealed class DatabaseManager
         InTx(conn =>
         {
             conn.Insert(summary);
-            // 요약에 사용된 RunId를 기준으로 '이어하기' 데이터를 삭제합니다.
-            DeleteCurrentRun(summary.RunId);
+            // 요약에 사용된 RunId를 기준으로 '이어하기' 데이터를 삭제합니다. (동일 트랜잭션 내에서 처리)
+            DeleteCurrentRun_NoTx(conn, summary.RunId);
         });
         Debug.Log($"[DB] 런 종료 및 요약 저장 완료: {summary.RunId}");
     }
@@ -549,5 +623,83 @@ public sealed class DatabaseManager
         try { _conn?.Close(); } catch { }
         _conn = null;
     }  
+    
+    // ==========================================================
+    // 5) v3.0: Perk Snapshot & Achievement Progress helpers
+    // ==========================================================
+
+    public void ReplaceRunPerkSnapshot(string runId, System.Collections.Generic.IEnumerable<RunPerkSnapshot> rows)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+        var list = rows?.ToList() ?? new System.Collections.Generic.List<RunPerkSnapshot>();
+        InTx(conn =>
+        {
+            conn.Table<RunPerkSnapshot>().Delete(x => x.RunId == runId);
+            if (list.Count > 0)
+            {
+                foreach (var r in list)
+                {
+                    if (r == null) continue;
+                    r.RunId = runId;
+                    r.EffectKey = r.EffectKey ?? string.Empty;
+                    conn.Insert(r);
+                }
+            }
+        });
+    }
+
+    public System.Collections.Generic.List<RunPerkSnapshot> LoadRunPerkSnapshot(string runId)
+    {
+        if (string.IsNullOrEmpty(runId)) return new System.Collections.Generic.List<RunPerkSnapshot>();
+        return _conn.Table<RunPerkSnapshot>().Where(x => x.RunId == runId).ToList();
+    }
+
+    public AchievementProgress LoadAchievementProgress(string profileId, string achievementId)
+    {
+        if (string.IsNullOrEmpty(profileId) || string.IsNullOrEmpty(achievementId)) return null;
+        return _conn.Table<AchievementProgress>()
+            .FirstOrDefault(x => x.ProfileId == profileId && x.AchievementId == achievementId);
+    }
+
+    public void UpsertAchievementProgress(AchievementProgress row)
+    {
+        if (row == null || string.IsNullOrEmpty(row.ProfileId) || string.IsNullOrEmpty(row.AchievementId)) return;
+        InTx(conn =>
+        {
+            var existing = conn.Table<AchievementProgress>()
+                .FirstOrDefault(x => x.ProfileId == row.ProfileId && x.AchievementId == row.AchievementId);
+            if (existing == null)
+            {
+                conn.Insert(row);
+            }
+            else
+            {
+                existing.IsUnlocked = row.IsUnlocked;
+                existing.Progress = row.Progress;
+                existing.UnlockedAtUtc = row.UnlockedAtUtc;
+                conn.Update(existing);
+            }
+        });
+    }
+
+    public void AddPerkPoints(string profileId, int delta)
+    {
+        if (string.IsNullOrEmpty(profileId) || delta == 0) return;
+        var profile = _conn.Find<PlayerProfile>(profileId);
+        if (profile == null)
+        {
+            profile = new PlayerProfile
+            {
+                ProfileId = profileId,
+                SchemaVersion = 1,
+                CreatedAtUtc = System.DateTime.UtcNow.ToString("o"),
+                AppVersion = Application.version,
+                UnspentPerkPoints = 0
+            };
+        }
+        profile.UnspentPerkPoints = Mathf.Max(0, profile.UnspentPerkPoints + delta);
+        profile.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
+        _conn.InsertOrReplace(profile);
+    }
     
 }

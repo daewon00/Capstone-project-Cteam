@@ -13,6 +13,9 @@ public static class ServiceRegistry
     public static void Register<T>(T service) where T : class
     {
         _services[typeof(T)] = service;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        UnityEngine.Debug.Log($"[BossFlow][ServiceRegistry] Register: {typeof(T).Name} => {(service!=null ? "ok" : "null")}");
+#endif
     }
 
     /// <summary>
@@ -29,12 +32,23 @@ public static class ServiceRegistry
     {
         var svc = Get<T>();
         if (svc == null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogWarning($"[BossFlow][ServiceRegistry] GetRequired FAILED: {typeof(T).Name} not registered.");
+#endif
             throw new InvalidOperationException($"[ServiceRegistry] 필수 서비스인 {typeof(T).Name}가 등록되지 않았습니다.");
+        }
         return svc;
     }
 
     // 새 게임 시작 시, 이전 게임의 전문가들을 모두 해고하는 기능
-    public static void ClearAll() => _services.Clear();
+    public static void ClearAll()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        UnityEngine.Debug.Log("[BossFlow][ServiceRegistry] ClearAll called.");
+#endif
+        _services.Clear();
+    }
     // ClearAll() 안됐을때 방지용
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()

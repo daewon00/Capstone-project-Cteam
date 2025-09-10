@@ -85,6 +85,20 @@ namespace Game.Save
     }
 
     /// <summary>
+    /// 업적의 진행 상황과 해금 여부를 저장합니다. (v3.0)
+    /// </summary>
+    [Table("AchievementProgress")]
+    public class AchievementProgress
+    {
+        [PrimaryKey, AutoIncrement] public int Id { get; set; }
+        [Indexed] public string ProfileId { get; set; }
+        [Indexed] public string AchievementId { get; set; }
+        public bool IsUnlocked { get; set; }
+        public int Progress { get; set; }
+        public string UnlockedAtUtc { get; set; }
+    }
+
+    /// <summary>
     /// 플레이어가 완료한 게임(Run)의 요약 정보를 저장합니다. (클리어 기록, 리더보드용)
     /// </summary>
     [Table("RunSummary")]
@@ -132,6 +146,20 @@ namespace Game.Save
         public string UpdatedAtUtc { get; set; }                // 마지막으로 저장한 시각.
         public string ContentCatalogVersion { get; set; }        // 어떤 버전의 콘텐츠로 플레이했는지 기록.
         public string AppVersion { get; set; }
+    }
+
+    /// <summary>
+    /// 런 시작 시점의 특전 효과를 스냅샷으로 저장합니다. (v3.0)
+    /// 동일한 RunId 내에서 EffectKey는 유일합니다.
+    /// </summary>
+    [Table("RunPerkSnapshot")]
+    public class RunPerkSnapshot
+    {
+        [PrimaryKey, AutoIncrement] public int Id { get; set; }
+        [Indexed] public string RunId { get; set; }
+        [Indexed] public string EffectKey { get; set; }
+        public float AggregatedFlatValue { get; set; }
+        public float AggregatedPercentValue { get; set; }
     }
 
     /// <summary>

@@ -55,6 +55,24 @@ public class BattleSceneBootstrap : MonoBehaviour
     {
         if (this.enabled && _battleController != null)
         {
+            // 정석: 전투 시작 전에 RunService를 현재 런으로 재바인딩하여
+            // 이전 전투의 커밋 상태가 다음 전투에 영향을 주지 않도록 합니다.
+            try
+            {
+                var runService = ServiceRegistry.Get<IRunService>();
+                if (runService != null)
+                {
+                    string runId = GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId)
+                        ? GameContext.I.RunId
+                        : PlayerPrefs.GetString("lastRunId", string.Empty);
+                    runService.RebindRun(runId);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log($"[BossFlow][BattleSceneBootstrap] RunService.RebindRun('{runId}')");
+#endif
+                }
+            }
+            catch { }
+
             _battleController.StartBattle();
         }
     }
