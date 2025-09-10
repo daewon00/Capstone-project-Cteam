@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: EnemyManaLeech
   displayName: EnemyManaLeech
-  description: 
+  description: "\uC0C1\uB300 \uB9C8\uB098 1 \uC904\uC774\uAE30"
   icon: {fileID: 21300000, guid: bcedfce387a0cdb40b30766ae3ef54ca, type: 3}
   stackable: 0
   maxStacks: 1

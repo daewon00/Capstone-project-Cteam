@@ -320,6 +320,8 @@ public class RelicSystem : MonoBehaviour
         foreach (var r in relics) v = r.ModifyPlayerMana(v);
         return v;
     }
+
+
     #endregion
     /*
      

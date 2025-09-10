@@ -81,6 +81,9 @@ public class EnemyController : MonoBehaviour
                     CardPointsController.instance.enemyCardPoints[i].activeCard = Ecard;
                     Ecard.assignedPlace = CardPointsController.instance.enemyCardPoints[i];
 
+                    Ecard.isPlayer = false; // 안전하게 적임을 명시
+                    GameEvents.OnCardPlayed?.Invoke(Ecard);
+
 
                     CardPointsController.instance.enemyStayPoints[i].activeCard = null;
 
@@ -142,6 +145,8 @@ public class EnemyController : MonoBehaviour
 
                 selectedPoint.activeCard = newCard;
                 newCard.assignedPlace = selectedPoint;
+
+                
 
             }
 
@@ -319,6 +324,8 @@ public class EnemyController : MonoBehaviour
         BattleController.instance.SpendEnemyrMana(cardSO.manaCost);
         
         AudioManager.instance.PlaySFX(4);
+
+        
     }
 
     CardScriptableObject SelectedCardToPlay()

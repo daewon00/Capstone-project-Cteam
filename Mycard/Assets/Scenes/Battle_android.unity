@@ -837,7 +837,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1842348416
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2051,11 +2051,11 @@ PrefabInstance:
       objectReference: {fileID: 6681031507117419995}
     - target: {fileID: 6953649620618766045, guid: 8fd0888bec34fec4abedee699d9710e6, type: 3}
       propertyPath: m_text
-      value: managem
+      value: test
       objectReference: {fileID: 0}
     - target: {fileID: 6953649620618766045, guid: 8fd0888bec34fec4abedee699d9710e6, type: 3}
       propertyPath: m_fontSize
-      value: 52.05
+      value: 72
       objectReference: {fileID: 0}
     - target: {fileID: 7140788903624328006, guid: 8fd0888bec34fec4abedee699d9710e6, type: 3}
       propertyPath: m_IsActive
@@ -2091,7 +2091,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7983217762022542974, guid: 8fd0888bec34fec4abedee699d9710e6, type: 3}
       propertyPath: m_Name
-      value: managem Button test
+      value: RelicTest
       objectReference: {fileID: 0}
     - target: {fileID: 7983217762022542974, guid: 8fd0888bec34fec4abedee699d9710e6, type: 3}
       propertyPath: m_IsActive

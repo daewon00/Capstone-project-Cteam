@@ -1,40 +1,33 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyFirstCardWeakenerRelic : Relic
+
+public sealed class EnemyFirstCardWeakenerRelic : Relic
 {
-    // ÀÌ¹ø Àû ÅÏ¿¡ ÀÌ¹Ì 1Àå ¾àÈ­Çß´ÂÁö ¿©ºÎ
-    private bool _usedThisEnemyTurn = false;
+    private bool _usedThisTurn;
 
     public EnemyFirstCardWeakenerRelic(RelicData data) : base(data) { }
 
-    // ÅÏ ½ÃÀÛ¸¶´Ù »óÅÂ ÃÊ±âÈ­
+    // ì  í„´ì´ ì‹œì‘ë  ë•Œë§ˆë‹¤ "ì´ë²ˆ í„´ì— ì´ë¯¸ ì ìš©í–ˆëŠ”ê°€?" ë¦¬ì…‹
     public override void OnTurnStart(bool isPlayerTurn)
     {
-        if (!isPlayerTurn) _usedThisEnemyTurn = false; // Àû ÅÏ ½ÃÀÛ ½Ã ¸®¼Â
+        if (!isPlayerTurn) _usedThisTurn = false;
     }
 
-    // Ä«µå°¡ ¡°ÇÊµå¿¡ ¼º°øÀûÀ¸·Î ³õ¿´À» ¶§¡± È£ÃâµÊ
+    // ì¹´ë“œê°€ "ë³´ë“œì—" í”Œë ˆì´ë˜ë©´ í˜¸ì¶œë¨ ìœ„ì—ì„œ ì ë„ ì´ë²¤íŠ¸ë¥¼ ì˜ê²Œ ë§Œë“¤ì—ˆìŒ
     public override void OnCardPlayed(Card card)
     {
-        if (_usedThisEnemyTurn || card == null) return;
+        if (_usedThisTurn || card == null || card.isPlayer) return;
 
-        // Áö±İÀÌ Àû ¾×Æ¼ºê ÅÏÀÎÁö È®ÀÎ
-        var bc = BattleController.instance;
-        if (bc == null || bc.currentPhase != BattleController.TurnOrder.enemyActive) return;
+        int reduce = Mathf.Max(1, Stacks);        // ìŠ¤íƒë§Œí¼ ê°ì†Œ (ê¸°ë³¸ 1)
+        int before = card.attackPower;
+        card.attackPower = Mathf.Max(0, before - reduce);
+        card.UpdateCardDisplay();                 
 
-        // ÀÌ Ä«µå°¡ Àû Ä«µåÀÎÁö È®ÀÎ(¾ÈÀüÇÏ°Ô µÎ °¡Áö ±âÁØÀ¸·Î Ã¼Å©)
-        bool isEnemyCard =
-            (card.isPlayer == false) ||
-            (card.assignedPlace != null && card.assignedPlace.isPlayerPoint == false);
-
-        if (!isEnemyCard) return;
-
-        // °ø°İ·Â 1 °¨¼Ò(½ºÅÃ Àû¿ë ¿øÇÏ¸é +Stacks ·Î ¹Ù²Ù¸é µÊ)
-        card.attackPower = Mathf.Max(0, card.attackPower - 1);
-        card.UpdateCardDisplay();
-
-        _usedThisEnemyTurn = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[EnemyFirstCardWeakener] {card.cardSO?.cardName}: {before} â†’ {card.attackPower} (-{reduce})");
+#endif
+        _usedThisTurn = true;
     }
 }

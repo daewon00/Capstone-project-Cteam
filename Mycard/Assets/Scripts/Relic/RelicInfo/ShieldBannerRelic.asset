@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: SheildBanner
   displayName: SheildBanner
-  description: SheildBanner
+  description: "\uCE74\uB4DC\uCCB4\uB825\uC99D\uAC00"
   icon: {fileID: 21300000, guid: 5d95131c1506b1840a5f0766d2169305, type: 3}
   stackable: 0
   maxStacks: 1

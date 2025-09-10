@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: ManaDiscount
   displayName: ManaDiscount
-  description: ManaDiscount
+  description: "\uCE74\uB4DC \uB9C8\uB098 \uC904\uC774\uAE30"
   icon: {fileID: 21300000, guid: b5170fe8ddaeaf04eb2ea31b3c93995e, type: 3}
   stackable: 0
   maxStacks: 1

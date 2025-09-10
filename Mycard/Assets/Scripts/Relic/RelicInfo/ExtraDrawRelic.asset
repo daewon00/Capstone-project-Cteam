@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: ExtraDraw
   displayName: ExtraDraw
-  description: ExtraDraw
+  description: "\uCD94\uAC00\uB4DC\uB85C\uC6B0"
   icon: {fileID: 21300000, guid: cca135a9c83c74e40a8fd94e124c09a2, type: 3}
   stackable: 0
   maxStacks: 1
