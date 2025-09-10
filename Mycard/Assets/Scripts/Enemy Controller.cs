@@ -83,6 +83,7 @@ public class EnemyController : MonoBehaviour
 
                     Ecard.isPlayer = false; // 안전하게 적임을 명시
                     GameEvents.OnCardPlayed?.Invoke(Ecard);
+                    Ecard.SetInteractable(false); // 적 카드 상호작용 비활성화
 
 
                     CardPointsController.instance.enemyStayPoints[i].activeCard = null;
@@ -318,6 +319,10 @@ public class EnemyController : MonoBehaviour
 
         placePoint.activeCard = newCard;
         newCard.assignedPlace = placePoint;
+
+        // 적 카드로 명시하고 상호작용 비활성화(클릭 방지)
+        newCard.isPlayer = false;
+        newCard.SetInteractable(false);
 
         cardsInHand.Remove(cardSO);
 

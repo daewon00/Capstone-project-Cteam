@@ -271,6 +271,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
+--- !u!1 &127493601
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 127493602}
+  m_Layer: 0
+  m_Name: CardSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &127493602
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127493601}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.74, y: 0, z: 0.99}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &198529039 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2261864374254778181, guid: 3f4a3af4ca33d5c41a8cd37f708ebe48, type: 3}
@@ -10071,6 +10102,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _hand: {fileID: 8135307613220409027}
   _cardPrefab: {fileID: 1671488877}
+  _drawSpawnPoint: {fileID: 127493602}
+  _initialDrawStagger: 0.15
 --- !u!1 &8219463498813520242
 GameObject:
   m_ObjectHideFlags: 0
@@ -11137,3 +11170,4 @@ SceneRoots:
   - {fileID: 9050268559666496744}
   - {fileID: 4925314712203319056}
   - {fileID: 1842348417}
+  - {fileID: 127493602}

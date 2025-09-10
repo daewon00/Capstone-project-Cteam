@@ -399,6 +399,13 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         // 탭/클릭 종료 시 비주얼 원복
         transform.DOKill(false);
         transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+
+        // 필드 위 카드나 inHand가 아닌 경우는 위치 복귀를 수행하지 않음
+        if (!inHand || assignedPlace != null)
+        {
+            return;
+        }
+
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
             MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);

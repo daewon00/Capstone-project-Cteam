@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Game.Save;
@@ -8,6 +9,9 @@ public class HandServiceBinder : MonoBehaviour
 {
     [SerializeField] private HandController _hand;
     [SerializeField] private Card _cardPrefab;               // 직접 지정 권장(DeckController 의존 제거)
+    [Header("Initial Draw FX")]
+    [SerializeField] private Transform _drawSpawnPoint;      // 초기 드로우 시 스폰 위치(없으면 핸드 위치)
+    [SerializeField] private float _initialDrawStagger = 0.15f; // 초기 드로우 시 장당 지연(sec)
 
     private IDeckService _deckService;
     private ICardCatalog _cardCatalog;
@@ -62,52 +66,65 @@ public class HandServiceBinder : MonoBehaviour
             // TODO: 시각/청각 효과 트리거 (셔플 애니메이션, 사운드 등)
         }
 
-        // 드로우 이유별 연출 훅(필요 시 확장)
-        switch (result.Reason)
+        // 초기 드로우는 장당 지연/스폰포인트를 사용해 연출
+        if (result.Reason == DrawReason.TurnStart && (_initialDrawStagger > 0f || _drawSpawnPoint != null))
         {
-            case DrawReason.CardEffect:
-                // TODO: 카드 효과 드로우 연출
-                break;
-            case DrawReason.TurnStart:
-                // TODO: 턴 시작 연출
-                break;
+            StartCoroutine(SpawnDrawnCardsStaggered(result));
+            return;
         }
 
+        // 일반 드로우(즉시 스폰)
         foreach (var state in result.DrawnCards)
         {
-            var so = _cardCatalog.GetCardData(state.CardId);
-            if (so == null)
-            {
-                Debug.LogError($"[HandServiceBinder] CardId({state.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다!");
-                continue;
-            }
+            SpawnAndRegister(state, immediateSpawnAt: _hand.transform.position);
+        }
+        _hand.SetCardPositionsInHand();
+    }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HandServiceBinder] Spawn view: instance={state.InstanceId}, cardId={state.CardId}");
-#endif
+    private IEnumerator SpawnDrawnCardsStaggered(DrawResult result)
+    {
+        Vector3 spawnPos = (_drawSpawnPoint != null ? _drawSpawnPoint.position : _hand.transform.position);
+        foreach (var state in result.DrawnCards)
+        {
+            SpawnAndRegister(state, immediateSpawnAt: spawnPos);
+            if (_initialDrawStagger > 0f)
+                yield return new WaitForSeconds(_initialDrawStagger);
+        }
+        _hand.SetCardPositionsInHand();
+    }
 
-            // 풀에서 가져오거나 새로 생성
-            Card newCard = _cardPool.Count > 0 ? _cardPool.Pop() : Instantiate(_cardPrefab);
-            newCard.gameObject.SetActive(true);
-            newCard.transform.SetParent(_hand.transform, false);
-            newCard.transform.position = _hand.transform.position;
-            newCard.Initialize(state.InstanceId, so, _deckService);
-            _hand.AddCardToHand(newCard);
-            if (_viewsById.ContainsKey(state.InstanceId))
-            {
-                Debug.LogWarning($"[HandServiceBinder] Duplicate view mapping for instance={state.InstanceId}. Overwriting.");
-                _viewsById[state.InstanceId] = newCard;
-            }
-            else
-            {
-                _viewsById.Add(state.InstanceId, newCard);
-            }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HandServiceBinder] View registered: go={newCard.name}, parent={(newCard.transform.parent!=null?newCard.transform.parent.name:"<none>")}, active={newCard.gameObject.activeSelf}, layer={newCard.gameObject.layer}, handCount={_hand.heldCards?.Count}");
-#endif
+    private void SpawnAndRegister(CardRuntimeState state, Vector3 immediateSpawnAt)
+    {
+        var so = _cardCatalog.GetCardData(state.CardId);
+        if (so == null)
+        {
+            Debug.LogError($"[HandServiceBinder] CardId({state.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다!");
+            return;
         }
 
-        _hand.SetCardPositionsInHand();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[HandServiceBinder] Spawn view: instance={state.InstanceId}, cardId={state.CardId}");
+#endif
+
+        // 풀에서 가져오거나 새로 생성
+        Card newCard = _cardPool.Count > 0 ? _cardPool.Pop() : Instantiate(_cardPrefab);
+        newCard.gameObject.SetActive(true);
+        newCard.transform.SetParent(_hand.transform, false);
+        newCard.transform.position = immediateSpawnAt;
+        newCard.Initialize(state.InstanceId, so, _deckService);
+        _hand.AddCardToHand(newCard);
+        if (_viewsById.ContainsKey(state.InstanceId))
+        {
+            Debug.LogWarning($"[HandServiceBinder] Duplicate view mapping for instance={state.InstanceId}. Overwriting.");
+            _viewsById[state.InstanceId] = newCard;
+        }
+        else
+        {
+            _viewsById.Add(state.InstanceId, newCard);
+        }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[HandServiceBinder] View registered: go={newCard.name}, parent={(newCard.transform.parent!=null?newCard.transform.parent.name:"<none>")}, active={newCard.gameObject.activeSelf}, layer={newCard.gameObject.layer}, handCount={_hand.heldCards?.Count}");
+#endif
     }
 
     private void HandleCardPlayed(PlayResult result)
