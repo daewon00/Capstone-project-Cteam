@@ -101,9 +101,9 @@ public class UIController : MonoBehaviour
         AudioManager.instance.PlaySFX(0);
     }
 
-    public void AddBanana()
+    public void AddRelicTest()
     {
-        RelicSystem.Instance.AddRelicById("ManaBoostGem", stacks: 1);
+        RelicSystem.Instance.AddRelicById("EnemyFirstCardWeakener", stacks: 1);
     }
 
     public void AddSword()
@@ -188,7 +188,7 @@ public class UIController : MonoBehaviour
         group.blocksRaycasts = visible;
     }
 
-    public void ChAdd()
+    /*public void ChAdd()
     {
         // 1) Resources/Characters 폴더 안의 "Cat.asset" 파일 불러오기
         CharacterSO newChar = Resources.Load<CharacterSO>("Characters/Cat");
@@ -204,7 +204,7 @@ public class UIController : MonoBehaviour
         {
             Debug.LogError("캐릭터 ScriptableObject를 찾을 수 없습니다!");
         }
-    }
+    }*/
 
     public void CardAdd1()
     {

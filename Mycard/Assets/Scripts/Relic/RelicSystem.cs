@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Reflection;
 
 #region Save DTOs
 [Serializable]
@@ -100,6 +101,8 @@ public class RelicSystem : MonoBehaviour
         }
     }
 
+
+
     // id에 따라 올바른 파생 유물 클래스를 new 해서 돌려줌
     private Relic CreateRelicFromId(string relicId, RelicData data)
     {
@@ -107,8 +110,13 @@ public class RelicSystem : MonoBehaviour
         switch (relicId)
         {
             case "WarBanner": return new WarBannerRelic(data);//워배너
-            case "ManaBoostGem": return new ManaGem(data);//ManaGem이 있어야함
+            case "ManaGem": return new ManaGem(data);//ManaGem이 있어야함
             case "HappyFlower": return new HappyFlowerRelic(data);//
+            case "ExtraDraw": return new ExtraDrawRelic(data);//
+            case "SheildBanner": return new ShieldBannerRelic(data);//
+            case "ManaDiscount": return new ManaDiscountRelic(data);//
+            case "EnemyManaLeech": return new EnemyManaLeechRelic(data);//
+            case "EnemyFirstCardWeakener": return new EnemyFirstCardWeakenerRelic(data);//
             // TODO: 새 유물을 추가할 때 case 추가
             default:
                 Debug.LogWarning($"[RelicSystem] 알 수 없는 relicId: {relicId}");
@@ -312,6 +320,8 @@ public class RelicSystem : MonoBehaviour
         foreach (var r in relics) v = r.ModifyPlayerMana(v);
         return v;
     }
+
+
     #endregion
     /*
      

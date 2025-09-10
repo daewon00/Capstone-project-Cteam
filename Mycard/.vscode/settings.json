@@ -56,5 +56,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Mycard.sln"
+    "dotnet.defaultSolution": "Mycard.sln",
+    "dotnet.preferCSharpExtension": true
 }

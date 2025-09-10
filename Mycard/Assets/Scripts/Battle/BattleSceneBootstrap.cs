@@ -24,7 +24,7 @@ public class BattleSceneBootstrap : MonoBehaviour
 
         if (deckService == null) Debug.LogWarning("[BattleSceneBootstrap] IDeckService를 찾지 못했습니다.");
         if (cardCatalog == null) Debug.LogWarning("[BattleSceneBootstrap] ICardCatalog를 찾지 못했습니다.");
-
+        if (deckService != null) GameServices.RegisterDeck(deckService);
         // HandServiceBinder 부착 및 초기화
         var binder = _handController.GetComponent<HandServiceBinder>();
         if (binder == null) binder = _handController.gameObject.AddComponent<HandServiceBinder>();
