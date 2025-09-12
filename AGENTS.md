@@ -104,6 +104,192 @@ Notes:
 - Maintain file structure and naming conventions. Do not rename public APIs without justification.
 - When adding effects or save fields, update both the runtime logic and DTO/serialization paths.
 
+## Git Operations Policy (Human‑Managed)
+- All Git repository operations (commit, push, branch creation/switching, history rewrites) are managed by humans (GitHub Desktop). Agents must not perform them.
+- Prohibited (non‑exhaustive): `git commit`, `git push`, `git branch`, `git checkout`/`git switch`, `git reset`, `git revert`, `git rebase`, `git tag`, `git merge`, `git stash apply/pop`, or any command that changes repo state.
+- Default stance: Do not run Git commands at all. Read‑only commands (e.g., `git status`, `git log`, `git diff`) are allowed only if explicitly requested by a human.
+- Focus the agent role on code analysis/edits (e.g., via `apply_patch`) and leave repository management entirely to the user.
+
+## Unity Serialization & Renames
+- Use `[FormerlySerializedAs]` when renaming serialized fields on `MonoBehaviour`/`ScriptableObject` to prevent data loss.
+- Avoid destructive type changes for serialized fields; prefer adding new fields and migrating data explicitly.
+- Use `[SerializeReference]` only when required; document polymorphic graphs and ensure asset compatibility.
+
+Example (safe rename)
+```csharp
+using UnityEngine;
+using UnityEngine.Serialization;
+
+public class WalletView : MonoBehaviour
+{
+    // Before: public int gold;
+    [FormerlySerializedAs("gold")]
+    [SerializeField] private int currentGold;
+}
+```
+
+Checklist
+- Before: identify assets that reference the field (search GUID/usages).
+- Apply `[FormerlySerializedAs]`; keep type compatible.
+- After: open key scenes and verify values persist; check Console for serialization warnings.
+- Tests: load an asset created before rename and assert values are intact.
+
+## Event Effects Extension Checklist
+- When adding a new `EventEffectDTO.type`, update: DTO definition/parsing, `EventManager.ApplyChoice`, persistence paths, and any UI copy impacted.
+- Route side‑effects through services (`IWalletService`, future `IDeckService`) and keep effects localized.
+- On unknown types, log `Debug.LogError("[EventManager] Unknown effect: <type>")` and fail fast (no silent no‑ops).
+- Maintain `eventId == asset name`; add guards and logs if a mismatch is detected at load time.
+
+Example (ApplyChoice extension)
+```csharp
+// inside EventManager.ApplyChoice(...)
+switch (effect.Type)
+{
+    case EventEffectType.HpDelta:
+        // existing
+        break;
+    case EventEffectType.GoldDelta:
+        // existing via IWalletService
+        break;
+    case EventEffectType.AddCard: // NEW
+        _deckService.AddCard(effect.RefId);
+        _database.AppendEventLog(sessionId, effect);
+        break;
+    default:
+        Debug.LogError($"[EventManager] Unknown effect type: {effect.Type}");
+        return; // fail fast
+}
+```
+
+Checklist
+- DTO: add new enum/string value; ensure JSON parse/serialize updated.
+- Manager: implement branch in `ApplyChoice` and persist minimal state.
+- Services: call through appropriate service (wallet/deck/etc.).
+- UI/Copy: confirm button/description text reflects the new effect.
+- Tests: unit test effect application; run Map→Event manual flow.
+
+## Database Versioning & Test Isolation
+- Maintain a `schema_version` (or equivalent) and bump on breaking schema changes.
+- Implement idempotent, transaction‑wrapped migrations using `DatabaseManager` helpers where possible.
+- Do not perform DB I/O in hot gameplay loops; batch writes and avoid per‑frame queries.
+- Tests must use a temporary DB path (not `Application.persistentDataPath`), and clean up after execution.
+
+Example (basic migration pattern)
+```sql
+-- schema_version table
+CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
+INSERT INTO schema_version(version) SELECT 1 WHERE NOT EXISTS(SELECT 1 FROM schema_version);
+
+-- migrating 1 -> 2
+BEGIN TRANSACTION;
+  -- ALTER TABLE / CREATE INDEX ...
+  UPDATE schema_version SET version = 2;
+COMMIT;
+```
+
+Test isolation sketch
+```csharp
+// Pseudocode: configure DatabaseManager for tests
+var tmp = System.IO.Path.GetTempFileName();
+var db = new DatabaseManager();
+db.Open(tmp);
+// run tests...
+db.Close();
+System.IO.File.Delete(tmp);
+```
+
+## Resources & Caching
+- Cache `Resources.Load` results; do not call `Resources.Load(All)` per frame.
+- Keep asset paths stable; if moving/renaming, update references and verify Map → Event flows.
+- Only place assets in `Assets/Resources/...` when runtime loading is required.
+
+Example (simple cache)
+```csharp
+static class EventCatalog
+{
+    private static readonly Dictionary<string, EventScriptableObject> cache = new();
+
+    public static EventScriptableObject Get(string eventId)
+    {
+        if (cache.TryGetValue(eventId, out var so)) return so;
+        so = Resources.Load<EventScriptableObject>($"Events/{eventId}");
+        if (so == null) Debug.LogError($"[Events] Missing SO: {eventId}");
+        else cache[eventId] = so;
+        return so;
+    }
+}
+```
+
+Checklist
+- Cache key: stable and matches asset name/ID.
+- Verify first access loads; subsequent calls hit cache.
+- Avoid cache in edit-time asset import code.
+
+## Editor‑Only Code
+- Place editor scripts under `Assets/Editor` and/or guard them with `#if UNITY_EDITOR`.
+- Do not include editor‑only assemblies in runtime builds.
+
+Example
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+
+[CustomEditor(typeof(MapTraversalController))]
+public class MapTraversalControllerEditor : Editor { /* ... */ }
+#endif
+```
+
+Checklist
+- Editor code is under `Assets/Editor` or wrapped with `#if UNITY_EDITOR`.
+- Runtime assemblies have no references to UnityEditor.* APIs.
+
+## Performance (Hot Paths)
+- Avoid allocations in `Update/LateUpdate/FixedUpdate`; avoid LINQ/boxing; reuse collections; pool objects created at runtime.
+- Avoid reflection/dynamic invocation in hot paths; prefer direct calls or precomputed delegates.
+- Profile changes with Unity Profiler; fix regressions before merging.
+
+Example (reuse list instead of LINQ)
+```csharp
+private readonly List<Card> _tmp = new(32);
+void Tick()
+{
+    _tmp.Clear();
+    foreach (var c in _hand) if (c.Cost == 0) _tmp.Add(c);
+    // use _tmp ...
+}
+```
+
+Checklist
+- No `new` allocations or LINQ in per-frame loops.
+- Object pooling for transient FX/projectiles.
+- Profiled frame time and GC allocs unchanged or improved.
+
+## Scene & Build Settings
+- Do not modify `ProjectSettings/*` or `EditorBuildSettings.asset` without explicit request and verification.
+- Keep scene navigation centralized (e.g., `MapTraversalController`); avoid new hard‑coded scene names and duplicate bootstraps.
+
+Example (centralized routing)
+```csharp
+public class SceneRouter : MonoBehaviour
+{
+    [SerializeField] private string eventSceneName = "Event";
+    public void GoToEvent() => UnityEngine.SceneManagement.SceneManager.LoadScene(eventSceneName);
+}
+```
+
+Checklist
+- Scene names exposed via serialized fields (not sprinkled constants).
+- One bootstrap path per flow; no duplicate initializers in scenes.
+
+## Local Tooling (BMAD)
+- Flatten snapshots (`flattened-codebase.xml`, `flatten-*.xml`) and Node artifacts are local developer assets; do not commit.
+- Prefer local ignore via `.git/info/exclude` to keep team workflows unaffected.
+
+Checklist
+- VS Code tasks run npm scripts; outputs are ignored locally.
+- `.git/info/exclude` includes: `.vscode/`, `tools/`, `package*.json`, `node_modules/`, `flatten*.xml`.
+- No BMAD artifacts in PRs; optional usage only.
+
 ## Coding Conventions (C#)
 - Names: `PascalCase` for types/methods/properties, `camelCase` for locals/fields (private fields may use `_camelCase`).
 - Access: Mark everything `private` by default; widen only as needed.

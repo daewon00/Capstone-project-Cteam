@@ -97,3 +97,8 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# BMad flatten output (local analysis artifact)
+flattened-codebase.xml
+flatten-*.xml
+node_modules/
