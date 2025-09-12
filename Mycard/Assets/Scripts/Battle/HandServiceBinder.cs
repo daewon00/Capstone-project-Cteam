@@ -37,7 +37,8 @@ public class HandServiceBinder : MonoBehaviour
             _deckService.OnCardPlayed += HandleCardPlayed;
             _subscribed = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HandServiceBinder] Initialize: hand={_hand!=null}, deckService={_deckService!=null}, cardCatalog={_cardCatalog!=null}, cardPrefab={_cardPrefab!=null}, subscribed={_subscribed}");
+            string spName = _drawSpawnPoint != null ? _drawSpawnPoint.name : "<null>";
+            Debug.Log($"[HandServiceBinder] Initialize: hand={_hand!=null}, deckService={_deckService!=null}, catalog={_cardCatalog!=null}, cardPrefab={_cardPrefab!=null}, spawnPoint={spName}, stagger={_initialDrawStagger:F2}, subscribed={_subscribed}");
 #endif
         }
     }
@@ -69,6 +70,12 @@ public class HandServiceBinder : MonoBehaviour
         // 초기 드로우는 장당 지연/스폰포인트를 사용해 연출
         if (result.Reason == DrawReason.TurnStart && (_initialDrawStagger > 0f || _drawSpawnPoint != null))
         {
+            // 디버그: 어떤 스폰 위치를 사용하는지 기록
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Vector3 sp = (_drawSpawnPoint != null ? _drawSpawnPoint.position : _hand.transform.position);
+            string spName = _drawSpawnPoint != null ? _drawSpawnPoint.name : "<hand.transform>";
+            Debug.Log($"[HandServiceBinder] Initial draw path: spawnPoint={spName} pos={sp}");
+#endif
             StartCoroutine(SpawnDrawnCardsStaggered(result));
             return;
         }
@@ -113,6 +120,12 @@ public class HandServiceBinder : MonoBehaviour
         newCard.transform.position = immediateSpawnAt;
         newCard.Initialize(state.InstanceId, so, _deckService);
         _hand.AddCardToHand(newCard);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // 스폰 위치와 목표(핸드 인덱스) 위치 비교 로그
+        int idx = newCard.handPosition;
+        Vector3 target = (idx >= 0 && idx < _hand.cardPositions.Count) ? _hand.cardPositions[idx] : new Vector3(float.NaN, float.NaN, float.NaN);
+        Debug.Log($"[HandServiceBinder] SpawnAndRegister: instance={state.InstanceId}, spawnPos={immediateSpawnAt}, targetPos={target}, handIndex={idx}");
+#endif
         if (_viewsById.ContainsKey(state.InstanceId))
         {
             Debug.LogWarning($"[HandServiceBinder] Duplicate view mapping for instance={state.InstanceId}. Overwriting.");
