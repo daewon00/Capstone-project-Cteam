@@ -162,6 +162,11 @@ public class GameInitializer : MonoBehaviour
         deckService.LoadAndPrepareDeck(runId);
         ServiceRegistry.Register<IDeckService>(deckService);
 
+        // relicserivce
+        //var relicService = new RelicService(dbFacade);
+        //ServiceRegistry.Register<IRelicService>(relicService);
+        //relicService.LoadAndPrepareRelics(runId);
+
         // 7.5. 런 서비스 등록: 전투 결과 커밋/라우팅 담당 (카탈로그 주입)
         var runService = new RunService(dbFacade, _rng, cardCatalog);
         ServiceRegistry.Register<IRunService>(runService);

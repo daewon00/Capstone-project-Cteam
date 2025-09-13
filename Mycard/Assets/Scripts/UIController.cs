@@ -104,6 +104,7 @@ public class UIController : MonoBehaviour
     public void AddRelicTest()
     {
         RelicSystem.Instance.AddRelicById("EnemyFirstCardWeakener", stacks: 1);
+
     }
 
     public void AddSword()
@@ -214,7 +215,7 @@ public class UIController : MonoBehaviour
     
     public void AddRelic()
     {
-        RelicSystem.Instance.AddRelicById("WarBanner", stacks: 1);
+        //RelicSystem.Instance.AddRelicById("WarBanner", stacks: 1);
     }
 
     public void Pauseup()

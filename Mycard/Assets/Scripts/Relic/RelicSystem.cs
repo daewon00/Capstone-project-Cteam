@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
+using Game.Save;
+using UnityEngine.SceneManagement;
 
 #region Save DTOs
 [Serializable]
@@ -20,6 +22,7 @@ public class RelicSaveData
 
 public class RelicSystem : MonoBehaviour
 {
+     
     public static RelicSystem Instance { get; private set; }
 
     [SerializeField] private RelicsUI relicsUI;   // 옵션(UI 표시)
@@ -46,11 +49,13 @@ public class RelicSystem : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         BuildIndex(); // DB 인덱싱
+        
     }
 
     private void Start()
     {
-        //LoadRelics();//씬 시작 시 자동으로 불러오기용
+        
+        LoadRelics();//씬 시작 시 자동으로 불러오기용
         //RelicSystem.Instance.LoadRelics(); //수동으로 불러올 거면 아무 곳에서나 호출.
     }
 
@@ -146,7 +151,7 @@ public class RelicSystem : MonoBehaviour
 
             relicsUI?.UpdateStacks(existing);
             FireRelicsChanged();
-            if (save) SaveRelics();
+            if (save) TryPersistToDbOrPrefs();
             return true;
         }
 
@@ -162,7 +167,7 @@ public class RelicSystem : MonoBehaviour
 
         relicsUI?.AddOrStack(relic);
         FireRelicsChanged();
-        if (save) SaveRelics();
+        if (save) TryPersistToDbOrPrefs();
         return true;
     }
     public void RemoveRelic(string relicId, bool save = true)
@@ -174,7 +179,7 @@ public class RelicSystem : MonoBehaviour
         relics.RemoveAt(idx);
         relicsUI?.Remove(relicId);
         FireRelicsChanged();
-        if (save) SaveRelics();
+        if (save) TryPersistToDbOrPrefs();
     }
 
     public void ClearRelics(bool save = true)
@@ -183,7 +188,7 @@ public class RelicSystem : MonoBehaviour
         relics.Clear();
         relicsUI?.Refresh(relics);
         FireRelicsChanged();
-        if (save) SaveRelics();
+        if (save) TryPersistToDbOrPrefs();
     }
 
     public int CountStacks(string relicId)
@@ -238,39 +243,42 @@ public class RelicSystem : MonoBehaviour
     #region Save / Load (PlayerPrefs + JSON)
     public void SaveRelics()
     {
+        // ★ DB가 가능한 상황(런 진행 중)이면 DB에 저장
+        var runId = PlayerPrefs.GetString("lastRunId", "");
+        if (!string.IsNullOrEmpty(runId))
+        {
+            SaveRelicsToDb(runId);
+            return;
+        }
+        /*
+        // ---- 이하: 기존 PlayerPrefs JSON 저장 (메뉴/테스트용 폴백) ----
         var data = new RelicSaveData();
         foreach (var r in relics)
         {
             if (r?.Data == null || string.IsNullOrEmpty(r.Data.relicId)) continue;
             data.entries.Add(new RelicSaveEntry { id = r.Data.relicId, stacks = Mathf.Max(1, r.Stacks) });
         }
-
         string json = JsonUtility.ToJson(data);
         PlayerPrefs.SetString(PlayerPrefsKey, json);
-        PlayerPrefs.Save();
-        // DeckController와 같은 방식: PlayerPrefs + JsonUtility【turn2file9†DeckController.cs†L32-L51】
+        PlayerPrefs.Save();*/
     }
 
     public bool LoadRelics(bool clearBeforeLoad = true)
     {
-        if (!PlayerPrefs.HasKey(PlayerPrefsKey)) return false;
+        // ★ 런이 있으면 DB에서 불러오기 우선
+        var runId = PlayerPrefs.GetString("lastRunId", "");
+        if (!string.IsNullOrEmpty(runId))
+            return LoadRelicsFromDb(runId, clearBeforeLoad);
 
+        // ---- 이하: 기존 PlayerPrefs JSON 로드 (메뉴/테스트용 폴백) ----
+        if (!PlayerPrefs.HasKey(PlayerPrefsKey)) return false;
         string json = PlayerPrefs.GetString(PlayerPrefsKey);
         var data = JsonUtility.FromJson<RelicSaveData>(json);
         if (data == null || data.entries == null) return false;
 
         if (clearBeforeLoad) ClearRelics(false);
-
         foreach (var e in data.entries)
-        {
-            // DB에 없으면 스킵(경고)
-            if (!dbById.ContainsKey(e.id))
-            {
-                Debug.LogWarning($"[RelicSystem] 로드 실패: 알 수 없는 relicId {e.id}");
-                continue;
-            }
             AddRelicById(e.id, Mathf.Max(1, e.stacks), save: false);
-        }
 
         relicsUI?.Refresh(relics);
         FireRelicsChanged();
@@ -336,149 +344,54 @@ public class RelicSystem : MonoBehaviour
      
      
      */
-}
-
-
-/*
- 기존코드
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine; 
-
-
-
- public class RelicSystem : MonoBehaviour
-{
-    public static RelicSystem Instance { get; private set; }
-
-    [SerializeField] private RelicsUI relicsUI;   // 옵션(UI 표시)
-
-    private readonly List<Relic> relics = new();
-
-    private void Awake()
+    private void TryPersistToDbOrPrefs()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-    }
-
-    private void OnEnable()
-    {
-        // 이벤트 구독
-        GameEvents.OnBattleStart += HandleBattleStart;
-        GameEvents.OnBattleEnd += HandleBattleEnd;
-        GameEvents.OnTurnStart += HandleTurnStart;
-        GameEvents.OnTurnEnd += HandleTurnEnd;
-        GameEvents.OnCardDrawn += HandleCardDrawn;
-        GameEvents.OnCardPlayed += HandleCardPlayed;
-        GameEvents.OnDamageDealt += HandleDamageDealt;
-
-        // 체인형 수정자 연결(누가 먼저 연결되든 null 안전)
-        GameEvents.ModifyPlayerAttack += ChainModifyPlayerAttack;
-        GameEvents.ModifyPlayerMana += ChainModifyPlayerMana;
-    }
-
-    private void OnDisable()
-    {
-        GameEvents.OnBattleStart -= HandleBattleStart;
-        GameEvents.OnBattleEnd -= HandleBattleEnd;
-        GameEvents.OnTurnStart -= HandleTurnStart;
-        GameEvents.OnTurnEnd -= HandleTurnEnd;
-        GameEvents.OnCardDrawn -= HandleCardDrawn;
-        GameEvents.OnCardPlayed -= HandleCardPlayed;
-        GameEvents.OnDamageDealt -= HandleDamageDealt;
-
-        GameEvents.ModifyPlayerAttack -= ChainModifyPlayerAttack;
-        GameEvents.ModifyPlayerMana -= ChainModifyPlayerMana;
-    }
-
-    public void NotifyStackChanged(Relic r)
-    {
-        relicsUI?.UpdateStacks(r);
-        FireRelicsChanged();
-    }
-
-    public event System.Action RelicsChanged; //추가+++
-    private void FireRelicsChanged() => RelicsChanged?.Invoke(); //추가+++
-
-    #region Public API
-    public void AddRelic(Relic newRelic)
-    {
-        // 동일 ID 스택 처리
-        var existing = relics.Find(r => r.Data.relicId == newRelic.Data.relicId);
-        if (existing != null && existing.Data.stackable)
+        // GameInitializer/Map 등에서 세팅한 현재 런 ID를 PlayerPrefs로 읽습니다.
+        var runId = PlayerPrefs.GetString("lastRunId", "");
+        if (string.IsNullOrEmpty(runId))
         {
-            existing.AddStack();
-            relicsUI?.UpdateStacks(existing); // 스택 텍스트만 갱신
-            FireRelicsChanged();              // <- 추가
+            // 런이 없으면 메뉴/에디터 테스트 상황 → 기존 PlayerPrefs 저장 유지
+            SaveRelics();
             return;
         }
-
-        relics.Add(newRelic);
-        newRelic.OnAdd();
-        relicsUI?.AddOrStack(newRelic);
-        FireRelicsChanged();              // <- 추가
+        SaveRelicsToDb(runId);
     }
-
-    public void RemoveRelic(string relicId)
+    private void SaveRelicsToDb(string runId)
     {
-        var idx = relics.FindIndex(r => r.Data.relicId == relicId);
-        if (idx >= 0)
+        var rows = new List<RelicInPossession>(relics.Count);
+        foreach (var r in relics)
         {
-            relics[idx].OnRemove();
-            relics.RemoveAt(idx);
-            //relicsUI?.Refresh(relics);
-            relicsUI?.Remove(relicId);
-            FireRelicsChanged();              // <- 추가
+            if (r?.Data == null || string.IsNullOrEmpty(r.Data.relicId)) continue;
+            rows.Add(new RelicInPossession
+            {
+                RunId = runId,
+                RelicId = r.Data.relicId,
+                Stacks = Mathf.Max(1, r.Stacks),
+                Cooldown = 0,        // 필요 시 유물 구현에 맞춰 채우기
+                UsesLeft = -1,       // -1 = 무제한 (규약)
+                StateJson = string.Empty
+            });
         }
+        DatabaseManager.Instance.ReplaceRelics(runId, rows);
     }
-    #endregion
+    public bool LoadRelicsFromDb(string runId, bool clearBeforeLoad = true)
+    {
+        var loaded = DatabaseManager.Instance.LoadCurrentRun(runId);
+        var rows = loaded?.Relics;
+        if (rows == null) return false;
 
-    #region Event Handlers
-    private void HandleBattleStart()
-    {
-        foreach (var r in relics) r.OnBattleStart();
-    }
-    private void HandleBattleEnd()
-    {
-        foreach (var r in relics) r.OnBattleEnd();
-    }
-    private void HandleTurnStart(bool isPlayer)
-    {
-        foreach (var r in relics) r.OnTurnStart(isPlayer);
-    }
-    private void HandleTurnEnd(bool isPlayer)
-    {
-        foreach (var r in relics) r.OnTurnEnd(isPlayer);
-    }
-    private void HandleCardDrawn(Card c)
-    {
-        foreach (var r in relics) r.OnCardDrawn(c);
-    }
-    private void HandleCardPlayed(Card c)
-    {
-        foreach (var r in relics) r.OnCardPlayed(c);
-    }
-    private void HandleDamageDealt(int dmg, bool fromPlayer)
-    {
-        foreach (var r in relics) r.OnDamageDealt(dmg, fromPlayer);
+        if (clearBeforeLoad) ClearRelics(save: false);
+
+        foreach (var row in rows)
+        {
+            // DB가 ‘유물ID + 스택’을 들고 있으므로 기존 편의 함수로 재구성
+            AddRelicById(row.RelicId, Mathf.Max(1, row.Stacks), save: false);
+        }
+
+        relicsUI?.Refresh(relics);
+        FireRelicsChanged();
+        return true;
     }
 
-    private int ChainModifyPlayerAttack(int baseAttack)
-    {
-        int v = baseAttack;
-        foreach (var r in relics) v = r.ModifyPlayerAttack(v);
-        return v;
-    }
-    private int ChainModifyPlayerMana(int curMana)
-    {
-        int v = curMana;
-        foreach (var r in relics) v = r.ModifyPlayerMana(v);
-        return v;
-    }
-    #endregion
+
 }
-
- 
- 
- */

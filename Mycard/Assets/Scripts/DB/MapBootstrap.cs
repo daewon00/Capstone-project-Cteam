@@ -8,6 +8,7 @@ public class MapBootstrap : MonoBehaviour
     [Header("씬(Scene)에 있는 오브젝트 연결")]
     public DeckManager deck;
     public MapGenerator mapGenerator;
+    
 
     void Start()
     {
@@ -37,6 +38,7 @@ public class MapBootstrap : MonoBehaviour
         if (deck != null)
         {
             deck.InitForRun(runId, data.Cards);
+
         }
 
         // 맵을 재현합니다.
@@ -45,7 +47,11 @@ public class MapBootstrap : MonoBehaviour
             // runId를 사용해 고유한 숫자 시드를 만들고, 맵을 다시 생성합니다.
             mapGenerator.RegenerateWithSeed(runId.GetHashCode());
         }
+        //
+        RelicSystem.Instance?.LoadRelicsFromDb(runId, clearBeforeLoad: true);
 
         Debug.Log($"[MapBootstrap] 런({runId}) 로드 완료. 카드: {data.Cards.Count}장");
+
+        
     }
 }

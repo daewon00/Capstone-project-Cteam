@@ -67,4 +67,6 @@ public interface IDatabase
     List<PerkAllocation> LoadPerkAllocations(string profileId);
     void SavePerkAllocations(string profileId, IEnumerable<PerkAllocation> perks);
     void ApplyPerkAdjustments(string profileId, IEnumerable<PerkAllocation> perks, int pointsDelta);
+    
+    
 }

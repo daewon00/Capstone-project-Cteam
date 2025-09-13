@@ -307,17 +307,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2261864374254778181, guid: 3f4a3af4ca33d5c41a8cd37f708ebe48, type: 3}
   m_PrefabInstance: {fileID: 9050268559666496744}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &316215157 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4352469265504193420, guid: 35f45198b2f1d8243822b929206ec871, type: 3}
-  m_PrefabInstance: {fileID: 1465026022295914122}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d90c54a15f0d8bc43b812ae929ac0cf0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!224 &316215158 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 310247884154420315, guid: 35f45198b2f1d8243822b929206ec871, type: 3}
@@ -6001,8 +5990,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 424797169178167935}
-        m_TargetAssemblyTypeName: UIController, Assembly-CSharp
-        m_MethodName: AddBanana
+        m_TargetAssemblyTypeName: UIController, Game.Runtime
+        m_MethodName: AddRelicTest
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -7204,67 +7193,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!1001 &4925314712203319056
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2690065756217384021, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_Name
-      value: RelicSystem
-      objectReference: {fileID: 0}
-    - target: {fileID: 6062642738649026198, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: relicsUI
-      value: 
-      objectReference: {fileID: 316215157}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 549.9444
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1057.0267
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7517984855347347369, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 09fe51ede1d07f045acd52e15c49b14d, type: 3}
 --- !u!224 &4953983175503956641
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11168,6 +11096,5 @@ SceneRoots:
   - {fileID: 116867751099021717}
   - {fileID: 1029039859}
   - {fileID: 9050268559666496744}
-  - {fileID: 4925314712203319056}
   - {fileID: 1842348417}
   - {fileID: 127493602}

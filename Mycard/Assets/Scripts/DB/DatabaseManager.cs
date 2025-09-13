@@ -701,5 +701,6 @@ public sealed class DatabaseManager
         profile.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
         _conn.InsertOrReplace(profile);
     }
-    
+
+
 }
