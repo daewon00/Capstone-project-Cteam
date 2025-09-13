@@ -357,12 +357,27 @@ public class BattleController : MonoBehaviour
         try
         {
             _deckService.SetHandLimit(_handLimit);
+            // 새 전투 시작 전, 더미 초기화/셔플을 보장
+            _deckService.PrepareNewCombat();
             _deckService.DrawCards(_initialHandCount, DrawReason.TurnStart);
         }
         catch (System.Exception e)
         {
             Debug.LogError($"[BattleController] 초기 드로우 실패: {e.Message}");
         }
+    }
+
+    private void OnDestroy()
+    {
+        // 씬 전환 등으로 파괴될 때, 전투가 시작된 상태였다면 남은 핸드 정리를 보장
+        try
+        {
+            if (_isInitialized && _battleStarted && _deckService != null)
+            {
+                _deckService.CleanupAfterCombat();
+            }
+        }
+        catch { }
     }
 
     //플레이어에게 데미지를 주는 함수
@@ -420,6 +435,8 @@ public class BattleController : MonoBehaviour
     {
         battleEnded = true;
         GameEvents.OnBattleEnd?.Invoke();      // +++ 전투 종료 알림
+        // 덱 서비스 측 상태 정리(남은 핸드 → Discard 등)
+        try { _deckService?.CleanupAfterCombat(); } catch { }
         HandController.instance.EmptyHand();    //핸드 제거
 
         if(enemyHealth <= 0)    // 적 체력 0 이하 승리시

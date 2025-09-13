@@ -52,6 +52,17 @@ public interface IDeckService
     DrawResult DrawCards(int amount, DrawReason reason = DrawReason.Unknown);
     PlayResult PlayCard(string instanceId);
 
+    // --- 전투 수명주기 API ---
+    /// <summary>
+    /// 새 전투를 준비합니다. 전투 종료 시점의 모든 더미(Hand/Discard/Exhaust 포함)를 DrawPile로 모으고 셔플합니다.
+    /// </summary>
+    void PrepareNewCombat();
+
+    /// <summary>
+    /// 전투 종료 정리 단계에서 호출합니다. 남아 있는 Hand를 Discard로 이동하는 등 마무리를 수행합니다.
+    /// </summary>
+    void CleanupAfterCombat();
+
     // --- UI 조회용 API ---
     int GetPileCount(CardLocation location);
     IReadOnlyList<CardRuntimeState> GetHandSnapshot();

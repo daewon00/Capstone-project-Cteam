@@ -139,6 +139,65 @@ public class DeckService : IDeckService
         return result;
     }
 
+    public void PrepareNewCombat()
+    {
+        EnsureInitialized();
+
+        // 모든 카드를 DrawPile로 모은 후 셔플하여 전투 시작 상태를 준비합니다.
+        // 1) 내부 리스트 재구성: 전 카드 ID 모으기
+        var allIds = _cardsById.Keys.ToList();
+
+        _drawPileIds.Clear();
+        _handIds.Clear();
+        _discardPileIds.Clear();
+        _exhaustPileIds.Clear();
+
+        _drawPileIds.AddRange(allIds);
+        foreach (var id in allIds)
+        {
+            var c = _cardsById[id];
+            c.Location = CardLocation.DrawPile;
+        }
+
+        // 2) 셔플 + 순서 재부여(값이 클수록 Top)
+        TryEnsureSeeded("deck-shuffle");
+        _rng.Shuffle("deck-shuffle", _drawPileIds);
+        for (int i = 0; i < _drawPileIds.Count; i++)
+        {
+            var id = _drawPileIds[i];
+            _cardsById[id].OrderInPile = i;
+        }
+
+        // 3) 보조 인덱스 갱신 + 저장/브로드캐스트(카운터 업데이트)
+        RecomputeNextOrderInPiles();
+        PersistAndBroadcast();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        var counts = GetCurrentPileCounts();
+        Debug.Log($"[DeckService] PrepareNewCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
+#endif
+    }
+
+    public void CleanupAfterCombat()
+    {
+        EnsureInitialized();
+
+        // 남아있는 핸드 카드를 모두 Discard로 이동(전투 종료 시 핸드 비우기 정합성 보장)
+        if (_handIds.Count > 0)
+        {
+            var handCopy = _handIds.ToList();
+            foreach (var id in handCopy)
+            {
+                MoveCard(id, CardLocation.DiscardPile);
+            }
+        }
+
+        PersistAndBroadcast();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        var counts = GetCurrentPileCounts();
+        Debug.Log($"[DeckService] CleanupAfterCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
+#endif
+    }
+
     public PlayResult PlayCard(string instanceId)
     {
         EnsureInitialized();
