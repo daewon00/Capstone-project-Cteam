@@ -11,10 +11,21 @@ public sealed class AchievementService : IAchievementService
     private readonly List<string> _newlyUnlocked = new();
     private string _profileId = "P1";
 
+    // In-memory counters for single-run achievements (e.g., floors traversed per run)
+    private readonly Dictionary<string, int> _singleRunFloorCount = new(System.StringComparer.OrdinalIgnoreCase);
+
     public AchievementService(IDatabase db)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _defs = LoadDefinitions();
+
+        // Subscribe to meta events where the service owns the logic
+        try
+        {
+            MetaEvents.OnFloorReached += HandleFloorReached;
+            MetaEvents.OnRunEnded += HandleRunEnded;
+        }
+        catch { }
     }
 
     public void RebindProfile(string profileId)
@@ -145,5 +156,79 @@ public sealed class AchievementService : IAchievementService
             dict[firstWin.Id] = firstWin;
         }
         return dict;
+    }
+
+    // --- Meta event handlers (service-owned logic) ---
+    private void HandleFloorReached(MetaEvents.FloorReachedPayload payload)
+    {
+        // Defensive guards
+        if (payload.RunId == null) return;
+
+        // Seed per-run counter from DB if missing (survives reload)
+        if (!_singleRunFloorCount.ContainsKey(payload.RunId))
+        {
+            try
+            {
+                int seed = 0;
+                var lr = _db.LoadCurrentRun(payload.RunId);
+                if (lr != null && lr.Nodes != null)
+                {
+                    // Count distinct visited floors; transitions ≈ visitedFloors - 1
+                    var distinctFloors = new System.Collections.Generic.HashSet<int>();
+                    foreach (var n in lr.Nodes)
+                    {
+                        if (n != null && n.Visited) distinctFloors.Add(n.Floor);
+                    }
+                    seed = Mathf.Max(0, distinctFloors.Count - 1);
+                }
+                _singleRunFloorCount[payload.RunId] = seed;
+            }
+            catch { _singleRunFloorCount[payload.RunId] = 0; }
+        }
+
+        // 1) Total floors traversed: count +1 per FloorReached event, unlock tiered
+        try
+        {
+            ReportProgress("ACH_TRAVERSE_FLOORS_TOTAL_T1", 1);
+            UnlockIfEligible("ACH_TRAVERSE_FLOORS_TOTAL_T1");
+
+            ReportProgress("ACH_TRAVERSE_FLOORS_TOTAL_T2", 1);
+            UnlockIfEligible("ACH_TRAVERSE_FLOORS_TOTAL_T2");
+
+            ReportProgress("ACH_TRAVERSE_FLOORS_TOTAL_T3", 1);
+            UnlockIfEligible("ACH_TRAVERSE_FLOORS_TOTAL_T3");
+        }
+        catch { }
+
+        // 2) Single-run floors traversed: in-memory counter per run
+        try
+        {
+            _singleRunFloorCount.TryGetValue(payload.RunId, out int cur);
+            cur += 1; // +1 per floor reached
+            _singleRunFloorCount[payload.RunId] = cur;
+
+            // Unlock when reaching thresholds. Use definitions if present.
+            if (_defs.TryGetValue("ACH_TRAVERSE_FLOORS_SINGLE_RUN_T1", out var def1))
+            {
+                if (cur >= Math.Max(1, def1.ProgressTarget))
+                {
+                    UnlockDirect(def1.Id, def1.PointsReward);
+                }
+            }
+            if (_defs.TryGetValue("ACH_TRAVERSE_FLOORS_SINGLE_RUN_T2", out var def2))
+            {
+                if (cur >= Math.Max(1, def2.ProgressTarget))
+                {
+                    UnlockDirect(def2.Id, def2.PointsReward);
+                }
+            }
+        }
+        catch { }
+    }
+
+    private void HandleRunEnded(MetaEvents.RunEndedPayload payload)
+    {
+        if (payload.RunId == null) return;
+        _singleRunFloorCount.Remove(payload.RunId);
     }
 }

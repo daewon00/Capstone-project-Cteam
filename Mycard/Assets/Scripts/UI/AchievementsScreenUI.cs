@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Game.Save;
 using System; // for StringComparer
+using UnityEngine.UI;
 
 public class AchievementsScreenUI : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class AchievementsScreenUI : MonoBehaviour
     [SerializeField] private AchievementSlotUI slotPrefab;
     [SerializeField] private TMP_Text summaryText;
     [SerializeField] private UnityEngine.UI.Button closeButton;
+    [SerializeField] private ScrollRect scrollRect; // optional: auto-found if not bound
 
     private IAchievementService _achievements;
     private IDatabase _db;
@@ -34,6 +36,13 @@ public class AchievementsScreenUI : MonoBehaviour
         {
             closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(Hide);
+        }
+
+        if (scrollRect == null)
+        {
+            // Auto-bind first ScrollRect under screenRoot if not wired in Inspector
+            var root = screenRoot != null ? screenRoot.transform : transform;
+            scrollRect = root.GetComponentInChildren<ScrollRect>(true);
         }
 
         if (screenRoot) screenRoot.SetActive(false);
@@ -91,6 +100,24 @@ public class AchievementsScreenUI : MonoBehaviour
             var slot = Instantiate(slotPrefab, slotsContainer);
             slot.Init(def, prog, isNew);
         }
+
+        // Refresh layout + reset scroll to top
+        try
+        {
+            Canvas.ForceUpdateCanvases();
+            var rt = slotsContainer as RectTransform;
+            if (rt != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+                // Some layout setups need two passes
+                LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+            }
+            if (scrollRect != null)
+            {
+                scrollRect.verticalNormalizedPosition = 1f; // top
+            }
+        }
+        catch { }
 
         if (summaryText)
         {

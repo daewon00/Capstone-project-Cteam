@@ -147,6 +147,25 @@ public class GameInitializer : MonoBehaviour
             catch { }
         };
 
+        // 적 카드 파괴 카운트 → 티어 업적 진행/해금
+        MetaEvents.OnEnemyCardDestroyed += payload =>
+        {
+            try
+            {
+                var ach = ServiceRegistry.Get<IAchievementService>();
+                ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS_T1", 1);
+                ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS_T1");
+                ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS_T2", 1);
+                ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS_T2");
+                ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS_T3", 1);
+                ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS_T3");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[BossFlow][GI] OnEnemyCardDestroyed handler executed.");
+#endif
+            }
+            catch { }
+        };
+
         // 층 도달/골드 변경 등은 이후 확장 시 매핑을 추가합니다.
 
         // 6. EventManager 등록: runId가 있을 때만 등록(클리어 직후 등 런이 없을 때는 건너뜀)

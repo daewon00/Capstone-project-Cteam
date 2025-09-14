@@ -34,11 +34,19 @@ public static class MetaEvents
         public int After;
     }
 
+    public struct EnemyCardDestroyedPayload
+    {
+        public string RunId;
+        public string CardId;
+        public string InstanceId;
+    }
+
     // --- Events ---
     public static event Action<CombatVictoryPayload> OnCombatVictory;
     public static event Action<RunEndedPayload> OnRunEnded;
     public static event Action<FloorReachedPayload> OnFloorReached;
     public static event Action<GoldChangedPayload> OnGoldChanged;
+    public static event Action<EnemyCardDestroyedPayload> OnEnemyCardDestroyed;
 
     // --- Raisers ---
     public static void RaiseCombatVictory(CombatVictoryPayload payload)
@@ -71,5 +79,13 @@ public static class MetaEvents
         UnityEngine.Debug.Log($"[MetaEvents] GoldChanged: run={payload.RunId}, delta={payload.Delta}, after={payload.After}");
 #endif
         OnGoldChanged?.Invoke(payload);
+    }
+
+    public static void RaiseEnemyCardDestroyed(EnemyCardDestroyedPayload payload)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        UnityEngine.Debug.Log($"[MetaEvents] EnemyCardDestroyed: run={payload.RunId}, card={payload.CardId}, inst={payload.InstanceId}");
+#endif
+        OnEnemyCardDestroyed?.Invoke(payload);
     }
 }

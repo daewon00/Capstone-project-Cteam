@@ -42,6 +42,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public string InstanceId { get; private set; }
     private IDeckService _deckService;
     private bool _isInteractable = true;
+    private bool _destroyBroadcasted; // 업적/메타 이벤트 중복 방지
 
     // 이벤트 기반 입력 상태(탭/드래그 구분)
     private bool _isDragging;
@@ -182,6 +183,33 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             currentHealth = 0;
             assignedPlace.activeCard = null;    // 자리 비우고
+
+            // 적 카드 파괴 브로드캐스트(중복 1회 보장)
+            if (!_destroyBroadcasted && !isPlayer)
+            {
+                _destroyBroadcasted = true;
+                try
+                {
+                    var runId = (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
+                        ? GameContext.I.RunId
+                        : PlayerPrefs.GetString("lastRunId", "");
+                    if (!string.IsNullOrEmpty(runId))
+                    {
+                        string cid = string.Empty;
+                        if (cardSO != null)
+                        {
+                            cid = !string.IsNullOrEmpty(cardSO.CardId) ? cardSO.CardId : (cardSO.cardName ?? string.Empty);
+                        }
+                        MetaEvents.RaiseEnemyCardDestroyed(new MetaEvents.EnemyCardDestroyedPayload
+                        {
+                            RunId = runId,
+                            CardId = cid,
+                            InstanceId = InstanceId
+                        });
+                    }
+                }
+                catch { }
+            }
             MoveToPoint(BattleController.instance.discardPoint.position, BattleController.instance.discardPoint.rotation);  // 묘지로 이동
             anim.SetTrigger("Jump");    // 점프 애니메이션
             Destroy(gameObject, 5f);    // 5초뒤 카드 제거
