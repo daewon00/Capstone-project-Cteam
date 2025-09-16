@@ -42,7 +42,9 @@ public class BattleController : MonoBehaviour
         {
             Debug.LogWarning("[BattleController] IDeckService를 찾지 못했습니다. 추후 단계에서 연결 예정.");
         }
+
     }
+
 
     /// <summary>
     /// Bootstrap/초기화 시점에 IDeckService를 주입받습니다. (향후 전투 시작/턴 흐름에서 사용)
@@ -105,8 +107,8 @@ public class BattleController : MonoBehaviour
             currentPhase = TurnOrder.playerCardAttacks;
             AdvanceTurn();
         }
-
-        //AudioManager.instance.PlayBGM();
+        AudioManager.instance.StopMusic();
+        AudioManager.instance.PlayBGM();
 
     }
 
@@ -451,6 +453,13 @@ public class BattleController : MonoBehaviour
                     point.activeCard.MoveToPoint(discardPoint.position, point.activeCard.transform.rotation);
                 }
             }
+            foreach (CardPlacePoint point in CardPointsController.instance.enemyStayPoints)
+            {
+                if (point.activeCard != null)
+                {
+                    point.activeCard.MoveToPoint(discardPoint.position, point.activeCard.transform.rotation);
+                }
+            }
         }
         else // 패배시 *필드에 남아있는 카드 제거 하는거 꼭 해야되는거면 패배 승리 상관 없이 전부 해야되는거 아닌가?*
         {
@@ -464,6 +473,7 @@ public class BattleController : MonoBehaviour
                     point.activeCard.MoveToPoint(discardPoint.position, point.activeCard.transform.rotation);
                 }
             }
+
         }
         
         UIController.instance.EnemyUI.SetActive(false);

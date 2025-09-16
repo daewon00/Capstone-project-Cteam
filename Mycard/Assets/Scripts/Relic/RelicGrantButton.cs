@@ -4,8 +4,11 @@ using UnityEngine;
 
 public class RelicGrantButton : MonoBehaviour
 {
+    
     public void AddRelicTest()
     {
-        RelicSystem.Instance.AddRelicById("ExtraDraw", stacks: 1);
+        RelicSystem.Instance.AddRelicById("EnemyFirstCardWeakener", stacks: 1);
     }
+
+
 }

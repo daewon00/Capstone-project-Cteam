@@ -23,40 +23,6 @@ public class GameContext : MonoBehaviour
         if (I != null) { Destroy(gameObject); return; }
         I = this; DontDestroyOnLoad(gameObject);
 
-        /*if (I == null)
-        {
-            I= this;
-            DontDestroyOnLoad(gameObject);
-            InitializeManager();
-            
-        }else if(I != this)
-        {
-            Destroy(gameObject);
-        }*/
     }
-
-
-    /*
-    private void InitializeManager()
-    {
-        DeckController = GetComponent<DeckController>();
-
-        if (DeckController != null)
-        {
-            GameObject prefab = Resources.Load<GameObject>("prefabs/DeckController"); //덱 컨트롤러를 프리팹에서 찾습니다
-            if(prefab == null)
-            {
-                Debug.Log("DeckController Prefabs not found");
-
-            }
-            else
-            {
-                Instantiate(prefab,transform.position, Quaternion.identity, transform);
-                DeckController = GetComponentInChildren<DeckController>();
-                //덱 컨트롤러를 게임 콘텍스트 밑에 불러옵니다 만약 잘 작동하면 배틀의 덱 컨트롤러를 지워도 될겁니다
-            }
-        }
-    }*/
-
 
 }

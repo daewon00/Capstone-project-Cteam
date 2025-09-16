@@ -104,15 +104,13 @@ public class UIController : MonoBehaviour
     public void AddRelicTest()
     {
         RelicSystem.Instance.AddRelicById("EnemyFirstCardWeakener", stacks: 1);
+        Debug.LogWarning("Relic추가됨");
 
     }
 
-    public void AddSword()
+    public void Addknight()
     {
-        /*GameObject SwordObject = new GameObject("SwordItem"); //아이템 오브젝트를 새로 만들어줍니다
-        Sword SwordItem = SwordObject.AddComponent<Sword>(); //아이템 스크립트를 불러와요
-        Inventory.Instance.AddItem(SwordItem);
-        SwordItem.OnAddItem();*/
+        RelicSystem.Instance.AddRelicById("COMP_COMP_Knight", stacks: 1);
     }
 
     public void AddWarBanner()

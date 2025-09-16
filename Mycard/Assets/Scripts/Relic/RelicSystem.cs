@@ -54,9 +54,9 @@ public class RelicSystem : MonoBehaviour
 
     private void Start()
     {
-        
-        LoadRelics();//씬 시작 시 자동으로 불러오기용
-        //RelicSystem.Instance.LoadRelics(); //수동으로 불러올 거면 아무 곳에서나 호출.
+        var runId = PlayerPrefs.GetString("lastRunId", "");
+        //LoadRelics();//씬 시작 시 자동으로 불러오기용
+        LoadRelicsFromDb(runId, clearBeforeLoad: true); //수동으로 불러올 거면 아무 곳에서나 호출.
     }
 
     public void AttachUI(RelicsUI ui)
@@ -122,6 +122,7 @@ public class RelicSystem : MonoBehaviour
             case "ManaDiscount": return new ManaDiscountRelic(data);//
             case "EnemyManaLeech": return new EnemyManaLeechRelic(data);//
             case "EnemyFirstCardWeakener": return new EnemyFirstCardWeakenerRelic(data);//
+            case "COMP_COMP_Knight": return new COMP_COMP_KnightRelic(data);//
             // TODO: 새 유물을 추가할 때 case 추가
             default:
                 Debug.LogWarning($"[RelicSystem] 알 수 없는 relicId: {relicId}");

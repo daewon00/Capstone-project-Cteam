@@ -7,6 +7,7 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
+        
         if (instance == null)
         {
 
@@ -21,6 +22,7 @@ public class AudioManager : MonoBehaviour
 
     public AudioSource menuMusic;   //메인 메뉴 BGM
     public AudioSource battleSelectMusic;   //전투 화면 BGM
+    public AudioSource MapMusic;
     public AudioSource[] bgm;   //BGM 목록
     private int currentBGM;     //BGM 인덱스
     private bool playingBGM;    //BGM 목록 재생 참거짓
@@ -56,6 +58,7 @@ public class AudioManager : MonoBehaviour
     {
         menuMusic.Stop();
         battleSelectMusic.Stop();
+        MapMusic.Stop();
         foreach (AudioSource track in bgm)
         {
             track.Stop();
@@ -79,6 +82,16 @@ public class AudioManager : MonoBehaviour
             StopMusic();
             battleSelectMusic.Play();
         }
+    }
+
+    public void PlayMapMusic() 
+    {
+        if (MapMusic.isPlaying == false)
+        {
+            StopMusic();
+            MapMusic.Play();
+        }
+
     }
 
     //BGM 목록중 랜덤 BGM 재생
