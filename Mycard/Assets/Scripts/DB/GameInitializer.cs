@@ -204,6 +204,16 @@ public class GameInitializer : MonoBehaviour
         }
 
         Debug.Log("GameInitializer: 모든 시스템 조립 및 등록이 완료되었습니다.");
+
+        // 9. 업적 토스트 컨트롤러를 보장(중복 생성 방지용으로 1개만 유지)
+        try
+        {
+            if (FindObjectsOfType<AchievementsToastController>(true).Length == 0)
+            {
+                gameObject.AddComponent<AchievementsToastController>();
+            }
+        }
+        catch { }
     }
 
     private static void TryEnsureSeeded(IRngService rng, string domain, string runId)

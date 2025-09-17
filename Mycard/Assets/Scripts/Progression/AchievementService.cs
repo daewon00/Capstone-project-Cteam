@@ -74,6 +74,23 @@ public sealed class AchievementService : IAchievementService
         _db.UpsertAchievementProgress(row);
         _db.AddPerkPoints(_profileId, points);
         _newlyUnlocked.Add(achievementId);
+
+        // Broadcast unlock for real-time UI (toast)
+        try
+        {
+            _defs.TryGetValue(achievementId, out var def);
+            MetaEvents.RaiseAchievementUnlocked(new MetaEvents.AchievementUnlockedPayload
+            {
+                ProfileId = _profileId,
+                AchievementId = achievementId,
+                DisplayName = def != null ? def.DisplayName : achievementId,
+                Description = def != null ? def.Description : string.Empty,
+                Points = (def != null && def.PointsReward > 0) ? def.PointsReward : points,
+                UnlockedAtUtc = row.UnlockedAtUtc,
+                RunId = GameContext.I != null ? GameContext.I.RunId : string.Empty
+            });
+        }
+        catch { }
     }
 
     public void Flush()

@@ -41,12 +41,24 @@ public static class MetaEvents
         public string InstanceId;
     }
 
+    public struct AchievementUnlockedPayload
+    {
+        public string ProfileId;
+        public string AchievementId;
+        public string DisplayName;
+        public string Description;
+        public int Points;
+        public string UnlockedAtUtc;
+        public string RunId; // optional
+    }
+
     // --- Events ---
     public static event Action<CombatVictoryPayload> OnCombatVictory;
     public static event Action<RunEndedPayload> OnRunEnded;
     public static event Action<FloorReachedPayload> OnFloorReached;
     public static event Action<GoldChangedPayload> OnGoldChanged;
     public static event Action<EnemyCardDestroyedPayload> OnEnemyCardDestroyed;
+    public static event Action<AchievementUnlockedPayload> OnAchievementUnlocked;
 
     // --- Raisers ---
     public static void RaiseCombatVictory(CombatVictoryPayload payload)
@@ -87,5 +99,13 @@ public static class MetaEvents
         UnityEngine.Debug.Log($"[MetaEvents] EnemyCardDestroyed: run={payload.RunId}, card={payload.CardId}, inst={payload.InstanceId}");
 #endif
         OnEnemyCardDestroyed?.Invoke(payload);
+    }
+
+    public static void RaiseAchievementUnlocked(AchievementUnlockedPayload payload)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        UnityEngine.Debug.Log($"[MetaEvents] AchievementUnlocked: id={payload.AchievementId}, name={payload.DisplayName}, +{payload.Points}pt");
+#endif
+        OnAchievementUnlocked?.Invoke(payload);
     }
 }
