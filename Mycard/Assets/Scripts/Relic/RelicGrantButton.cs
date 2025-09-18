@@ -7,7 +7,7 @@ public class RelicGrantButton : MonoBehaviour
     
     public void AddRelicTest()
     {
-        RelicSystem.Instance.AddRelicById("EnemyFirstCardWeakener", stacks: 1);
+        RelicSystem.Instance.AddRelicById("COMP_COMP_Knight", stacks: 1);
     }
 
 
