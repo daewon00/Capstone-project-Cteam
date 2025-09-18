@@ -1,6 +1,10 @@
 using UnityEngine;
 using Game.Save;
 using System.Linq;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine.SceneManagement;
 
 // Runtime debug overlay for testing progression without clearing the game each time.
 // Toggle with F10 (Editor or Development builds).
@@ -19,6 +23,13 @@ public class ProgressionDebugOverlay : MonoBehaviour
     private float _userScale = 1f;
     private const string ScalePrefsKey = "dbg.overlay.scale";
 
+    // Danger Zone (data wipe) state
+    private bool _dangerExpanded;
+    private string _dangerConfirm = string.Empty; // must type DELETE
+    private bool _alsoDeletePrefs = true;
+    private bool _reloadMainMenuAfterWipe = true;
+    private string _lastWipeLog = string.Empty;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
     {
@@ -35,17 +46,15 @@ public class ProgressionDebugOverlay : MonoBehaviour
         _db = ServiceRegistry.Get<IDatabase>();
         _perk = ServiceRegistry.Get<IPerkService>();
         _mod = ServiceRegistry.Get<IModifierService>();
-        // 1) 개발 빌드에서는 기본 ON (foolproof)
-        if (Debug.isDebugBuild) _visible = true;
-        // 2) 사용자 스케일 로드
+        // 사용자 스케일 로드
         _userScale = Mathf.Clamp(PlayerPrefs.GetFloat(ScalePrefsKey, 1f), 0.5f, 4f);
     }
 
     private void Update()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // PC/에뮬레이터: F10 토글
-        if (Input.GetKeyDown(KeyCode.F10)) _visible = !_visible;
+        // PC/시뮬레이터: 특정 UI 텍스트(Txt_Title) 5회 클릭 시 토글
+        TryHandleTitleClickToggle();
 
         // 모바일: 3손가락 동시 터치로 오버레이 열기/토글
         if (Input.touchCount >= 3)
@@ -171,8 +180,217 @@ public class ProgressionDebugOverlay : MonoBehaviour
         string clampTag = rawScale < MinApplied ? " (min clamp)" : rawScale > MaxApplied ? " (max clamp)" : "";
         GUILayout.Label($"Applied x{scale:0.00} / Raw x{rawScale:0.00}{clampTag}");
         GUILayout.Label("재열기: F10(PC) / 3손가락 터치(모바일)");
+
+        // --- Danger Zone: destructive test tools ---
+        GUILayout.Space(10);
+        GUILayout.Label("[Danger Zone] 테스트용 데이터 삭제");
+        _dangerExpanded = GUILayout.Toggle(_dangerExpanded, _dangerExpanded ? "접기" : "펼치기", GUILayout.Width(80));
+        if (_dangerExpanded)
+        {
+            GUILayout.BeginVertical(GUI.skin.box);
+            // Current Run delete
+            GUILayout.Label("현재 런 데이터 삭제 (Run-only)");
+            if (GUILayout.Button("Delete Current Run", GUILayout.Height(24)))
+            {
+                TryDeleteCurrentRun();
+            }
+            GUILayout.Space(6);
+
+            // Full wipe
+            GUILayout.Label("전체 저장 데이터 삭제 (DB + 옵션: PlayerPrefs)");
+            GUILayout.BeginHorizontal();
+            _alsoDeletePrefs = GUILayout.Toggle(_alsoDeletePrefs, "PlayerPrefs도 삭제", GUILayout.Width(160));
+            _reloadMainMenuAfterWipe = GUILayout.Toggle(_reloadMainMenuAfterWipe, "삭제 후 메인 메뉴", GUILayout.Width(160));
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+            GUILayout.Label("확인 입력: 'DELETE' 입력 후 실행하세요");
+            _dangerConfirm = GUILayout.TextField(_dangerConfirm, GUILayout.Width(200));
+            using (new GuiColorScope(_dangerConfirm == "DELETE" ? Color.white : new Color(1f, 0.6f, 0.6f)))
+            {
+                if (GUILayout.Button("Delete ALL Data", GUILayout.Height(30)))
+                {
+                    if (_dangerConfirm == "DELETE")
+                    {
+                        WipeAllData(_alsoDeletePrefs);
+                        _dangerConfirm = string.Empty;
+                        if (_reloadMainMenuAfterWipe)
+                        {
+                            TryReloadMainMenu();
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[ProgressionDebug] DELETE 확인 입력이 필요합니다.");
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(_lastWipeLog))
+            {
+                GUILayout.Space(4);
+                GUILayout.Label(_lastWipeLog);
+            }
+
+            // DB path hint
+            GUILayout.Space(4);
+            GUILayout.Label($"DB 위치: {Application.persistentDataPath}/game_save.db");
+
+            GUILayout.EndVertical();
+        }
         GUILayout.EndArea();
         GUI.matrix = oldMatrix;
 #endif
     }
+
+    // --- Hidden toggle by clicking a specific UI element name ---
+    private const string TitleObjectName = "Txt_Title"; // 클릭 타겟 이름
+    private const int ClicksToToggle = 5;                // 누적 클릭 수
+    private const float ClickWindowSeconds = 1.5f;       // 누적 허용 시간 간격
+    private int _titleClickCount;
+    private float _lastTitleClickAt;
+
+    private void TryHandleTitleClickToggle()
+    {
+        if (!Input.GetMouseButtonDown(0)) return;
+        var es = EventSystem.current;
+        if (es == null) return;
+        var ped = new PointerEventData(es) { position = Input.mousePosition };
+        var hits = new List<RaycastResult>();
+        es.RaycastAll(ped, hits);
+        if (hits == null || hits.Count == 0) return;
+
+        bool hitTitle = false;
+        for (int i = 0; i < hits.Count; i++)
+        {
+            var go = hits[i].gameObject;
+            if (go != null && go.name == TitleObjectName)
+            {
+                hitTitle = true;
+                break;
+            }
+        }
+        if (!hitTitle) return;
+
+        float now = Time.unscaledTime;
+        if (now - _lastTitleClickAt <= ClickWindowSeconds) _titleClickCount++;
+        else _titleClickCount = 1;
+        _lastTitleClickAt = now;
+
+        if (_titleClickCount >= ClicksToToggle)
+        {
+            _titleClickCount = 0;
+            _visible = !_visible;
+        }
+    }
+
+    private void TryDeleteCurrentRun()
+    {
+        try
+        {
+            var runId = PlayerPrefs.GetString("lastRunId", "");
+            if (!string.IsNullOrEmpty(runId))
+            {
+                // Clean shop/event session rows first (defensive)
+                DatabaseManager.Instance.DeleteActiveShopSession(runId);
+                DatabaseManager.Instance.DeleteActiveEventSession(runId);
+                // Delete run rows
+                DatabaseManager.Instance.DeleteCurrentRun(runId);
+                Debug.Log($"[ProgressionDebug] Current run deleted: {runId}");
+            }
+            PlayerPrefs.DeleteKey("lastRunId");
+            PlayerPrefs.DeleteKey("selectedCompanionId");
+            PlayerPrefs.Save();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[ProgressionDebug] DeleteCurrentRun failed: {e.Message}");
+        }
+    }
+
+    private void WipeAllData(bool alsoPrefs)
+    {
+        var sb = new System.Text.StringBuilder();
+        try { ServiceRegistry.Get<IAchievementService>()?.Flush(); } catch { }
+
+        // Close DB to release file handles
+        try { DatabaseManager.Instance.Close(); } catch { }
+
+        var dir = Application.persistentDataPath;
+        var candidates = new System.Collections.Generic.List<string>();
+        try
+        {
+            // Target known files
+            candidates.Add(Path.Combine(dir, "game_save.db"));
+            candidates.Add(Path.Combine(dir, "game_save.db.bak"));
+            candidates.Add(Path.Combine(dir, "game_save.db-wal"));
+            candidates.Add(Path.Combine(dir, "game_save.db-shm"));
+            // Also sweep any matching pattern, just in case
+            foreach (var f in Directory.GetFiles(dir, "game_save.db*"))
+                if (!candidates.Contains(f)) candidates.Add(f);
+        }
+        catch { }
+
+        int deleted = 0;
+        foreach (var f in candidates)
+        {
+            try
+            {
+                if (File.Exists(f)) { File.Delete(f); deleted++; sb.AppendLine($"Deleted: {f}"); }
+            }
+            catch (System.Exception e)
+            {
+                sb.AppendLine($"Failed delete: {f} ({e.Message})");
+            }
+        }
+
+        // Optionally clear PlayerPrefs keys (safer than DeleteAll in case of unrelated keys)
+        if (alsoPrefs)
+        {
+            try
+            {
+                PlayerPrefs.DeleteKey("lastRunId");
+                PlayerPrefs.DeleteKey("selectedCompanionId");
+                PlayerPrefs.DeleteKey(ScalePrefsKey);
+                PlayerPrefs.Save();
+                sb.AppendLine("PlayerPrefs keys cleared (lastRunId, selectedCompanionId, dbg.overlay.scale)");
+            }
+            catch (System.Exception e)
+            {
+                sb.AppendLine($"PlayerPrefs clear failed: {e.Message}");
+            }
+        }
+
+        // Reconnect to recreate a clean schema
+        try { DatabaseManager.Instance.Connect(); sb.AppendLine("DB reconnected and schema ensured."); }
+        catch (System.Exception e) { sb.AppendLine($"Reconnect failed: {e.Message}"); }
+
+        _lastWipeLog = $"[Wipe] files deleted={deleted}\n" + sb.ToString();
+        Debug.Log($"[ProgressionDebug] Full data wipe complete. Deleted files={deleted}\n{_lastWipeLog}");
+    }
+
+    private void TryReloadMainMenu()
+    {
+        try
+        {
+            // 개발/테스트 편의: 메뉴로 복귀. 씬 이름은 프로젝트 표준을 따릅니다.
+            SceneManager.LoadScene("Main Menu");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[ProgressionDebug] Failed to load Main Menu: {e.Message}");
+        }
+    }
+}
+
+// Lightweight GUI color scope helper
+internal readonly struct GuiColorScope : System.IDisposable
+{
+    private readonly Color _prev;
+    public GuiColorScope(Color c)
+    {
+        _prev = GUI.color;
+        GUI.color = c;
+    }
+    public void Dispose() => GUI.color = _prev;
 }

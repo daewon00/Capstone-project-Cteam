@@ -117,6 +117,9 @@ public class RunService : IRunService
             n.Act == run.Act && n.Floor == run.Floor && n.NodeIndex == run.NodeIndex)
             ?? new MapNodeState { RunId = _runId, Act = run.Act, Floor = run.Floor, NodeIndex = run.NodeIndex };
 
+        // Ensure RNG domain for reward generation is seeded (robust against boot without runId)
+        TryEnsureSeeded("reward-generation");
+
         var rewardContainer = GenerateRewards();
         nodeState.RewardsJson = JsonUtility.ToJson(rewardContainer);
         nodeState.Cleared = true;
@@ -139,6 +142,33 @@ public class RunService : IRunService
 
         Debug.Log("[RunService] Node cleared. Rewards saved. Transitioning to Map Scene.");
         SceneManager.LoadScene("Map Scene");
+    }
+
+    private void TryEnsureSeeded(string domain)
+    {
+        if (_rngService == null) return;
+        try { _rngService.NextUInt(domain); }
+        catch (InvalidOperationException)
+        {
+            _rngService.Seed(domain, HashRunIdToSeed(_runId, domain));
+        }
+    }
+
+    private static uint HashRunIdToSeed(string runId, string domain)
+    {
+        unchecked
+        {
+            uint h = 2166136261u; // FNV-1a basis
+            if (!string.IsNullOrEmpty(runId))
+            {
+                foreach (char c in runId) { h ^= c; h *= 16777619u; }
+            }
+            if (!string.IsNullOrEmpty(domain))
+            {
+                foreach (char c in domain) { h ^= c; h *= 16777619u; }
+            }
+            return h == 0u ? 1u : h;
+        }
     }
 
     private RewardContainer GenerateRewards()
