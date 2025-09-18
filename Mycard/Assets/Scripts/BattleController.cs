@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
+using Game.Save;
+using BattleSnapshot;
 
 // Phase 2: 조립 책임자 역할 부여. 다른 컨트롤러보다 먼저 실행되도록 우선순위 부여
 [DefaultExecutionOrder(-9000)]
@@ -8,6 +10,7 @@ public class BattleController : MonoBehaviour
 
     public static BattleController instance;
     private IRunService _runService; // 전투 결과 보고 대상
+    internal static bool SkipInitialSetup { get; set; }
 
     [Header("Dependencies")]
 
@@ -21,6 +24,7 @@ public class BattleController : MonoBehaviour
     private bool _isInitialized;
     private bool _battleStarted;
     private bool _isAdvancingTurn = false; // 중복 턴 진행 방지
+    private int _turnCounter = 1;
 
     // 이 스크립트가 생성될 때 instance에 자기 자신 할당
     private void Awake()
@@ -71,6 +75,36 @@ public class BattleController : MonoBehaviour
     public enum TurnOrder { playerActive, playerCardAttacks, enemyActive, enemyCardAttacks }    //전투 단계
     public TurnOrder currentPhase;  // 지금 단계 저장
 
+    public int CurrentTurnNumber => _turnCounter;
+    public TurnOrder CurrentPhase => currentPhase;
+
+    private void RequestSnapshot(string reason)
+    {
+        BattleSnapshotScheduler.Instance?.RequestSnapshot(reason);
+    }
+
+    public void SetTurnStateFromSnapshot(int turnNumber, TurnOrder phase, int playerManaValue, int playerMaxManaValue, int enemyManaValue, int enemyMaxManaValue, bool ended)
+    {
+        _turnCounter = Mathf.Max(1, turnNumber);
+        currentPhase = phase;
+        playerMana = playerManaValue;
+        currentPlayerMaxMana = playerMaxManaValue;
+        enemyMana = enemyManaValue;
+        currentEnemyMaxMana = enemyMaxManaValue;
+        battleEnded = ended;
+
+        UIController.instance?.SetPlayerManaText(playerMana);
+        UIController.instance?.SetEnemyManaText(enemyMana);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BattleController] SetTurnStateFromSnapshot: turn={_turnCounter}, phase={currentPhase}, playerMana={playerMana}/{currentPlayerMaxMana}, enemyMana={enemyMana}/{currentEnemyMaxMana}");
+#endif
+    }
+
+    public void MarkRestored()
+    {
+        _battleStarted = true;
+    }
+
     public Transform discardPoint;  //파괴 카드 위치
     public int playerHealth, enemyHealth;   //플레이어 체력, 적 체력
 
@@ -84,8 +118,18 @@ public class BattleController : MonoBehaviour
     // 첫 프레임 시작 전에 호출
     void Start()
     {
-        // 런 서비스 참조 확보(있지 않으면 null 허용)
+        // Always cache the run service so restored combats can report their result.
         _runService = ServiceRegistry.Get<IRunService>();
+
+        if (SkipInitialSetup)
+        {
+            SkipInitialSetup = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[BattleController] Start skipped due to snapshot restore");
+#endif
+            return;
+        }
+
         GameEvents.OnBattleStart?.Invoke(); // 추가 +++
         //playerMana = startingMana;
         //UIController.instance.SetPlayerManaText(playerMana);
@@ -242,6 +286,10 @@ public class BattleController : MonoBehaviour
             }
         }
         _isAdvancingTurn = false;
+        if (currentPhase == TurnOrder.playerActive && !battleEnded)
+        {
+            _turnCounter = Mathf.Max(1, _turnCounter + 1);
+        }
     }
 
     public void EndPlayerTurn() //턴 종료 눌리면 버튼 비활성화 하고 턴 진행
@@ -250,6 +298,7 @@ public class BattleController : MonoBehaviour
         UIController.instance.drawCardButton.SetActive(false);
 
         GameEvents.OnTurnEnd?.Invoke(true);   // 추가 +++ 플레이어 턴 종료
+        RequestSnapshot("AfterPlayerEndTurn");
         AdvanceTurn();
     }
 

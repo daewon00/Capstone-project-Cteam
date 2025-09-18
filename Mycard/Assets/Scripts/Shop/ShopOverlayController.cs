@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Game.Save;
+using UnityEngine.SceneManagement;
 
 public class ShopOverlayController : MonoBehaviour
 {
@@ -102,6 +103,18 @@ public class ShopOverlayController : MonoBehaviour
         // --- 3. UI 표시 및 초기 상태 저장 ---
         // 준비된 내용으로 상점 UI를 화면에 표시합니다.
         shopUI.Open();
+
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService != null && _currentRun != null)
+        {
+            var payload = new RunStagePayloads.Shop
+            {
+                act = _currentRun.Act,
+                floor = floor,
+                nodeIndex = index
+            };
+            stageService.SetStage(RunStageType.ShopOverlay, SceneManager.GetActiveScene().name, RunStageService.ToJson(payload));
+        }
 
         // '완전 최초 방문'이었는지 최종적으로 다시 확인합니다.
         // (dto == null) → DB에 데이터가 없었다는 뜻.

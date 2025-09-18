@@ -93,6 +93,8 @@ public sealed class DatabaseManager
         _conn.CreateTable<ActiveShopSession>(); //db 상점
         _conn.CreateTable<ActiveEventSession>(); //db 이벤트
         _conn.CreateTable<RunPerkSnapshot>();
+        _conn.CreateTable<RunStageState>();
+        _conn.CreateTable<ActiveBattleState>();
 
         // ==== CardRuntimeState 핵심 인덱스 생성 ====
         try
@@ -310,7 +312,9 @@ public sealed class DatabaseManager
             Relics = _conn.Table<RelicInPossession>().Where(x => x.RunId == runId).ToList(),
             Potions = _conn.Table<PotionInPossession>().Where(x => x.RunId == runId).ToList(),
             Nodes = _conn.Table<MapNodeState>().Where(x => x.RunId == runId).ToList(),
-            RngStates = _conn.Table<RngState>().Where(x => x.RunId == runId).ToList()
+            RngStates = _conn.Table<RngState>().Where(x => x.RunId == runId).ToList(),
+            Stage = _conn.Find<RunStageState>(runId),
+            BattleState = _conn.Find<ActiveBattleState>(runId)
         };
     }
 
@@ -338,6 +342,8 @@ public sealed class DatabaseManager
         conn.Table<MapNodeState>().Delete(x => x.RunId == runId);
         conn.Table<RngState>().Delete(x => x.RunId == runId);
         conn.Table<RunPerkSnapshot>().Delete(x => x.RunId == runId);
+        conn.Table<ActiveBattleState>().Delete(x => x.RunId == runId);
+        conn.Table<RunStageState>().Delete(x => x.RunId == runId);
         conn.Table<CurrentRun>().Delete(x => x.RunId == runId);
     }
 
@@ -530,6 +536,49 @@ public sealed class DatabaseManager
     {
         if (string.IsNullOrEmpty(runId)) return;
         _conn.Table<ActiveEventSession>().Delete(x => x.RunId == runId);
+    }
+
+    public RunStageState LoadRunStageState(string runId)
+    {
+        if (string.IsNullOrEmpty(runId)) return null;
+        return _conn.Find<RunStageState>(runId);
+    }
+
+    public void UpsertRunStageState(RunStageState state)
+    {
+        if (state == null || string.IsNullOrEmpty(state.RunId)) return;
+        state.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
+        _conn.InsertOrReplace(state);
+    }
+
+    public void DeleteRunStageState(string runId)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+        _conn.Table<RunStageState>().Delete(x => x.RunId == runId);
+    }
+
+    public ActiveBattleState LoadActiveBattleState(string runId)
+    {
+        if (string.IsNullOrEmpty(runId)) return null;
+        return _conn.Find<ActiveBattleState>(runId);
+    }
+
+    public void UpsertActiveBattleState(string runId, string json)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+        var row = new ActiveBattleState
+        {
+            RunId = runId,
+            Json = json ?? string.Empty,
+            UpdatedAtUtc = DateTime.UtcNow.ToString("o")
+        };
+        _conn.InsertOrReplace(row);
+    }
+
+    public void DeleteActiveBattleState(string runId)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+        _conn.Table<ActiveBattleState>().Delete(x => x.RunId == runId);
     }
 
     // --- RNG 상태 저장/로드 ---

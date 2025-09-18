@@ -99,6 +99,13 @@ public class GameInitializer : MonoBehaviour
         Debug.Log($"[BossFlow][GI] Registered IWalletService (runId='{runId}').");
 #endif
 
+        var stageService = new RunStageService(dbFacade);
+        stageService.RebindRun(runId);
+        ServiceRegistry.Register<IRunStageService>(stageService);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BossFlow][GI] Registered IRunStageService (runId='{runId}').");
+#endif
+
         // 5.5 특전/모디파이어/업적 서비스 등록
         var perkService = new PerkService(dbFacade);
         ServiceRegistry.Register<IPerkService>(perkService);

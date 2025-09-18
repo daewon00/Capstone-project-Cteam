@@ -6,7 +6,7 @@ namespace Game.Save
 {
     // ==== 게임 전체에서 공통으로 사용하는 데이터 종류들 ====
     //카드 위치
-    public enum CardLocation { Master = 0, DrawPile = 1, DiscardPile = 2, ExhaustPile = 3, Hand = 4 }
+    public enum CardLocation { Master = 0, DrawPile = 1, DiscardPile = 2, ExhaustPile = 3, Hand = 4, PlayerField = 5, EnemyField = 6 }
     //노드 종류
     public enum NodeType { Battle, Elite, Boss, Event, Shop, Rest, CardRemove }
 
@@ -114,6 +114,40 @@ namespace Game.Save
         public int DurationSeconds { get; set; }            // 플레이 시간 (초).
         public string Seed { get; set; }                    // 해당 판의 맵 시드.
         public string EndedAtUtc { get; set; }              // 게임이 끝난 시각.
+    }
+
+    public enum RunStageType
+    {
+        Unknown = 0,
+        Map = 1,
+        Event = 2,
+        Battle = 3,
+        ShopOverlay = 4,
+        Reward = 5
+    }
+
+    /// <summary>
+    /// 현재 런이 어느 흐름에서 저장되었는지를 나타냅니다.
+    /// </summary>
+    [Table("RunStageState")]
+    public class RunStageState
+    {
+        [PrimaryKey] public string RunId { get; set; }
+        public RunStageType Stage { get; set; }
+        public string SceneHint { get; set; }
+        public string PayloadJson { get; set; }
+        public string UpdatedAtUtc { get; set; }
+    }
+
+    /// <summary>
+    /// 전투 중 중단된 경우를 복원하기 위한 런타임 상태 스냅샷입니다.
+    /// </summary>
+    [Table("ActiveBattleState")]
+    public class ActiveBattleState
+    {
+        [PrimaryKey] public string RunId { get; set; }
+        public string Json { get; set; }
+        public string UpdatedAtUtc { get; set; }
     }
 
     //=========================================================================================
@@ -322,6 +356,8 @@ namespace Game.Save
         public List<PotionInPossession> Potions;
         public List<MapNodeState> Nodes;
         public List<RngState> RngStates;
+        public RunStageState Stage;
+        public ActiveBattleState BattleState;
     }
 
 }

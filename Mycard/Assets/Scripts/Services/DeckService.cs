@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Game.Save;
 using Game.Utils; // Shuffle extension
+using BattleSnapshot;
 
 public class DeckService : IDeckService
 {
@@ -18,6 +19,8 @@ public class DeckService : IDeckService
     private readonly List<string> _handIds = new List<string>();
     private readonly List<string> _discardPileIds = new List<string>();
     private readonly List<string> _exhaustPileIds = new List<string>();
+    private readonly List<string> _playerFieldIds = new List<string>();
+    private readonly List<string> _enemyFieldIds = new List<string>();
     private readonly Dictionary<CardLocation, int> _nextOrderInPile = new Dictionary<CardLocation, int>();
     private int _handLimit = 10; // 내부 관리 핸드 한도
 
@@ -151,6 +154,8 @@ public class DeckService : IDeckService
         _handIds.Clear();
         _discardPileIds.Clear();
         _exhaustPileIds.Clear();
+        _playerFieldIds.Clear();
+        _enemyFieldIds.Clear();
 
         _drawPileIds.AddRange(allIds);
         foreach (var id in allIds)
@@ -269,6 +274,42 @@ public class DeckService : IDeckService
         Debug.Log($"[DeckService] Card '{cardId}' added to deck (DiscardPile). counts={GetPileCounts().Discard}");
     }
 
+    public IReadOnlyList<CardRuntimeState> GetCardsInLocation(CardLocation location)
+    {
+        EnsureInitialized();
+        return _cardsById.Values.Where(c => c.Location == location).OrderByDescending(c => c.OrderInPile).ToList();
+    }
+
+    public CardRuntimeState GetCardByInstanceId(string instanceId)
+    {
+        if (string.IsNullOrEmpty(instanceId)) return null;
+        return _cardsById.TryGetValue(instanceId, out var state) ? state : null;
+    }
+
+    public void UpdateBattleCardState(BattleCardState state, CardLocation location)
+    {
+        EnsureInitialized();
+        if (state == null || string.IsNullOrEmpty(state.instanceId)) return;
+        if (!_cardsById.TryGetValue(state.instanceId, out var cardState))
+            return;
+
+        var fromList = GetPileList(cardState.Location);
+        fromList.Remove(state.instanceId);
+
+        cardState.Location = location;
+        cardState.OrderInPile = state.slotIndex >= 0 ? state.slotIndex : cardState.OrderInPile;
+        cardState.ModifiersJson = JsonUtility.ToJson(state);
+
+        var toList = GetPileList(location);
+        if (!toList.Contains(state.instanceId))
+        {
+            toList.Add(state.instanceId);
+        }
+
+        RecomputeNextOrderInPiles();
+        PersistAndBroadcast();
+    }
+
     private void TryEnsureSeeded(string domain)
     {
         try { _rng.NextUInt(domain); }
@@ -306,6 +347,8 @@ public class DeckService : IDeckService
         _handIds.Clear();
         _discardPileIds.Clear();
         _exhaustPileIds.Clear();
+        _playerFieldIds.Clear();
+        _enemyFieldIds.Clear();
 
         if (allCards == null) return;
 
@@ -357,6 +400,9 @@ public class DeckService : IDeckService
         _nextOrderInPile[to] = next + 1;
 
         GetPileList(to).Add(instanceId);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[DeckService] MoveCard instance={instanceId} -> {to}");
+#endif
     }
 
     private void PersistAndBroadcast(DrawResult drawnResult = null, PlayResult playedResult = null)
@@ -375,7 +421,7 @@ public class DeckService : IDeckService
 
 #if UNITY_EDITOR
         // 데이터 무결성 검사(에디터 전용)
-        int total = _drawPileIds.Count + _discardPileIds.Count + _handIds.Count + _exhaustPileIds.Count;
+        int total = _drawPileIds.Count + _discardPileIds.Count + _handIds.Count + _exhaustPileIds.Count + _playerFieldIds.Count + _enemyFieldIds.Count;
         UnityEngine.Debug.Assert(total == _cardsById.Count, $"[DeckService] 카드 총량 불일치! 캐시 합계: {total}, 전체: {_cardsById.Count}");
 #endif
 
@@ -400,6 +446,8 @@ public class DeckService : IDeckService
             case CardLocation.Hand: return _handIds;
             case CardLocation.DiscardPile: return _discardPileIds;
             case CardLocation.ExhaustPile: return _exhaustPileIds;
+            case CardLocation.PlayerField: return _playerFieldIds;
+            case CardLocation.EnemyField: return _enemyFieldIds;
             default:
                 Debug.LogWarning($"[DeckService] 알 수 없는 CardLocation: {loc}");
                 return _drawPileIds;
@@ -413,6 +461,8 @@ public class DeckService : IDeckService
         _handIds.Sort(comp);
         _discardPileIds.Sort(comp);
         _exhaustPileIds.Sort(comp);
+        _playerFieldIds.Sort(comp);
+        _enemyFieldIds.Sort(comp);
     }
 
     private void RecomputeNextOrderInPiles()
@@ -422,6 +472,8 @@ public class DeckService : IDeckService
         _nextOrderInPile[CardLocation.Hand] = _handIds.Select(id => _cardsById[id].OrderInPile).DefaultIfEmpty(-1).Max() + 1;
         _nextOrderInPile[CardLocation.DiscardPile] = _discardPileIds.Select(id => _cardsById[id].OrderInPile).DefaultIfEmpty(-1).Max() + 1;
         _nextOrderInPile[CardLocation.ExhaustPile] = _exhaustPileIds.Select(id => _cardsById[id].OrderInPile).DefaultIfEmpty(-1).Max() + 1;
+        _nextOrderInPile[CardLocation.PlayerField] = _playerFieldIds.Select(id => _cardsById[id].OrderInPile).DefaultIfEmpty(-1).Max() + 1;
+        _nextOrderInPile[CardLocation.EnemyField] = _enemyFieldIds.Select(id => _cardsById[id].OrderInPile).DefaultIfEmpty(-1).Max() + 1;
     }
 
     private PileCounts GetCurrentPileCounts() => new PileCounts

@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using Unity.VisualScripting;
 using DG.Tweening;
 using UnityEngine.EventSystems;
+using BattleSnapshot;
 
 public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerUpHandler
 {
@@ -40,6 +42,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     // 서비스 경로: 런타임 식별자와 서비스 참조
     public string InstanceId { get; private set; }
+    [SerializeField] private string _battleInstanceId;
     private IDeckService _deckService;
     private bool _isInteractable = true;
     private bool _destroyBroadcasted; // 업적/메타 이벤트 중복 방지
@@ -126,10 +129,27 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             return;
         }
         InstanceId = instanceId;
+        _battleInstanceId = instanceId;
         cardSO = so;
         _deckService = deckService;
         SetupCard();
         SetInteractable(true);
+    }
+
+    public void SetBattleInstanceId(string id)
+    {
+        if (!string.IsNullOrEmpty(id))
+        {
+            _battleInstanceId = id;
+        }
+    }
+
+    public string GetBattleInstanceId()
+    {
+        if (!string.IsNullOrEmpty(InstanceId)) return InstanceId;
+        if (string.IsNullOrEmpty(_battleInstanceId))
+            _battleInstanceId = Guid.NewGuid().ToString("N");
+        return _battleInstanceId;
     }
 
     public void SetInteractable(bool value)
@@ -222,6 +242,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         anim.SetTrigger("Hurt");    // 맞는 애니메이션
         UpdateCardDisplay();    //체력 UI 수정
+        BattleDeckRuntimeSync.UpdateCardState(this);
     }
 
     //카드 현 상태 UI 텍스트 설정
@@ -372,6 +393,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);
                     if (theHC != null) theHC.ResumeLayoutFor(this);
                     UIController.instance?.SetDragModeUIVisibility(true);
+                    BattleDeckRuntimeSync.UpdateCardState(this);
                     return;
                 }
 
@@ -438,6 +460,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
         }
+        BattleDeckRuntimeSync.UpdateCardState(this);
     }
 
     private void UpdateHoverHighlight(Ray pointerRay)

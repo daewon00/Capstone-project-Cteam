@@ -86,6 +86,7 @@ public class HandServiceBinder : MonoBehaviour
             SpawnAndRegister(state, immediateSpawnAt: _hand.transform.position);
         }
         _hand.SetCardPositionsInHand();
+        BattleSnapshotScheduler.Instance?.RequestSnapshot("AfterInitialDraw");
     }
 
     private IEnumerator SpawnDrawnCardsStaggered(DrawResult result)
@@ -98,6 +99,7 @@ public class HandServiceBinder : MonoBehaviour
                 yield return new WaitForSeconds(_initialDrawStagger);
         }
         _hand.SetCardPositionsInHand();
+        BattleSnapshotScheduler.Instance?.RequestSnapshot("AfterInitialDraw");
     }
 
     private void SpawnAndRegister(CardRuntimeState state, Vector3 immediateSpawnAt)
@@ -210,5 +212,19 @@ public class HandServiceBinder : MonoBehaviour
         if (card == null) return;
         card.gameObject.SetActive(false);
         _cardPool.Push(card);
+    }
+
+    public void RegisterExistingCard(Card card)
+    {
+        if (card == null) return;
+        var id = card.GetBattleInstanceId();
+        if (string.IsNullOrEmpty(id)) return;
+        _viewsById[id] = card;
+    }
+
+    public void ResetViewCache()
+    {
+        _viewsById.Clear();
+        _cardPool.Clear();
     }
 }
