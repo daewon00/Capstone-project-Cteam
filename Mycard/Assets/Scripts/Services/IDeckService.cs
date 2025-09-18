@@ -72,4 +72,8 @@ public interface IDeckService
     /// 카드 ID로 새 카드를 생성하여 덱에 추가합니다. (기본: DiscardPile 상단)
     /// </summary>
     void AddCardToDeckById(string cardId, bool isUpgraded = false);
+
+    IReadOnlyList<CardRuntimeState> GetCardsInLocation(CardLocation location);
+    CardRuntimeState GetCardByInstanceId(string instanceId);
+    void UpdateBattleCardState(BattleSnapshot.BattleCardState state, CardLocation location);
 }

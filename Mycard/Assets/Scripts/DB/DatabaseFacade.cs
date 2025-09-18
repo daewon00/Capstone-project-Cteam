@@ -33,6 +33,15 @@ public sealed class DatabaseFacade : IDatabase
     public void DeleteActiveEventSession(string runId)
         => DatabaseManager.Instance.DeleteActiveEventSession(runId);
 
+    public RunStageState LoadRunStageState(string runId)
+        => DatabaseManager.Instance.LoadRunStageState(runId);
+
+    public void UpsertRunStageState(RunStageState state)
+        => DatabaseManager.Instance.UpsertRunStageState(state);
+
+    public void DeleteRunStageState(string runId)
+        => DatabaseManager.Instance.DeleteRunStageState(runId);
+
     public void UpsertNodeState(MapNodeState node)
         => DatabaseManager.Instance.UpsertNodeState(node);
 
@@ -51,6 +60,15 @@ public sealed class DatabaseFacade : IDatabase
 
     public void UpsertRngStates(string runId, System.Collections.Generic.IEnumerable<RngState> states)
         => DatabaseManager.Instance.UpsertRngStates(runId, states);
+
+    public ActiveBattleState LoadActiveBattleState(string runId)
+        => DatabaseManager.Instance.LoadActiveBattleState(runId);
+
+    public void UpsertActiveBattleState(string runId, string json)
+        => DatabaseManager.Instance.UpsertActiveBattleState(runId, json);
+
+    public void DeleteActiveBattleState(string runId)
+        => DatabaseManager.Instance.DeleteActiveBattleState(runId);
 
     // ==== 덱 상태(CardRuntimeState) 관리 API ====
     public void UpsertCardRuntimeStates(string runId, System.Collections.Generic.IEnumerable<CardRuntimeState> cards)

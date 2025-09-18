@@ -125,6 +125,19 @@ public class CompanionSelectController : MonoBehaviour
         // 3.7. 런 서비스에도 컨텍스트를 주입해 전투 결과 보고가 정확히 동작하도록 합니다.
         ServiceRegistry.Get<IRunService>()?.RebindRun(runId);
 
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService != null)
+        {
+            stageService.RebindRun(runId);
+            var locationPayload = new RunStagePayloads.Location
+            {
+                act = run.Act,
+                floor = run.Floor,
+                nodeIndex = run.NodeIndex
+            };
+            stageService.SetStage(RunStageType.Map, mapScene, RunStageService.ToJson(locationPayload));
+        }
+
         // 3.8. 이벤트 매니저 등록(조건부): 런이 생성된 시점에 EventManager를 등록합니다.
         try
         {

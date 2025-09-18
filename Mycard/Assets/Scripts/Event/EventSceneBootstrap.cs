@@ -23,6 +23,7 @@ public class EventSceneBootstrap : MonoBehaviour
     private IEventManager _eventManager;
     private EventSessionDTO _currentSession;
     private bool _isResolving; // 중복 입력을 막기 위한 '잠금 장치'
+    private RunStagePayloads.Event _eventStageCache;
 
     void Start()
     {
@@ -55,6 +56,7 @@ public class EventSceneBootstrap : MonoBehaviour
 
         // 받아온 정보로 UI를 채웁니다.
         BindUI();
+        MarkStageAsEvent();
     }
 
     private void BindUI()
@@ -113,10 +115,68 @@ public class EventSceneBootstrap : MonoBehaviour
     // 씬 전환을 위한 안전한 함수
     private void SafeGoMap()
     {
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService != null)
+        {
+            RunStagePayloads.Location payload = null;
+
+            if (_eventStageCache != null)
+            {
+                payload = new RunStagePayloads.Location
+                {
+                    act = _eventStageCache.act,
+                    floor = _eventStageCache.floor,
+                    nodeIndex = _eventStageCache.nodeIndex
+                };
+            }
+            else
+            {
+                var runId = PlayerPrefs.GetString("lastRunId", string.Empty);
+                var runData = string.IsNullOrEmpty(runId) ? null : DatabaseManager.Instance.LoadCurrentRun(runId);
+                if (runData?.Run != null)
+                {
+                    payload = new RunStagePayloads.Location
+                    {
+                        act = runData.Run.Act,
+                        floor = runData.Run.Floor,
+                        nodeIndex = runData.Run.NodeIndex
+                    };
+                }
+            }
+
+            stageService.SetStage(RunStageType.Map, mapSceneName, payload != null ? RunStageService.ToJson(payload) : null);
+        }
+
         if (!string.IsNullOrEmpty(mapSceneName))
             SceneManager.LoadScene(mapSceneName);
         else
             Debug.LogError("[EventScene] mapSceneName이 비어있어 씬 전환이 불가합니다.");
+    }
+
+    private void MarkStageAsEvent()
+    {
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService == null) return;
+
+        if (!stageService.TryGetPayload(out _eventStageCache) || _eventStageCache == null)
+        {
+            _eventStageCache = new RunStagePayloads.Event();
+            var runId = PlayerPrefs.GetString("lastRunId", string.Empty);
+            var runData = string.IsNullOrEmpty(runId) ? null : DatabaseManager.Instance.LoadCurrentRun(runId);
+            if (runData?.Run != null)
+            {
+                _eventStageCache.act = runData.Run.Act;
+                _eventStageCache.floor = runData.Run.Floor;
+                _eventStageCache.nodeIndex = runData.Run.NodeIndex;
+            }
+        }
+
+        if (_currentSession != null && !string.IsNullOrEmpty(_currentSession.eventId))
+        {
+            _eventStageCache.eventId = _currentSession.eventId;
+        }
+
+        stageService.SetStage(RunStageType.Event, SceneManager.GetActiveScene().name, RunStageService.ToJson(_eventStageCache));
     }
 
 }

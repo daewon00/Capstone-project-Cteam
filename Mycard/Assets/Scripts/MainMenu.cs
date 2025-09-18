@@ -99,7 +99,44 @@ public class MainMenu : MonoBehaviour
     // "이어하기" 버튼을 눌렀을 때
     void OnClickContinue()
     {
-        SceneManager.LoadScene(mapScene);
+        var runId = PlayerPrefs.GetString("lastRunId", "");
+        if (string.IsNullOrEmpty(runId))
+        {
+            SceneManager.LoadScene(mapScene);
+            return;
+        }
+
+        RunStageState stageState = null;
+        try
+        {
+            stageState = DatabaseManager.Instance.LoadRunStageState(runId);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[MainMenu] Failed to load RunStageState: {e.Message}");
+        }
+
+        var targetScene = mapScene;
+        var stage = stageState != null ? stageState.Stage : RunStageType.Map;
+
+        switch (stage)
+        {
+            case RunStageType.Event:
+                if (!string.IsNullOrEmpty(stageState?.SceneHint)) targetScene = stageState.SceneHint;
+                break;
+            case RunStageType.Battle:
+                if (!string.IsNullOrEmpty(stageState?.SceneHint)) targetScene = stageState.SceneHint;
+                break;
+            case RunStageType.ShopOverlay:
+            case RunStageType.Reward:
+            case RunStageType.Map:
+            case RunStageType.Unknown:
+            default:
+                targetScene = mapScene;
+                break;
+        }
+
+        SceneManager.LoadScene(targetScene);
     }
 
     // ★ 테스트용: 현재 런 데이터 삭제

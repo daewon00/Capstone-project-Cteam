@@ -28,6 +28,9 @@ public interface IDatabase
     void UpsertActiveEventSession(string runId, string json);
     string LoadActiveEventSessionJson(string runId);
     void DeleteActiveEventSession(string runId);
+    RunStageState LoadRunStageState(string runId);
+    void UpsertRunStageState(RunStageState state);
+    void DeleteRunStageState(string runId);
 
     // --- 노드 상태 (단일 행) ---
     // 이벤트 결과를 맵 노드에 기록하기 위한 기능입니다.
@@ -40,6 +43,9 @@ public interface IDatabase
     // 결정론적 무작위성 유지를 위해 도메인별 RNG 상태를 저장/로드합니다.
     List<RngState> LoadRngStates(string runId);
     void UpsertRngStates(string runId, IEnumerable<RngState> states);
+    ActiveBattleState LoadActiveBattleState(string runId);
+    void UpsertActiveBattleState(string runId, string json);
+    void DeleteActiveBattleState(string runId);
 
     // ==== 덱 상태(CardRuntimeState) 관리 API ====
     /// <summary>

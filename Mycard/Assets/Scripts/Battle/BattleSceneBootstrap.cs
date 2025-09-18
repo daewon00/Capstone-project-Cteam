@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using Game.Save;
+using BattleSnapshot;
 
 // 씬 조립자: 컨트롤러보다 먼저 실행되어 서비스 주입을 담당합니다.
 [DefaultExecutionOrder(-9000)]
@@ -8,6 +11,8 @@ public class BattleSceneBootstrap : MonoBehaviour
     [SerializeField] private BattleController _battleController;
     [SerializeField] private HandController _handController;
     [SerializeField] private Card _cardPrefab; // 핸드에 생성할 카드 프리팹(권장: 명시 지정)
+
+    public static Card CardPrefabReference { get; private set; }
 
     void Awake()
     {
@@ -25,6 +30,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         if (deckService == null) Debug.LogWarning("[BattleSceneBootstrap] IDeckService를 찾지 못했습니다.");
         if (cardCatalog == null) Debug.LogWarning("[BattleSceneBootstrap] ICardCatalog를 찾지 못했습니다.");
         if (deckService != null) GameServices.RegisterDeck(deckService);
+        CardPrefabReference = _cardPrefab;
         // HandServiceBinder 부착 및 초기화
         var binder = _handController.GetComponent<HandServiceBinder>();
         if (binder == null) binder = _handController.gameObject.AddComponent<HandServiceBinder>();
@@ -49,30 +55,93 @@ public class BattleSceneBootstrap : MonoBehaviour
             if (_battleController == null) Debug.LogWarning("[BattleSceneBootstrap] BattleController가 연결되지 않았습니다.");
         }
 
+        var scheduler = FindObjectOfType<BattleSnapshotScheduler>();
+        if (scheduler == null)
+        {
+            var go = new GameObject("BattleSnapshotScheduler");
+            scheduler = go.AddComponent<BattleSnapshotScheduler>();
+        }
+        scheduler.Initialize();
+
     }
 
     void Start()
     {
-        if (this.enabled && _battleController != null)
-        {
-            // 정석: 전투 시작 전에 RunService를 현재 런으로 재바인딩하여
-            // 이전 전투의 커밋 상태가 다음 전투에 영향을 주지 않도록 합니다.
-            try
-            {
-                var runService = ServiceRegistry.Get<IRunService>();
-                if (runService != null)
-                {
-                    string runId = GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId)
-                        ? GameContext.I.RunId
-                        : PlayerPrefs.GetString("lastRunId", string.Empty);
-                    runService.RebindRun(runId);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[BossFlow][BattleSceneBootstrap] RunService.RebindRun('{runId}')");
-#endif
-                }
-            }
-            catch { }
+        if (!this.enabled || _battleController == null) return;
 
+        var runId = GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId)
+            ? GameContext.I.RunId
+            : PlayerPrefs.GetString("lastRunId", string.Empty);
+
+        var runService = ServiceRegistry.Get<IRunService>();
+        runService?.RebindRun(runId);
+
+        var deckService = ServiceRegistry.Get<IDeckService>();
+        var cardCatalog = ServiceRegistry.Get<ICardCatalog>();
+        var rngService = ServiceRegistry.Get<IRngService>();
+
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService != null)
+        {
+            stageService.RebindRun(runId);
+            RunStagePayloads.Battle payload;
+            if (!stageService.TryGetPayload(out payload) || payload == null)
+            {
+                var runData = string.IsNullOrEmpty(runId) ? null : DatabaseManager.Instance.LoadCurrentRun(runId);
+                payload = new RunStagePayloads.Battle
+                {
+                    act = runData?.Run?.Act ?? 0,
+                    floor = runData?.Run?.Floor ?? 0,
+                    nodeIndex = runData?.Run?.NodeIndex ?? 0,
+                    battleKind = (int)(GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal)
+                };
+            }
+
+            payload.sceneName = SceneManager.GetActiveScene().name;
+            stageService.SetStage(RunStageType.Battle, payload.sceneName, RunStageService.ToJson(payload));
+        }
+
+        BattleSnapshotDTO resume = null;
+        try
+        {
+            var db = ServiceRegistry.Get<IDatabase>();
+            var battleState = db?.LoadActiveBattleState(runId);
+            if (battleState != null && !string.IsNullOrEmpty(battleState.Json))
+            {
+                resume = JsonUtility.FromJson<BattleSnapshotDTO>(battleState.Json);
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[BattleSceneBootstrap] Failed to parse battle snapshot: {e.Message}");
+        }
+
+        var scheduler = BattleSnapshotScheduler.Instance;
+
+        if (resume != null)
+        {
+            BattleController.SkipInitialSetup = true;
+            scheduler?.SetCombatResolving(true);
+
+            var context = new BattleSceneContext(_battleController, _handController, CardPointsController.instance, EnemyController.instance,
+                deckService, cardCatalog, _cardPrefab, rngService);
+            BattleSnapshotRestorer.Apply(resume, context);
+            if (resume.turn != null)
+            {
+                _battleController.SetTurnStateFromSnapshot(resume.turn.turnNumber,
+                    (BattleController.TurnOrder)resume.turn.phase,
+                    resume.turn.playerMana,
+                    resume.turn.playerMaxMana,
+                    resume.turn.enemyMana,
+                    resume.turn.enemyMaxMana,
+                    resume.turn.battleEnded);
+            }
+
+            scheduler?.SetCombatResolving(false);
+            scheduler?.RequestSnapshot("ResumeLoaded");
+        }
+        else
+        {
             _battleController.StartBattle();
         }
     }

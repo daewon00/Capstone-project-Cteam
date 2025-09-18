@@ -1,6 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Game.Save;
+using BattleSnapshot;
 
 public class EnemyController : MonoBehaviour
 {   //카드를 배치하는 알고리즘이 들어가 있음
@@ -21,7 +24,11 @@ public class EnemyController : MonoBehaviour
     public AITpye enemyAIType;
 
     private List<CardScriptableObject> cardsInHand = new List<CardScriptableObject>();
-    private List<Card> stagedCards = new List<Card>();
+    private readonly List<Card> stagedCards = new List<Card>();
+
+    public IReadOnlyList<CardScriptableObject> ActiveDeck => activeCards;
+    public IReadOnlyList<CardScriptableObject> CurrentHand => cardsInHand;
+    public IReadOnlyList<Card> StagedCards => stagedCards;
     public int startHandSize;
     void Start()
     {
@@ -47,7 +54,7 @@ public class EnemyController : MonoBehaviour
         int interations = 0;
         while (tempDeck.Count > 0 && interations < 500)
         {
-            int selected = Random.Range(0, tempDeck.Count);
+            int selected = UnityEngine.Random.Range(0, tempDeck.Count);
             activeCards.Add(tempDeck[selected]);
             tempDeck.RemoveAt(selected); //선택되지 않은 activecard 값을 줄여준다.
             interations++;
@@ -84,6 +91,7 @@ public class EnemyController : MonoBehaviour
                     Ecard.isPlayer = false; // 안전하게 적임을 명시
                     GameEvents.OnCardPlayed?.Invoke(Ecard);
                     Ecard.SetInteractable(false); // 적 카드 상호작용 비활성화
+                    BattleDeckRuntimeSync.UpdateCardState(Ecard);
 
 
                     CardPointsController.instance.enemyStayPoints[i].activeCard = null;
@@ -109,7 +117,7 @@ public class EnemyController : MonoBehaviour
         List<CardPlacePoint> cardPoints = new List<CardPlacePoint>();
         cardPoints.AddRange(CardPointsController.instance.enemyStayPoints);
 
-        int randomPoint = Random.Range(0, cardPoints.Count);
+        int randomPoint = UnityEngine.Random.Range(0, cardPoints.Count);
         CardPlacePoint selectedPoint = cardPoints[randomPoint];
 
         if (enemyAIType == AITpye.placeFromDeck || enemyAIType == AITpye.handRandomPlace)
@@ -118,7 +126,7 @@ public class EnemyController : MonoBehaviour
 
             while (selectedPoint.activeCard != null && cardPoints.Count > 0) //카드를 랜덤 포인트에 배치 카드가 있다면
             {
-                randomPoint = Random.Range(0, cardPoints.Count);
+                randomPoint = UnityEngine.Random.Range(0, cardPoints.Count);
                 selectedPoint = cardPoints[randomPoint];
                 cardPoints.RemoveAt(randomPoint);
             }
@@ -142,10 +150,14 @@ public class EnemyController : MonoBehaviour
                 newCard.cardSO = activeCards[0];
                 activeCards.RemoveAt(0);
                 newCard.SetupCard();
+                newCard.SetBattleInstanceId(Guid.NewGuid().ToString("N"));
                 newCard.MoveToPoint(selectedPoint.transform.position, selectedPoint.transform.rotation);
 
                 selectedPoint.activeCard = newCard;
                 newCard.assignedPlace = selectedPoint;
+                newCard.isPlayer = false;
+                newCard.SetInteractable(false);
+                BattleDeckRuntimeSync.UpdateCardState(newCard);
 
                 
 
@@ -170,7 +182,7 @@ public class EnemyController : MonoBehaviour
 
                     while (selectedPoint.activeCard != null && cardPoints.Count > 0)
                     {
-                        randomPoint = Random.Range(0, cardPoints.Count);
+                        randomPoint = UnityEngine.Random.Range(0, cardPoints.Count);
                         selectedPoint = cardPoints[randomPoint];
                         cardPoints.RemoveAt(randomPoint);
                     }
@@ -210,14 +222,14 @@ public class EnemyController : MonoBehaviour
                 {
                     if(preferradPoints.Count > 0)
                     {
-                        int selectPoint = Random.Range(0, preferradPoints.Count);
+                        int selectPoint = UnityEngine.Random.Range(0, preferradPoints.Count);
                         selectedPoint = preferradPoints[selectPoint];
 
                         preferradPoints.RemoveAt(selectPoint);
                     }
                     else
                     {
-                        int selectPoint = Random.Range(0, secondaryPoints.Count);
+                        int selectPoint = UnityEngine.Random.Range(0, secondaryPoints.Count);
                         selectedPoint = secondaryPoints[selectPoint];
 
                         secondaryPoints.RemoveAt(selectPoint);
@@ -265,14 +277,14 @@ public class EnemyController : MonoBehaviour
                 {
                     if (preferradPoints.Count > 0)
                     {
-                        int selectPoint = Random.Range(0, preferradPoints.Count);
+                        int selectPoint = UnityEngine.Random.Range(0, preferradPoints.Count);
                         selectedPoint = preferradPoints[selectPoint];
 
                         preferradPoints.RemoveAt(selectPoint);
                     }
                     else
                     {
-                        int selectPoint = Random.Range(0, secondaryPoints.Count);
+                        int selectPoint = UnityEngine.Random.Range(0, secondaryPoints.Count);
                         selectedPoint = secondaryPoints[selectPoint];
 
                         secondaryPoints.RemoveAt(selectPoint);
@@ -313,8 +325,9 @@ public class EnemyController : MonoBehaviour
 
         Card newCard = Instantiate(cardToSpawn, cardSpawnPoint.position, cardSpawnPoint.rotation);
         newCard.cardSO = cardSO;
-        
+
         newCard.SetupCard();
+        newCard.SetBattleInstanceId(Guid.NewGuid().ToString("N"));
         newCard.MoveToPoint(placePoint.transform.position, placePoint.transform.rotation);
 
         placePoint.activeCard = newCard;
@@ -323,6 +336,7 @@ public class EnemyController : MonoBehaviour
         // 적 카드로 명시하고 상호작용 비활성화(클릭 방지)
         newCard.isPlayer = false;
         newCard.SetInteractable(false);
+        BattleDeckRuntimeSync.UpdateCardState(newCard);
 
         cardsInHand.Remove(cardSO);
 
@@ -349,11 +363,116 @@ public class EnemyController : MonoBehaviour
 
         if(cardsToPlay.Count > 0)
         {
-            int selected = Random.Range(0, cardsToPlay.Count);
+            int selected = UnityEngine.Random.Range(0, cardsToPlay.Count);
 
             cardToPlay = cardsToPlay[selected];
         }
 
         return cardToPlay;
+    }
+
+    public void RestoreStateFromSnapshot(EnemyCombatState enemyState, List<EnemyBoardSlotState> frontline, List<EnemyBoardSlotState> bench, BattleSceneContext context)
+    {
+        var catalog = context.CardCatalog;
+        activeCards.Clear();
+        cardsInHand.Clear();
+
+        if (enemyState != null)
+        {
+            if (enemyState.deckCardIds != null)
+            {
+                foreach (var id in enemyState.deckCardIds)
+                {
+                    var so = !string.IsNullOrEmpty(id) ? catalog?.GetCardData(id) : null;
+                    if (so != null) activeCards.Add(so);
+                }
+            }
+
+            if (enemyState.handCardIds != null)
+            {
+                foreach (var id in enemyState.handCardIds)
+                {
+                    var so = !string.IsNullOrEmpty(id) ? catalog?.GetCardData(id) : null;
+                    if (so != null) cardsInHand.Add(so);
+                }
+            }
+        }
+
+        var board = CardPointsController.instance;
+        if (board != null)
+        {
+            for (int i = 0; i < board.enemyCardPoints.Length; i++)
+            {
+                var slot = board.enemyCardPoints[i];
+                if (slot != null && slot.activeCard != null)
+                {
+                    Destroy(slot.activeCard.gameObject);
+                    slot.activeCard = null;
+                }
+            }
+
+            for (int i = 0; i < board.enemyStayPoints.Length; i++)
+            {
+                var slot = board.enemyStayPoints[i];
+                if (slot != null && slot.activeCard != null)
+                {
+                    Destroy(slot.activeCard.gameObject);
+                    slot.activeCard = null;
+                }
+            }
+        }
+
+        stagedCards.Clear();
+
+        if (frontline != null && board != null)
+        {
+            foreach (var slotState in frontline)
+            {
+                if (slotState == null) continue;
+                if (slotState.slotIndex < 0 || slotState.slotIndex >= board.enemyCardPoints.Length) continue;
+                var slot = board.enemyCardPoints[slotState.slotIndex];
+                if (slot == null) continue;
+                var so = !string.IsNullOrEmpty(slotState.cardId) ? catalog?.GetCardData(slotState.cardId) : null;
+                if (so == null) continue;
+
+                var card = Instantiate(cardToSpawn, slot.transform.position, slot.transform.rotation);
+                card.cardSO = so;
+                card.SetupCard();
+                card.SetBattleInstanceId(!string.IsNullOrEmpty(slotState.instanceId) ? slotState.instanceId : Guid.NewGuid().ToString("N"));
+                card.currentHealth = slotState.currentHp;
+                card.attackPower = slotState.attack;
+                card.UpdateCardDisplay();
+                card.isPlayer = false;
+                card.SetInteractable(false);
+                card.assignedPlace = slot;
+                slot.activeCard = card;
+            }
+        }
+
+        if (bench != null && board != null)
+        {
+            foreach (var slotState in bench)
+            {
+                if (slotState == null) continue;
+                if (slotState.slotIndex < 0 || slotState.slotIndex >= board.enemyStayPoints.Length) continue;
+                var slot = board.enemyStayPoints[slotState.slotIndex];
+                if (slot == null) continue;
+                var so = !string.IsNullOrEmpty(slotState.cardId) ? catalog?.GetCardData(slotState.cardId) : null;
+                if (so == null) continue;
+
+                var card = Instantiate(cardToSpawn, slot.transform.position, slot.transform.rotation);
+                card.cardSO = so;
+                card.SetupCard();
+                card.SetBattleInstanceId(!string.IsNullOrEmpty(slotState.instanceId) ? slotState.instanceId : Guid.NewGuid().ToString("N"));
+                card.currentHealth = slotState.currentHp;
+                card.attackPower = slotState.attack;
+                card.UpdateCardDisplay();
+                card.isPlayer = false;
+                card.SetInteractable(false);
+                card.assignedPlace = slot;
+                slot.activeCard = card;
+                stagedCards.Add(card);
+            }
+        }
     }
 }

@@ -62,6 +62,7 @@ public class RunService : IRunService
         }
 
         var run = lr.Run;
+        var stageService = ServiceRegistry.Get<IRunStageService>();
 
         // 보스 전투 승리 시: 즉시 런 클리어 처리로 분기 (GameContext 없을 경우 PlayerPrefs 폴백)
         var battleKind = GameContext.I != null
@@ -93,6 +94,7 @@ public class RunService : IRunService
             };
             Debug.Log("[BossFlow][RunService] EndRunAndSummarize(Cleared=true)");
             _database.EndRunAndSummarize(summary);
+            stageService?.ClearStage();
 
             // 런 종료 방송(클리어)
             try
@@ -126,6 +128,13 @@ public class RunService : IRunService
 
         _database.UpsertNodeState(nodeState);
         _database.UpsertRngStates(_runId, _rngService.GetStatesForSave());
+
+        stageService?.SetStage(RunStageType.Reward, string.Empty, RunStageService.ToJson(new RunStagePayloads.Reward
+        {
+            act = run.Act,
+            floor = run.Floor,
+            nodeIndex = run.NodeIndex
+        }));
 
         // Broadcast a combat victory event for achievements/progression hooks.
         try
@@ -214,6 +223,7 @@ public class RunService : IRunService
             EndedAtUtc = DateTime.UtcNow.ToString("o")
         };
         _database.EndRunAndSummarize(summary);
+        ServiceRegistry.Get<IRunStageService>()?.ClearStage();
 
         // Broadcast run ended (defeat) for achievement hooks
         try

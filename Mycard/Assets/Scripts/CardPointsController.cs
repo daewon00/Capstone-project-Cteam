@@ -28,7 +28,7 @@ public class CardPointsController : MonoBehaviour
 
     public void PlayerAttack()
     {
-        
+        BattleSnapshotScheduler.Instance?.SetCombatResolving(true);
         StartCoroutine(PlayerAttackCo());
         CameraController.instance.MoveTo(CameraController.instance.battleTransform);
 
@@ -76,14 +76,15 @@ public class CardPointsController : MonoBehaviour
 
         CheckAssignedCards();
 
+        BattleSnapshotScheduler.Instance?.SetCombatResolving(false);
         BattleController.instance.AdvanceTurn();
     }
 
     public void EnemyAttack()
     {
-        
+        BattleSnapshotScheduler.Instance?.SetCombatResolving(true);
         StartCoroutine(EnemyAttackCo());
-        
+
 
 
     }
@@ -130,6 +131,7 @@ public class CardPointsController : MonoBehaviour
         CheckAssignedCards();
 
         GameEvents.OnTurnEnd?.Invoke(false);//추가+++
+        BattleSnapshotScheduler.Instance?.SetCombatResolving(false);
         BattleController.instance.AdvanceTurn();
     }
 

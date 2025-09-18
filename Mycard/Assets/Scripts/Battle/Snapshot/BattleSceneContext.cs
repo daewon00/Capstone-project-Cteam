@@ -1,0 +1,135 @@
+using System.Collections.Generic;
+using BattleSnapshot;
+using Game.Save;
+using UnityEngine;
+
+public class BattleSceneContext
+{
+    public BattleController Battle { get; }
+    public HandController Hand { get; }
+    public CardPointsController Board { get; }
+    public EnemyController Enemy { get; }
+    public IDeckService DeckService { get; }
+    public ICardCatalog CardCatalog { get; }
+    public Card CardPrefab { get; }
+    public IRngService RngService { get; }
+    public HandServiceBinder HandBinder { get; }
+
+    public BattleSceneContext(BattleController battle, HandController hand, CardPointsController board, EnemyController enemy,
+        IDeckService deckService, ICardCatalog catalog, Card cardPrefab, IRngService rng)
+    {
+        Battle = battle;
+        Hand = hand;
+        Board = board;
+        Enemy = enemy;
+        DeckService = deckService;
+        CardCatalog = catalog;
+        CardPrefab = cardPrefab;
+        RngService = rng;
+        HandBinder = hand != null ? hand.GetComponent<HandServiceBinder>() : null;
+    }
+
+    public void ClearHand()
+    {
+        Debug.Log($"[BattleSceneContext] ClearHand (before) count={(Hand != null ? Hand.heldCards.Count : -1)}");
+        if (Hand == null) return;
+        foreach (var card in Hand.heldCards)
+        {
+            if (card != null)
+                Object.Destroy(card.gameObject);
+        }
+        Hand.heldCards.Clear();
+        Hand.SetCardPositionsInHand();
+        HandBinder?.ResetViewCache();
+        Debug.Log("[BattleSceneContext] ClearHand completed");
+    }
+
+    public void SpawnCardInHand(CardRuntimeState state)
+    {
+        if (Hand == null || state == null || CardPrefab == null || CardCatalog == null || DeckService == null) return;
+        var so = CardCatalog.GetCardData(state.CardId);
+        if (so == null)
+        {
+            Debug.LogWarning($"[BattleSceneContext] Missing SO for hand card {state.CardId}");
+            return;
+        }
+        var card = Object.Instantiate(CardPrefab, Hand.transform.position, CardPrefab.transform.rotation);
+        card.gameObject.SetActive(true);
+        card.Initialize(state.InstanceId, so, DeckService);
+        card.isPlayer = true;
+        card.inHand = true;
+        card.transform.SetParent(Hand.transform, true);
+        Hand.heldCards.Add(card);
+        Hand.SetCardPositionsInHand();
+        HandBinder?.RegisterExistingCard(card);
+        BattleDeckRuntimeSync.UpdateCardState(card);
+        Debug.Log($"[BattleSceneContext] SpawnCardInHand -> heldCards={Hand.heldCards.Count}");
+    }
+
+    public void ClearPlayerField()
+    {
+        if (Board == null) return;
+        foreach (var slot in Board.playerCardPoints)
+        {
+            if (slot == null) continue;
+            if (slot.activeCard != null)
+            {
+                Object.Destroy(slot.activeCard.gameObject);
+                slot.activeCard = null;
+            }
+        }
+    }
+
+    public void SpawnPlayerFieldCard(int slotIndex, CardRuntimeState runtime)
+    {
+        if (Board == null || runtime == null || CardPrefab == null || CardCatalog == null || DeckService == null) return;
+        if (slotIndex < 0 || slotIndex >= Board.playerCardPoints.Length)
+        {
+            Debug.LogWarning($"[BattleSceneContext] Invalid slot index {slotIndex}");
+            return;
+        }
+        var slot = Board.playerCardPoints[slotIndex];
+        if (slot == null)
+        {
+            Debug.LogWarning($"[BattleSceneContext] Slot {slotIndex} missing");
+            return;
+        }
+        if (slot.activeCard != null)
+        {
+            Object.Destroy(slot.activeCard.gameObject);
+            slot.activeCard = null;
+        }
+
+        var so = CardCatalog.GetCardData(runtime.CardId);
+        if (so == null)
+        {
+            Debug.LogWarning($"[BattleSceneContext] Missing SO for field card {runtime.CardId}");
+            return;
+        }
+        var card = Object.Instantiate(CardPrefab);
+        card.gameObject.SetActive(true);
+        card.Initialize(runtime.InstanceId, so, DeckService);
+        card.isPlayer = true;
+        card.inHand = false;
+        card.assignedPlace = slot;
+        card.SetInteractable(false);
+        card.transform.SetParent(slot.transform, true);
+        card.transform.position = slot.transform.position;
+        card.transform.rotation = CardPrefab.transform.rotation;
+        card.MoveToPoint(slot.transform.position, card.transform.rotation);
+        slot.activeCard = card;
+
+        var modifiers = BattleDeckRuntimeSync.ParseModifiers(runtime.ModifiersJson);
+        if (modifiers != null)
+        {
+            card.currentHealth = modifiers.currentHp;
+            card.attackPower = modifiers.attack;
+            card.UpdateCardDisplay();
+        }
+
+        BattleDeckRuntimeSync.UpdateCardState(card);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BattleSceneContext] SpawnPlayerFieldCard index={slotIndex} pos={card.transform.position} rot={card.transform.rotation.eulerAngles}");
+#endif
+    }
+}

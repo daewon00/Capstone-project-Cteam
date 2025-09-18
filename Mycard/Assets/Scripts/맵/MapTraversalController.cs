@@ -57,6 +57,50 @@ public class MapTraversalController : MonoBehaviour
         {
             Debug.LogWarning($"[MapTraversalController] 보상 처리 중 오류: {e.Message}");
         }
+
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService != null)
+        {
+            var locationPayload = new RunStagePayloads.Location
+            {
+                act = _run.Act,
+                floor = _run.Floor,
+                nodeIndex = _run.NodeIndex
+            };
+
+            var currentStage = stageService.Current;
+            if (currentStage == null)
+            {
+                stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
+            }
+            else
+            {
+                switch (currentStage.Stage)
+                {
+                    case RunStageType.Map:
+                    case RunStageType.Unknown:
+                        stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
+                        break;
+                    case RunStageType.ShopOverlay:
+                        if (stageService.TryGetPayload(out RunStagePayloads.Shop shopPayload))
+                        {
+                            if (shopPayload.floor == _run.Floor && shopPayload.nodeIndex == _run.NodeIndex)
+                            {
+                                _shopOverlay?.OpenForNode(_run.Floor, _run.NodeIndex);
+                            }
+                        }
+                        break;
+                    case RunStageType.Reward:
+                        // 보상 수령 전이면 그대로 유지하여 TriggerRewardUIIfNeeded가 처리하게 둡니다.
+                        break;
+                    case RunStageType.Event:
+                    case RunStageType.Battle:
+                        // 다른 씬으로 이어가기 해야 하지만 맵에 도달했다면 맵으로 복귀 처리.
+                        stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
+                        break;
+                }
+            }
+        }
     }
 
 
@@ -65,6 +109,8 @@ public class MapTraversalController : MonoBehaviour
     {
         if (_isMoving) return;
         _isMoving = true;
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+
         try
         {
         // [디버그 1] 함수 시작: 어떤 노드가 클릭되었는지 기록
@@ -150,10 +196,23 @@ public class MapTraversalController : MonoBehaviour
 
 
         // 5. 최종 행동 결정: 모든 검사와 상태 변경이 끝난 후, 딱 한 번만 결정합니다.
+        var locationPayload = new RunStagePayloads.Location
+        {
+            act = _run.Act,
+            floor = _run.Floor,
+            nodeIndex = _run.NodeIndex
+        };
+
         if (target.nodeType == NodeType.Shop)
         {
             // 목표가 상점이면 (새로 이동했든, 다시 클릭했든) 상점 오버레이를 엽니다.
             Debug.Log("<color=green>ACTION: Opening Shop Overlay.</color>");
+            stageService?.SetStage(RunStageType.ShopOverlay, SceneManager.GetActiveScene().name, RunStageService.ToJson(new RunStagePayloads.Shop
+            {
+                act = locationPayload.act,
+                floor = locationPayload.floor,
+                nodeIndex = locationPayload.nodeIndex
+            }));
             _shopOverlay?.OpenForNode(_run.Floor, _run.NodeIndex);
         }
         else if (target.nodeType == NodeType.Event)
@@ -175,6 +234,7 @@ public class MapTraversalController : MonoBehaviour
                 if (activeSession != null)
                 {
                     // 있다면, 이벤트 씬으로 보냅니다.
+                    stageService?.SetStage(RunStageType.Event, eventSceneName, stageService.Current?.PayloadJson);
                     SceneManager.LoadScene(eventSceneName);
                 }
                 // 없다면 (이미 해결된 이벤트라면), 아무것도 하지 않습니다.
@@ -192,6 +252,14 @@ public class MapTraversalController : MonoBehaviour
                 var session = em.LoadActiveOrCreate(eventId);
                 if (session != null)
                 {
+                    var payload = new RunStagePayloads.Event
+                    {
+                        act = locationPayload.act,
+                        floor = locationPayload.floor,
+                        nodeIndex = locationPayload.nodeIndex,
+                        eventId = session.eventId
+                    };
+                    stageService?.SetStage(RunStageType.Event, eventSceneName, RunStageService.ToJson(payload));
                     SceneManager.LoadScene(eventSceneName);
                 }
             }
@@ -211,7 +279,18 @@ public class MapTraversalController : MonoBehaviour
             if (GameContext.I != null) GameContext.I.CurrentBattleKind = kind;
             try { PlayerPrefs.SetInt("currentBattleKind", (int)kind); PlayerPrefs.Save(); } catch { }
             Debug.Log($"[BossFlow][Map] Battle node click → kind={kind}, nodeType={target.nodeType}, assignedScene='{target.assignedScene}'");
-            SceneManager.LoadScene(battleSceneName);
+            var battleSceneToLoad = string.IsNullOrEmpty(target.assignedScene) ? battleSceneName : target.assignedScene;
+            var battlePayload = new RunStagePayloads.Battle
+            {
+                act = locationPayload.act,
+                floor = locationPayload.floor,
+                nodeIndex = locationPayload.nodeIndex,
+                battleKind = (int)kind,
+                sceneName = battleSceneToLoad
+            };
+            stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
+            ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            SceneManager.LoadScene(battleSceneToLoad);
         }
         else if (target.nodeType == NodeType.Elite)
         {
@@ -219,7 +298,18 @@ public class MapTraversalController : MonoBehaviour
             if (GameContext.I != null) GameContext.I.CurrentBattleKind = GameContext.BattleKind.Elite;
             try { PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Elite); PlayerPrefs.Save(); } catch { }
             Debug.Log($"[BossFlow][Map] Elite node click → kind=Elite, assignedScene='{target.assignedScene}'");
-            SceneManager.LoadScene(battleSceneName);
+            var battleSceneToLoad = string.IsNullOrEmpty(target.assignedScene) ? battleSceneName : target.assignedScene;
+            var battlePayload = new RunStagePayloads.Battle
+            {
+                act = locationPayload.act,
+                floor = locationPayload.floor,
+                nodeIndex = locationPayload.nodeIndex,
+                battleKind = (int)GameContext.BattleKind.Elite,
+                sceneName = battleSceneToLoad
+            };
+            stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
+            ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            SceneManager.LoadScene(battleSceneToLoad);
         }
         else if (target.nodeType == NodeType.Boss)
         {
@@ -227,11 +317,23 @@ public class MapTraversalController : MonoBehaviour
             if (GameContext.I != null) GameContext.I.CurrentBattleKind = GameContext.BattleKind.Boss;
             try { PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Boss); PlayerPrefs.Save(); } catch { }
             Debug.Log($"[BossFlow][Map] Boss node click → kind=Boss, assignedScene='{target.assignedScene}'");
-            SceneManager.LoadScene(battleSceneName);
+            var battleSceneToLoad = string.IsNullOrEmpty(target.assignedScene) ? battleSceneName : target.assignedScene;
+            var battlePayload = new RunStagePayloads.Battle
+            {
+                act = locationPayload.act,
+                floor = locationPayload.floor,
+                nodeIndex = locationPayload.nodeIndex,
+                battleKind = (int)GameContext.BattleKind.Boss,
+                sceneName = battleSceneToLoad
+            };
+            stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
+            ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            SceneManager.LoadScene(battleSceneToLoad);
         }
         else if (isMoveToChild) // 상점이 아닌 다른 노드는, '이동'했을 때만 씬을 전환합니다.
         {
             Debug.Log($"<color=cyan>ACTION: Other node type. Calling GoToAssignedScene for '{target.assignedScene}'</color>");
+            stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
             target.GoToAssignedScene();
         }
         else
@@ -334,6 +436,15 @@ public class MapTraversalController : MonoBehaviour
             var rewards = JsonUtility.FromJson<RewardContainer>(currentNode.RewardsJson);
             Debug.Log("[MapTraversal] Pending rewards found. Showing reward UI...");
 
+            var stageService = ServiceRegistry.Get<IRunStageService>();
+            var rewardPayload = new RunStagePayloads.Reward
+            {
+                act = currentNode.Act,
+                floor = currentNode.Floor,
+                nodeIndex = currentNode.NodeIndex
+            };
+            stageService?.SetStage(RunStageType.Reward, SceneManager.GetActiveScene().name, RunStageService.ToJson(rewardPayload));
+
             // 보상 UI 컨트롤러를 찾아 호출합니다. (씬에 구현체가 없으면 경고 후 종료)
             IRewardUI rewardUI = null;
             var monos = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -347,6 +458,12 @@ public class MapTraversalController : MonoBehaviour
                 Debug.LogWarning("[MapTraversal] IRewardUI 구현체를 찾지 못했습니다. 기본 보상(골드) 자동 적용 후 JSON을 정리합니다.");
                 ApplyNonCardRewards(rewards);
                 ClearRewardsJson(currentNode);
+                stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(new RunStagePayloads.Location
+                {
+                    act = currentNode.Act,
+                    floor = currentNode.Floor,
+                    nodeIndex = currentNode.NodeIndex
+                }));
                 return;
             }
 
@@ -355,6 +472,12 @@ public class MapTraversalController : MonoBehaviour
                 Debug.Log("[MapTraversal] Reward UI closed. Applying non-card rewards and clearing JSON.");
                 ApplyNonCardRewards(rewards);
                 ClearRewardsJson(currentNode);
+                stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(new RunStagePayloads.Location
+                {
+                    act = currentNode.Act,
+                    floor = currentNode.Floor,
+                    nodeIndex = currentNode.NodeIndex
+                }));
             });
         }
         catch (System.Exception ex)
