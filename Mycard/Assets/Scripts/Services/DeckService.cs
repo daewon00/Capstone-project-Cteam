@@ -6,6 +6,9 @@ using Game.Save;
 using Game.Utils; // Shuffle extension
 using BattleSnapshot;
 
+/// <summary>
+/// 런 덱의 런타임 상태를 관리하고 전투에서의 카드 이동 및 저장을 처리하는 서비스입니다.
+/// </summary>
 public class DeckService : IDeckService
 {
     private readonly IDatabase _db;
@@ -28,18 +31,24 @@ public class DeckService : IDeckService
     public event System.Action<DrawResult> OnCardsDrawn;
     public event System.Action<PileCounts> OnPileCountsChanged;
 
+    /// <summary>
+    /// 덱 서비스에 필요한 DB와 RNG 핸들을 주입합니다.
+    /// </summary>
     public DeckService(IDatabase db, IRngService rng)
     {
         _db = db;
         _rng = rng;
     }
 
+    /// <summary>
+    /// 런 덱 상태를 로드하고 필요하면 구버전 데이터를 백필합니다.
+    /// </summary>
     public void LoadAndPrepareDeck(string runId)
     {
         _currentRunId = runId;
         if (string.IsNullOrEmpty(_currentRunId)) return;
 
-        // 1) 최신 포맷 시도
+        // 1) 최신 포맷(CardRuntimeState) 먼저 조회
         var existingCards = _db.LoadCardRuntimeStates(_currentRunId);
         if (existingCards != null && existingCards.Count > 0)
         {
@@ -87,7 +96,7 @@ public class DeckService : IDeckService
             });
         }
 
-        // 3) 초기 셔플은 deck-init 도메인을 사용
+        // 3) 초기 셔플은 deck-init 도메인을 사용합니다.
         TryEnsureSeeded("deck-init");
         _rng.Shuffle("deck-init", newDeck);
 
@@ -99,15 +108,21 @@ public class DeckService : IDeckService
         _runtimeDeck = newDeck;
         BuildInternalCache(_runtimeDeck);
         Debug.Log($"[DeckService] 백필 완료: {_runtimeDeck.Count}장");
-        // 초기 카운트 방송
+        // 초기 카운트를 방송해 UI가 싱크되도록 합니다.
         OnPileCountsChanged?.Invoke(GetPileCounts());
     }
 
+    /// <summary>
+    /// 핸드 한도를 설정합니다.
+    /// </summary>
     public void SetHandLimit(int limit)
     {
         _handLimit = limit > 0 ? limit : 10;
     }
 
+    /// <summary>
+    /// 지정한 수만큼 카드를 드로우하고 결과를 반환합니다.
+    /// </summary>
     public DrawResult DrawCards(int amount, DrawReason reason = DrawReason.Unknown)
     {
         EnsureInitialized();
@@ -132,7 +147,7 @@ public class DeckService : IDeckService
             }
             if (_drawPileIds.Count == 0) break;
 
-            string topId = _drawPileIds[_drawPileIds.Count - 1]; // Top은 리스트 끝
+            string topId = _drawPileIds[_drawPileIds.Count - 1]; // 최상단 카드는 리스트 마지막
             MoveCard(topId, CardLocation.Hand);
             drawn.Add(_cardsById[topId]);
         }
@@ -142,11 +157,14 @@ public class DeckService : IDeckService
         return result;
     }
 
+    /// <summary>
+    /// 새 전투를 준비하기 위해 모든 카드를 드로우 더미로 모으고 셔플합니다.
+    /// </summary>
     public void PrepareNewCombat()
     {
         EnsureInitialized();
 
-        // 모든 카드를 DrawPile로 모은 후 셔플하여 전투 시작 상태를 준비합니다.
+        // 모든 카드를 DrawPile로 모은 뒤 셔플하여 전투 시작 상태를 준비합니다.
         // 1) 내부 리스트 재구성: 전 카드 ID 모으기
         var allIds = _cardsById.Keys.ToList();
 
@@ -182,11 +200,14 @@ public class DeckService : IDeckService
 #endif
     }
 
+    /// <summary>
+    /// 전투 종료 후 남은 카드 상태를 정리하고 저장합니다.
+    /// </summary>
     public void CleanupAfterCombat()
     {
         EnsureInitialized();
 
-        // 남아있는 핸드 카드를 모두 Discard로 이동(전투 종료 시 핸드 비우기 정합성 보장)
+        // 남아있는 핸드 카드를 모두 버림 더미로 이동합니다.
         if (_handIds.Count > 0)
         {
             var handCopy = _handIds.ToList();
@@ -203,6 +224,9 @@ public class DeckService : IDeckService
 #endif
     }
 
+    /// <summary>
+    /// 핸드에 있는 카드를 사용 처리하고 결과를 반환합니다.
+    /// </summary>
     public PlayResult PlayCard(string instanceId)
     {
         EnsureInitialized();
@@ -217,7 +241,7 @@ public class DeckService : IDeckService
             return result;
         }
 
-        // 기본 규칙: 사용하면 버림 더미로 이동(향후 카드 효과에 따라 Exhaust 등 변경 가능)
+        // 기본 규칙: 사용하면 버림 더미로 이동(향후 카드 효과에 따라 exhaust 등으로 확장 가능)
         MoveCard(instanceId, CardLocation.DiscardPile);
         result.TargetPile = CardLocation.DiscardPile;
         result.Code = PlayResult.ResultCode.Success;
@@ -235,7 +259,7 @@ public class DeckService : IDeckService
     public IReadOnlyList<CardRuntimeState> GetHandSnapshot()
     {
         if (_handIds.Count == 0) return Array.Empty<CardRuntimeState>();
-        // 현재 핸드 목록에서 OrderInPile DESC로 반환(Top 우선)
+        // 현재 핸드 목록을 OrderInPile 내림차순(Top 우선)으로 정렬해 반환합니다.
         return _handIds
             .Select(id => _cardsById[id])
             .OrderByDescending(c => c.OrderInPile)
@@ -244,13 +268,16 @@ public class DeckService : IDeckService
 
     public PileCounts GetPileCounts() => GetCurrentPileCounts();
 
+    /// <summary>
+    /// 카드 ID를 기반으로 새 카드를 생성해 덱에 추가합니다.
+    /// </summary>
     public void AddCardToDeckById(string cardId, bool isUpgraded = false)
     {
         EnsureInitialized();
         if (string.IsNullOrEmpty(cardId))
             throw new System.ArgumentException("cardId must be non-empty", nameof(cardId));
 
-        // 신규 카드 인스턴스 생성: DiscardPile 상단으로 push
+        // 신규 카드 인스턴스를 생성해 버림 더미 상단에 추가합니다.
         var instanceId = System.Guid.NewGuid().ToString("N");
         var newCard = new CardRuntimeState
         {
@@ -269,7 +296,7 @@ public class DeckService : IDeckService
         _nextOrderInPile[CardLocation.DiscardPile] = next + 1;
         _discardPileIds.Add(instanceId);
 
-        // 스냅샷 저장 + 방송
+        // 스냅샷을 저장하고 변경 사항을 방송합니다.
         PersistAndBroadcast();
         Debug.Log($"[DeckService] Card '{cardId}' added to deck (DiscardPile). counts={GetPileCounts().Discard}");
     }
@@ -323,7 +350,7 @@ public class DeckService : IDeckService
     {
         unchecked
         {
-            uint h = 2166136261u; // FNV-1a
+            uint h = 2166136261u; // FNV-1a 해시 기준값
             if (!string.IsNullOrEmpty(runId)) foreach (char c in runId) { h ^= c; h *= 16777619u; }
             if (!string.IsNullOrEmpty(domain)) foreach (char c in domain) { h ^= c; h *= 16777619u; }
             return h == 0u ? 1u : h;
@@ -367,7 +394,7 @@ public class DeckService : IDeckService
     {
         if (_discardPileIds.Count == 0) return false;
 
-        // discard → draw로 이동 (리스트 병합)
+        // 버림 더미의 카드를 드로우 더미로 이동합니다.
         _drawPileIds.AddRange(_discardPileIds);
         _discardPileIds.Clear();
 
@@ -375,7 +402,7 @@ public class DeckService : IDeckService
         TryEnsureSeeded("deck-shuffle");
         _rng.Shuffle("deck-shuffle", _drawPileIds);
 
-        // 새 순서 부여(작을수록 bottom, 클수록 top)
+        // 새 순서를 부여합니다(값이 클수록 상단).
         for (int i = 0; i < _drawPileIds.Count; i++)
         {
             var id = _drawPileIds[i];
@@ -394,7 +421,7 @@ public class DeckService : IDeckService
         fromList.Remove(instanceId);
 
         card.Location = to;
-        // Top으로 push: 다음 순번 할당 후 리스트 끝에 추가
+        // 상단으로 추가: 다음 순번을 할당한 뒤 리스트 끝에 추가합니다.
         if (!_nextOrderInPile.TryGetValue(to, out var next)) next = 0;
         card.OrderInPile = next;
         _nextOrderInPile[to] = next + 1;

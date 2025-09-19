@@ -18,6 +18,11 @@ public class CardScriptableObject : ScriptableObject
 
     public Sprite characterSprite, bgSprite;
 
+    [SerializeField]
+    private List<CardEffectDefinition> effects = new();
+
+    public IReadOnlyList<CardEffectDefinition> Effects => effects;
+
     /*
     public enum CardType //추가1
     {

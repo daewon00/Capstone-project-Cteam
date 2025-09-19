@@ -3,6 +3,9 @@ using System.Reflection;
 using UnityEngine;
 using Game.Save;
 
+/// <summary>
+/// 맵 씬 진입 시 현재 런 데이터를 복원하고 덱과 맵 생성을 초기화합니다.
+/// </summary>
 public class MapBootstrap : MonoBehaviour
 {
     [Header("씬(Scene)에 있는 오브젝트 연결")]
@@ -10,6 +13,9 @@ public class MapBootstrap : MonoBehaviour
     public MapGenerator mapGenerator;
     
 
+    /// <summary>
+    /// 런 ID를 확인하고 덱과 맵, 유물 상태를 복구합니다.
+    /// </summary>
     void Start()
     {
         // 씬에 있는 오브젝트를 자동으로 찾아 연결 (인스펙터에서 연결하는 것을 잊었을 때를 대비한 안전장치)

@@ -4,6 +4,9 @@
 
 using System;
 
+/// <summary>
+/// 런 진행 중 각 카드 인스턴스의 고유 ID와 전투 중 임시 상태를 보관합니다.
+/// </summary>
 [Serializable] // 이 클래스의 데이터를 저장하거나 에디터에 표시할 수 있도록 합니다.
 public class CardInstance
 {

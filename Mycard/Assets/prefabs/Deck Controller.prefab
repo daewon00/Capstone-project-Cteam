@@ -154,7 +154,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1f277ba9153ebaa48b1abc89678f11d9, type: 2}
   - {fileID: 11400000, guid: b1b45855cf524f146a308f5210e8b0d9, type: 2}
   - {fileID: 11400000, guid: b3aa3bd7afd7aa44a909c48d436bf20f, type: 2}
-  cardToSpawn: {fileID: 2177406694648586450, guid: ae2d31e4ec7d6ab4aaf2d2b6575c8c35, type: 3}
+  cardToSpawn: {fileID: 2177406694648586450, guid: 7597e66270171af4fbeda47477a3ccf6, type: 3}
   drawCardCost: 0
   waitBetweenDrawingCards: 0.25
   cardDatabase:

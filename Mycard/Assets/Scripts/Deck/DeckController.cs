@@ -7,12 +7,18 @@ using UnityEngine;
 
 
 //추가1
+/// <summary>
+/// 레거시 덱 컨트롤러가 저장하던 카드 ID 배열을 담는 단순 컨테이너입니다.
+/// </summary>
 [Serializable]
 public class DeckSaveData
 {
     public List<string> ids = new List<string>(); // deckToUse를 Id 배열로 저장
 }
 
+/// <summary>
+/// 레거시 덱 컨트롤러로, 현재는 IDeckService 이전 코드 호환을 위해 남겨두었습니다.
+/// </summary>
 [Obsolete("DeckController는 레거시입니다. IDeckService를 사용하세요.", true)]
 public class DeckController : MonoBehaviour
 {
@@ -23,6 +29,9 @@ public class DeckController : MonoBehaviour
     private ICardCatalog _cardCatalog;
     private bool _isInitialized = false;
 
+    /// <summary>
+    /// 단일 인스턴스를 유지하고 씬 전환 시 파괴되지 않도록 설정합니다.
+    /// </summary>
     private void Awake()
     {
         instance = this;
@@ -59,6 +68,9 @@ public class DeckController : MonoBehaviour
     //추가4
     private const string PlayerPrefsKey = "deck_1";
 
+    /// <summary>
+    /// 레거시 덱 데이터를 인덱싱하고 드로우 덱을 초기화합니다.
+    /// </summary>
     void Start()
     {
         BuildIndex();
@@ -95,11 +107,17 @@ public class DeckController : MonoBehaviour
      */
 
     // Update is called once per frame
+    /// <summary>
+    /// 레거시 컨트롤러는 프레임별 로직을 사용하지 않습니다.
+    /// </summary>
     void Update()
     {
 
     }
 
+    /// <summary>
+    /// 현재 덱 목록을 기준으로 드로우용 카드 배열을 셔플해 구성합니다.
+    /// </summary>
     public void SetupDeck()
     {
         activeCards.Clear();
@@ -118,7 +136,7 @@ public class DeckController : MonoBehaviour
     }
 
     /// <summary>
-    /// BattleSceneBootstrap에서 호출해 서비스를 주입합니다. 이 메서드가 호출되기 전에는 동작하지 않아야 합니다.
+    /// BattleSceneBootstrap에서 서비스를 주입해 레거시 컨트롤러가 동작하도록 초기화합니다.
     /// </summary>
     public void Initialize(IDeckService deckService, ICardCatalog cardCatalog)
     {
@@ -133,6 +151,9 @@ public class DeckController : MonoBehaviour
         if (!_isInitialized)
             throw new InvalidOperationException("DeckController가 초기화되지 않았습니다. BattleSceneBootstrap에서 Initialize()를 호출해야 합니다.");
     }
+    /// <summary>
+    /// 드로우 더미를 다시 구성하며 필요 시 셔플합니다.
+    /// </summary>
     public void RebuildDrawPile(bool shuffle = true) //카드 추가시 재구성
     {
         if (shuffle)
@@ -147,6 +168,9 @@ public class DeckController : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// 핸드에 카드를 한 장 드로우하는 레거시 경로입니다.
+    /// </summary>
     [Obsolete("카드 드로우는 IDeckService.DrawCards()를 사용하세요.", false)]
     public void DrawCardToHand()
     {
@@ -168,6 +192,9 @@ public class DeckController : MonoBehaviour
         AudioManager.instance.PlaySFX(3); //sfx3
     }
 
+    /// <summary>
+    /// 마나를 소모해 드로우를 수행하는 레거시 경로입니다.
+    /// </summary>
     [Obsolete("카드 드로우는 IDeckService.DrawCards()를 사용하세요.", false)]
     public void DrawCardForMana() //드로우 카드의 코스트 기제
     {
@@ -186,6 +213,9 @@ public class DeckController : MonoBehaviour
             UIController.instance.drawCardButton.SetActive(false);
         }
     }
+    /// <summary>
+    /// 지정한 수만큼 카드를 순차적으로 드로우합니다. 레거시 구현입니다.
+    /// </summary>
     [Obsolete("카드 드로우는 IDeckService.DrawCards()를 사용하세요.", false)]
     public void DrawMulitpleCards(int amountToDraw)
     {
@@ -195,6 +225,9 @@ public class DeckController : MonoBehaviour
        StartCoroutine(DrawMultipleCo(amountToDraw));
     }
 
+    /// <summary>
+    /// 카드 여러 장을 일정 간격으로 드로우하는 레거시 코루틴입니다.
+    /// </summary>
     [Obsolete("레거시 코루틴은 사용하지 않습니다.", false)]
     IEnumerator DrawMultipleCo(int amountToDraw)
     {
@@ -214,6 +247,9 @@ public class DeckController : MonoBehaviour
     public IReadOnlyList<CardScriptableObject> CurrentDeck => deckToUse;
     public IReadOnlyList<CardScriptableObject> CurrentDrawPile => activeCards;
 
+    /// <summary>
+    /// 지정된 카드를 덱에 추가하고 필요 시 드로우 더미를 재구성합니다.
+    /// </summary>
     public bool AddCardToDeck(CardScriptableObject so, int count = 1, bool rebuildDrawPile = true)
     {
         //갯수 제한이나 복사제한을 둘때 사용하시오
@@ -243,6 +279,9 @@ public class DeckController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 카드 ID를 통해 덱에 카드를 추가합니다.
+    /// </summary>
     public bool AddCardToDeckById(string id, int count = 1, bool rebuildDrawpile = true)
     {
         if (string.IsNullOrEmpty(id)) return false;
@@ -255,6 +294,9 @@ public class DeckController : MonoBehaviour
         return AddCardToDeck(so, count, rebuildDrawpile);
     }
     //card so 이름으로 삭제 뒤에서 부터 제거
+    /// <summary>
+    /// 전달된 카드 참조와 일치하는 항목을 덱에서 제거합니다.
+    /// </summary>
     public int RemoveCardFromDeck(CardScriptableObject so, int count = 1, bool rebuildDrawPile = true)
     {
         if (so == null || count <= 0) return 0;
@@ -275,6 +317,9 @@ public class DeckController : MonoBehaviour
         return removed;
     }
     //ID로 삭제
+    /// <summary>
+    /// 카드 ID를 기준으로 덱에서 제거합니다.
+    /// </summary>
     public int RemoveCardFromDeckById(string id, int count = 1, bool rebuildDrawPile = true) 
     {
         if (string.IsNullOrEmpty(id)) return 0;
@@ -286,6 +331,9 @@ public class DeckController : MonoBehaviour
         return RemoveCardFromDeck(so, count, rebuildDrawPile);
     }
 
+    /// <summary>
+    /// 덱을 완전히 비우고 필요 시 드로우 더미를 재구성합니다.
+    /// </summary>
     public void ClearDeck(bool rebuildDrawPile = true) //덱 비우기
     {
         deckToUse.Clear();
@@ -293,6 +341,9 @@ public class DeckController : MonoBehaviour
         NotifyChanged();
         if (rebuildDrawPile) RebuildDrawPile(true);
     }
+    /// <summary>
+    /// 덱 자체를 섞고 드로우 더미를 다시 만듭니다.
+    /// </summary>
     [Obsolete("셔플은 IDeckService가 자동으로 처리합니다.", false)]
     public void ShuffleDeckToUse()
     {
@@ -309,12 +360,18 @@ public class DeckController : MonoBehaviour
         NotifyChanged();
         RebuildDrawPile(true);
     }
+    /// <summary>
+    /// 덱에서 특정 카드가 몇 장인지 계산합니다.
+    /// </summary>
     public int CountOfInDeck(CardScriptableObject so) //카드숫자를 세기
     {
         int c = 0;
         foreach (var x in deckToUse) if (x == so) c++;
         return c;
     }
+    /// <summary>
+    /// 레거시 저장 경로로, 현재는 IDeckService가 처리하므로 동작하지 않습니다.
+    /// </summary>
     [Obsolete("덱 저장은 IDeckService/DB가 자동으로 처리합니다.", false)]
     public void SaveDeck()
     {
@@ -322,6 +379,9 @@ public class DeckController : MonoBehaviour
         Debug.LogWarning($"[DEPRECATED] DeckController.SaveDeck() 호출은 무시됩니다. Stack: {Environment.StackTrace}");
 #endif
     }
+    /// <summary>
+    /// 레거시 로드 경로로, 현재는 IDeckService가 처리하므로 항상 false를 반환합니다.
+    /// </summary>
     [Obsolete("덱 로드는 IDeckService.LoadAndPrepareDeck()으로 대체되었습니다.", false)]
     public bool LoadDeck(bool rebuildDrawPile = true)
     {
@@ -332,6 +392,9 @@ public class DeckController : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 카드 데이터베이스와 현재 덱을 스캔해 ID 인덱스를 구성합니다.
+    /// </summary>
     private void BuildIndex()
     {
         dbById.Clear();
@@ -346,6 +409,9 @@ public class DeckController : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// 카드 하나를 ID 인덱스에 등록합니다.
+    /// </summary>
     private void TryIndex(CardScriptableObject so)
     {
         if (so == null) return;
@@ -357,6 +423,9 @@ public class DeckController : MonoBehaviour
         dbById[so.CardId] = so; // 마지막 등록 우선
     }
 
+    /// <summary>
+    /// 덱 변경 이벤트를 발생시켜 외부 UI나 시스템이 동기화하도록 합니다.
+    /// </summary>
     private void NotifyChanged() //deck이 변했음을 알리는 코드
     {
         OnDeckChanged?.Invoke(deckToUse);

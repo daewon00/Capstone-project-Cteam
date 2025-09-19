@@ -6,6 +6,9 @@ using TMPro;
 using Game.Save; // EventChoiceDTO를 사용하기 위함
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// 이벤트 씬에서 UI를 구성하고 선택 결과를 적용한 뒤 다음 씬으로 전환합니다.
+/// </summary>
 public class EventSceneBootstrap : MonoBehaviour
 {
     [Header("UI 연결")]
@@ -25,6 +28,9 @@ public class EventSceneBootstrap : MonoBehaviour
     private bool _isResolving; // 중복 입력을 막기 위한 '잠금 장치'
     private RunStagePayloads.Event _eventStageCache;
 
+    /// <summary>
+    /// 이벤트 매니저를 확보하고 세션을 불러와 UI를 채웁니다.
+    /// </summary>
     void Start()
     {
         // EventManager가 없으면 안전하게 맵으로 돌아갑니다.
@@ -59,6 +65,9 @@ public class EventSceneBootstrap : MonoBehaviour
         MarkStageAsEvent();
     }
 
+    /// <summary>
+    /// 현재 이벤트 세션에 맞춰 설명과 선택지 버튼을 갱신합니다.
+    /// </summary>
     private void BindUI()
     {
 
@@ -97,6 +106,9 @@ public class EventSceneBootstrap : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 선택지 클릭 시 중복 입력을 막고 결과를 적용한 뒤 맵 씬으로 복귀합니다.
+    /// </summary>
     private void OnChoicePicked(EventChoiceDTO choice)
     {
         if (_isResolving) return; // 중복 클릭 방지
@@ -113,6 +125,9 @@ public class EventSceneBootstrap : MonoBehaviour
     }
     
     // 씬 전환을 위한 안전한 함수
+    /// <summary>
+    /// 런 단계 정보를 업데이트하고 안전하게 맵 씬으로 전환합니다.
+    /// </summary>
     private void SafeGoMap()
     {
         var stageService = ServiceRegistry.Get<IRunStageService>();
@@ -153,6 +168,9 @@ public class EventSceneBootstrap : MonoBehaviour
             Debug.LogError("[EventScene] mapSceneName이 비어있어 씬 전환이 불가합니다.");
     }
 
+    /// <summary>
+    /// 런 스테이지 서비스에 현재 이벤트 진행 상황을 기록합니다.
+    /// </summary>
     private void MarkStageAsEvent()
     {
         var stageService = ServiceRegistry.Get<IRunStageService>();

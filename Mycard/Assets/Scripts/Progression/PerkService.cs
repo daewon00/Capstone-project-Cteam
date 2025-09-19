@@ -4,22 +4,37 @@ using System.Linq;
 using Game.Save;
 using UnityEngine;
 
+/// <summary>
+/// 특전 정의를 로드하고 구매·집계·스냅샷 계산을 담당하는 서비스입니다.
+/// </summary>
 public sealed class PerkService : IPerkService
 {
     private readonly IDatabase _db;
     private readonly Dictionary<string, PerkDefinition> _defs;
 
+    /// <summary>
+    /// DB 핸들을 받아 특전 서비스를 초기화합니다.
+    /// </summary>
     public PerkService(IDatabase db)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         _defs = LoadDefinitions();
     }
 
+    /// <summary>
+    /// 모든 특전 정의를 반환합니다.
+    /// </summary>
     public IReadOnlyList<PerkDefinition> GetAllDefinitions() => _defs.Values.ToList();
 
+    /// <summary>
+    /// 지정한 프로필의 현재 특전 배치를 조회합니다.
+    /// </summary>
     public IReadOnlyList<PerkAllocation> GetAllocations(string profileId)
         => _db.LoadPerkAllocations(profileId);
 
+    /// <summary>
+    /// 특전 레벨을 구매하고 포인트를 차감합니다.
+    /// </summary>
     public bool TryPurchase(string profileId, string perkId, int levels, out string error)
     {
         error = null;
@@ -62,10 +77,13 @@ public sealed class PerkService : IPerkService
             existing.Level = targetLevel;
         }
         DatabaseManager.Instance.SavePerkAllocations(profileId, allocations);
-        MirrorAllocationsToPrefs(profileId, allocations); // convenient debug mirror
+        MirrorAllocationsToPrefs(profileId, allocations); // 디버그용 미러링
         return true;
     }
 
+    /// <summary>
+    /// 특전 집계값을 계산하고 런 스냅샷 테이블에 저장합니다.
+    /// </summary>
     public void ComputeRunSnapshotAndPersist(string profileId, string runId)
     {
         var aggregates = ComputeAggregatesForProfile(profileId);
@@ -88,8 +106,8 @@ public sealed class PerkService : IPerkService
         foreach (var def in _defs.Values)
         {
             if (string.IsNullOrEmpty(def?.EffectKey)) continue;
-            if (!effectKeys.Add(def.EffectKey)) continue; // distinct only
-            if (aggregates.ContainsKey(def.EffectKey)) continue; // already added
+            if (!effectKeys.Add(def.EffectKey)) continue; // 이미 처리한 키는 건너뜁니다.
+            if (aggregates.ContainsKey(def.EffectKey)) continue; // 집계에 존재하면 생략합니다.
             rows.Add(new RunPerkSnapshot
             {
                 RunId = runId,
@@ -102,6 +120,9 @@ public sealed class PerkService : IPerkService
         _db.ReplaceRunPerkSnapshot(runId, rows);
     }
 
+    /// <summary>
+    /// 프로필의 특전 배치로부터 평면/비율 보너스를 집계합니다.
+    /// </summary>
     public Dictionary<string, (float flat, float percent)> ComputeAggregatesForProfile(string profileId)
     {
         var dict = new Dictionary<string, (float flat, float percent)>(StringComparer.OrdinalIgnoreCase);
@@ -119,13 +140,16 @@ public sealed class PerkService : IPerkService
         return dict;
     }
 
+    /// <summary>
+    /// 목표 레벨 집합을 적용하며 포인트 변화를 계산합니다.
+    /// </summary>
     public bool ApplyAdjustments(string profileId, System.Collections.Generic.Dictionary<string, int> targetLevels, out string error)
     {
         error = null;
         if (string.IsNullOrEmpty(profileId)) { error = "Invalid profile"; return false; }
         if (targetLevels == null) { error = "No adjustments"; return false; }
 
-        // Load current state
+        // 현재 상태를 로드합니다.
         var currentAlloc = _db.LoadPerkAllocations(profileId).ToDictionary(a => a.PerkId, a => a.Level, StringComparer.OrdinalIgnoreCase);
         var profile = _db.LoadProfile(profileId);
         int unspent = profile?.UnspentPerkPoints ?? 0;
@@ -133,7 +157,7 @@ public sealed class PerkService : IPerkService
         int totalCost = 0;
         int totalRefund = 0;
 
-        // Union of keys: adjust only provided keys, keep others
+        // 적용 대상 키를 합집합으로 구성합니다.
         var allKeys = new HashSet<string>(currentAlloc.Keys, StringComparer.OrdinalIgnoreCase);
         foreach (var k in targetLevels.Keys) allKeys.Add(k);
 
@@ -146,7 +170,7 @@ public sealed class PerkService : IPerkService
 
             if (!_defs.TryGetValue(perkId, out var def))
             {
-                // Unknown perk ID in request → ignore with warning
+                // 요청에 알 수 없는 특전이 포함된 경우 경고 후 무시합니다.
                 Debug.LogWarning($"[PerkService] Unknown perk in ApplyAdjustments: {perkId}");
                 finalLevels[perkId] = current; // no change
                 continue;
@@ -178,7 +202,7 @@ public sealed class PerkService : IPerkService
             return false;
         }
 
-        // Compose new allocation rows: only levels > 0
+        // 레벨이 0 초과인 항목만 새 행으로 구성합니다.
         var rows = new List<PerkAllocation>();
         foreach (var kv in finalLevels)
         {
@@ -203,6 +227,9 @@ public sealed class PerkService : IPerkService
         }
     }
 
+    /// <summary>
+    /// Resources에서 특전 정의를 로드하거나 기본 데이터를 생성합니다.
+    /// </summary>
     private Dictionary<string, PerkDefinition> LoadDefinitions()
     {
         var result = new Dictionary<string, PerkDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -219,7 +246,7 @@ public sealed class PerkService : IPerkService
             Debug.LogWarning($"[PerkService] Failed to load SOs: {e.Message}");
         }
 
-        // Fallback default definitions for dev/testing if none provided
+        // 에셋이 없을 경우 개발/테스트용 기본 정의를 생성합니다.
         if (result.Count == 0)
         {
             var flat = ScriptableObject.CreateInstance<PerkDefinition>();
@@ -244,10 +271,11 @@ public sealed class PerkService : IPerkService
         return result;
     }
 
-    // Note: For editor/dev convenience we mirror the latest allocations snapshot into PlayerPrefs
-    // so the debug overlay can show levels even before a read API existed.
+    // 참고: 에디터/개발 편의를 위해 최신 배치를 PlayerPrefs에도 복사합니다.
 
-    // Helper to persist allocations snapshot in PlayerPrefs whenever we SavePerkAllocations
+    /// <summary>
+    /// 특전 배치를 PlayerPrefs에 복제해 디버그 오버레이가 즉시 참조할 수 있도록 합니다.
+    /// </summary>
     public static void MirrorAllocationsToPrefs(string profileId, IEnumerable<PerkAllocation> perks)
     {
         var wrapper = new AllocWrapper { items = perks.ToList() };

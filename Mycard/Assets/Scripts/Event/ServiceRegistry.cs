@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 게임 전체에서 사용될 전문가(서비스)들을 등록하고 찾아 쓸 수 있게 해주는 '보관소' 클래스입니다.
+/// <summary>
+/// 게임 전역에서 서비스 인스턴스를 등록하고 검색하는 간단한 보관소입니다.
+/// </summary>
 public static class ServiceRegistry
 {
     private static readonly Dictionary<Type, object> _services = new();
@@ -27,7 +29,9 @@ public static class ServiceRegistry
         return service as T;
     }
 
-    // 필수 서비스가 등록되지 않았을 때, 버그를 바로 찾을 수 있도록 돕는 기능
+    /// <summary>
+    /// 필수 서비스가 누락되었을 때 예외를 발생시켜 문제를 즉시 드러냅니다.
+    /// </summary>
     public static T GetRequired<T>() where T : class
     {
         var svc = Get<T>();
@@ -41,7 +45,9 @@ public static class ServiceRegistry
         return svc;
     }
 
-    // 새 게임 시작 시, 이전 게임의 전문가들을 모두 해고하는 기능
+    /// <summary>
+    /// 등록된 모든 서비스를 해제합니다.
+    /// </summary>
     public static void ClearAll()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -49,7 +55,9 @@ public static class ServiceRegistry
 #endif
         _services.Clear();
     }
-    // ClearAll() 안됐을때 방지용
+    /// <summary>
+    /// 도중 초기화 누락을 방지하기 위해 서브시스템 리셋 시 서비스를 비웁니다.
+    /// </summary>
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics()
     {

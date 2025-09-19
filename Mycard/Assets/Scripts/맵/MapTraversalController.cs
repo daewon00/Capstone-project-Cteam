@@ -4,6 +4,9 @@ using System.Linq;
 using Game.Save;
 using UnityEngine.SceneManagement; // SceneManager를 사용하기 위해 추가
 
+/// <summary>
+/// 맵 노드 이동과 상점/이벤트/전투 씬 전환을 관리하고 런 진행 정보를 DB와 동기화합니다.
+/// </summary>
 public class MapTraversalController : MonoBehaviour
 {
     [Header("Marker")]
@@ -105,6 +108,9 @@ public class MapTraversalController : MonoBehaviour
 
 
 
+    /// <summary>
+    /// 노드 클릭 시 유효성을 검사하고 이동 및 씬 전환을 실행합니다.
+    /// </summary>
     public void OnNodeClicked(NodeGoScene target)
     {
         if (_isMoving) return;

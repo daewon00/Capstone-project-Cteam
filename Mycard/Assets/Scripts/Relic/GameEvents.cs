@@ -21,6 +21,7 @@ public static class GameEvents
 
     // 스탯 조정(가변 훅, 필요하면 호출)
     public static Func<int, int> ModifyPlayerAttack;   // 누적 체인(예: 최종 공격력 = 체인 통과 결과)
+    public static Func<int, int> ModifyEnemyAttack;    // 제아에게 공격 제어
     public static Func<int, int> ModifyPlayerMana;     // 플레이어 마나 수정
 
 

@@ -4,12 +4,18 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
+/// <summary>
+/// 이벤트 세션을 로드·저장하고 선택 결과를 런 상태에 반영하는 실행 서비스입니다.
+/// </summary>
 public sealed class EventManager : IEventManager 
 {
     private readonly IDatabase _db;
     private readonly string _runId;
     private CurrentRun _run;
 
+    /// <summary>
+    /// 런 ID와 DB 핸들을 받아 이벤트 매니저를 초기화합니다.
+    /// </summary>
     public EventManager(IDatabase db, string runId)
     {
         _db = db;
@@ -18,6 +24,9 @@ public sealed class EventManager : IEventManager
         if (_run == null) Debug.LogError("[EventManager] 현재 런 정보를 찾을 수 없습니다.");
     }
 
+    /// <summary>
+    /// 활성 이벤트 세션을 불러오거나 없으면 지정한 ID 기준으로 새 세션을 생성합니다.
+    /// </summary>
     public EventSessionDTO LoadActiveOrCreate(string eventIdFallback)
     {
         if (_run == null) return null;
@@ -62,6 +71,9 @@ public sealed class EventManager : IEventManager
         return newSession;
     }
 
+    /// <summary>
+    /// 활성 세션을 생성하지 않고 존재 여부만 확인해 불러옵니다.
+    /// </summary>
     public EventSessionDTO TryLoadActive()
     {
         if (_run == null) return null;
@@ -83,6 +95,9 @@ public sealed class EventManager : IEventManager
         }
     }
 
+    /// <summary>
+    /// 전달된 선택지를 적용하고 런 상태 및 맵 노드 저장 데이터를 갱신합니다.
+    /// </summary>
     public void ApplyChoice(EventSessionDTO session, EventChoiceDTO choice)
     {
         if (choice == null || _run == null) return;
@@ -138,9 +153,21 @@ public sealed class EventManager : IEventManager
     [Serializable]
     private class EventResolutionSnapshot
     {
+        /// <summary>
+        /// 해결된 이벤트 ID입니다.
+        /// </summary>
         public string eventId;
+        /// <summary>
+        /// 플레이어가 선택한 선택지 ID입니다.
+        /// </summary>
         public string selectedChoiceId;
+        /// <summary>
+        /// 적용된 효과 목록입니다.
+        /// </summary>
         public EventEffectDTO[] appliedEffects;
+        /// <summary>
+        /// 해결 시각(UTC ISO8601)입니다.
+        /// </summary>
         public string resolvedAtUtc;
     }
 }

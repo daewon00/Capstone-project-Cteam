@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Game.Save;
 
+/// <summary>
+/// 전투 종료 결과에 따라 보상, 런 요약, 스테이지 전환을 처리하는 서비스 구현체입니다.
+/// </summary>
 public class RunService : IRunService
 {
     private readonly IDatabase _database;
@@ -15,6 +18,9 @@ public class RunService : IRunService
 
     public event Action OnRunEnded;
 
+    /// <summary>
+    /// 런 서비스에 필요한 의존성을 주입합니다.
+    /// </summary>
     public RunService(IDatabase database, IRngService rngService, ICardCatalog cardCatalog)
     {
         _database = database;
@@ -22,6 +28,9 @@ public class RunService : IRunService
         _cardCatalog = cardCatalog;
     }
 
+    /// <summary>
+    /// 현재 작업 중인 런 ID를 바인딩하고 커밋 상태를 초기화합니다.
+    /// </summary>
     public void RebindRun(string runId)
     {
         _runId = runId ?? string.Empty;
@@ -29,6 +38,9 @@ public class RunService : IRunService
         Debug.Log($"[RunService] Rebound to Run ID: {_runId}");
     }
 
+    /// <summary>
+    /// 전투 종료 결과를 보고받아 승리/패배 처리 로직을 실행합니다.
+    /// </summary>
     public void ReportCombatEnded(CombatResult result)
     {
         if (_hasCommitted)
@@ -49,6 +61,9 @@ public class RunService : IRunService
         }
     }
 
+    /// <summary>
+    /// 전투 승리 시 보상 생성 또는 런 클리어 처리를 수행합니다.
+    /// </summary>
     private void ProcessVictory()
     {
         Debug.Log("[RunService] Processing VICTORY...");
@@ -64,14 +79,14 @@ public class RunService : IRunService
         var run = lr.Run;
         var stageService = ServiceRegistry.Get<IRunStageService>();
 
-        // 보스 전투 승리 시: 즉시 런 클리어 처리로 분기 (GameContext 없을 경우 PlayerPrefs 폴백)
+        // 보스 전투 승리 시: 즉시 런 클리어 처리로 분기 (GameContext가 없으면 PlayerPrefs 폴백)
         var battleKind = GameContext.I != null
             ? GameContext.I.CurrentBattleKind
             : (GameContext.BattleKind)PlayerPrefs.GetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
         Debug.Log($"[BossFlow][RunService] ProcessVictory: battleKind={battleKind}, runId={_runId}");
         if (battleKind == GameContext.BattleKind.Boss)
         {
-            // 전투 승리 방송(메타)
+            // 전투 승리 이벤트를 메타 이벤트 허브에 방송합니다.
             try
             {
                 MetaEvents.RaiseCombatVictory(new MetaEvents.CombatVictoryPayload
@@ -84,7 +99,7 @@ public class RunService : IRunService
             }
             catch { }
 
-            // 런 종료 요약(클리어)
+            // 런 종료 요약을 작성하고 클리어 상태로 저장합니다.
             var summary = new RunSummary
             {
                 RunId = _runId,
@@ -96,7 +111,7 @@ public class RunService : IRunService
             _database.EndRunAndSummarize(summary);
             stageService?.ClearStage();
 
-            // 런 종료 방송(클리어)
+            // 런 종료 이벤트를 방송해 업적/진행도를 갱신합니다.
             try
             {
                 MetaEvents.RaiseRunEnded(new MetaEvents.RunEndedPayload
@@ -111,7 +126,7 @@ public class RunService : IRunService
 
             // 에디터 배치형 UGUI(씬의 RunClearedView)가 MetaEvents.OnRunEnded를 수신해 스스로 표시합니다.
             Debug.Log("[BossFlow][RunService] Broadcast done. Expect RunClearedView in scene to activate.");
-            // 태그 정리
+            // 저장된 전투 종류 태그를 정리합니다.
             try { PlayerPrefs.DeleteKey("currentBattleKind"); PlayerPrefs.Save(); } catch { }
             return;
         }
@@ -119,7 +134,7 @@ public class RunService : IRunService
             n.Act == run.Act && n.Floor == run.Floor && n.NodeIndex == run.NodeIndex)
             ?? new MapNodeState { RunId = _runId, Act = run.Act, Floor = run.Floor, NodeIndex = run.NodeIndex };
 
-        // Ensure RNG domain for reward generation is seeded (robust against boot without runId)
+        // 보상 생성 도메인이 초기화되지 않았다면 현재 런 ID를 기반으로 시드합니다.
         TryEnsureSeeded("reward-generation");
 
         var rewardContainer = GenerateRewards();
@@ -136,7 +151,7 @@ public class RunService : IRunService
             nodeIndex = run.NodeIndex
         }));
 
-        // Broadcast a combat victory event for achievements/progression hooks.
+        // 일반 전투 승리 이벤트도 방송해 업적/진행도를 갱신합니다.
         try
         {
             MetaEvents.RaiseCombatVictory(new MetaEvents.CombatVictoryPayload
@@ -153,6 +168,9 @@ public class RunService : IRunService
         SceneManager.LoadScene("Map Scene");
     }
 
+    /// <summary>
+    /// 보상 생성 전에 RNG 도메인이 초기화되어 있는지 확인하고 필요 시 시드합니다.
+    /// </summary>
     private void TryEnsureSeeded(string domain)
     {
         if (_rngService == null) return;
@@ -163,11 +181,14 @@ public class RunService : IRunService
         }
     }
 
+    /// <summary>
+    /// 런 ID와 도메인을 조합해 안정적인 시드 값을 생성합니다.
+    /// </summary>
     private static uint HashRunIdToSeed(string runId, string domain)
     {
         unchecked
         {
-            uint h = 2166136261u; // FNV-1a basis
+            uint h = 2166136261u; // FNV-1a 기준값
             if (!string.IsNullOrEmpty(runId))
             {
                 foreach (char c in runId) { h ^= c; h *= 16777619u; }
@@ -180,19 +201,22 @@ public class RunService : IRunService
         }
     }
 
+    /// <summary>
+    /// 전투 승리 보상 컨테이너를 생성합니다.
+    /// </summary>
     private RewardContainer GenerateRewards()
     {
         var container = new RewardContainer();
         int goldAmount = _rngService.NextInt("reward-generation", 80, 121);
         container.Items.Add(new RewardItem { Type = "Gold", Amount = goldAmount });
 
-        // v2.0: 카드 선택지 3장 생성(중복 방지)
+        // v2.0: 카드 선택지 3장을 생성하며 중복을 방지합니다.
         try
         {
             var allIds = _cardCatalog?.GetAllCardIds();
             if (allIds != null && allIds.Count > 0)
             {
-                // 간단한 중복 방지: 목록 사본에서 무작위 pop
+                // 간단한 중복 방지: 목록 사본에서 무작위로 꺼내 제거합니다.
                 var pool = new System.Collections.Generic.List<string>(allIds);
                 for (int i = 0; i < 3 && pool.Count > 0; i++)
                 {
@@ -210,6 +234,9 @@ public class RunService : IRunService
         return container;
     }
 
+    /// <summary>
+    /// 전투 패배 시 런 요약을 작성하고 메인 메뉴로 이동합니다.
+    /// </summary>
     private void ProcessDefeat()
     {
         Debug.Log("[RunService] Processing DEFEAT...");
@@ -225,7 +252,7 @@ public class RunService : IRunService
         _database.EndRunAndSummarize(summary);
         ServiceRegistry.Get<IRunStageService>()?.ClearStage();
 
-        // Broadcast run ended (defeat) for achievement hooks
+        // 패배 상태의 런 종료 이벤트를 방송합니다.
         try
         {
             MetaEvents.RaiseRunEnded(new MetaEvents.RunEndedPayload

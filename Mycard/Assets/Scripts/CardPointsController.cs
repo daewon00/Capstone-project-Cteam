@@ -5,6 +5,7 @@ public class CardPointsController : MonoBehaviour
 {   //카드의 턴동안의 행동을 담당하는 스크립트입니다
 
     public static CardPointsController instance;
+    private ICardEffectService _effectService;
 
     private void Awake()
     {
@@ -17,7 +18,7 @@ public class CardPointsController : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-
+        _effectService = ServiceRegistry.Get<ICardEffectService>();
     }
 
     // Update is called once per frame
@@ -36,7 +37,9 @@ public class CardPointsController : MonoBehaviour
 
     IEnumerator PlayerAttackCo()
     {
-        
+        if (_effectService == null)
+            _effectService = ServiceRegistry.Get<ICardEffectService>();
+
         yield return new WaitForSeconds(timeBetweenAttacks);
 
         for (int i = 0; i < playerCardPoints.Length; i++)
@@ -45,33 +48,51 @@ public class CardPointsController : MonoBehaviour
                 ? playerCardPoints[i].activeCard : null;
             int baseAtk = playerCard?.attackPower ?? 0;
             int finalAtk = GameEvents.ModifyPlayerAttack?.Invoke(baseAtk) ?? baseAtk;
-            if (playerCardPoints[i].activeCard != null) //1번 칸에 있을때
-             {
-                if (enemyCardPoints[i].activeCard != null) //적카드포인트도 1번칸에 있을때
-                {
-                    //적카드공격
-                    //enemyCardPoints[i].activeCard.DamageCard(playerCardPoints[i].activeCard.attackPower);
-                    enemyCardPoints[i].activeCard.DamageCard(finalAtk);//추가+++
+            if (playerCard == null)
+                continue;
 
+            bool usePierce = _effectService?.HasEffect(playerCard, CardEffectType.Pierce) ?? false;
 
-                }
-                else
-                {
-                    //BattleController.instance.DamageEnemy(playerCardPoints[i].activeCard.attackPower); //카드가 없다면 직접공격
-                    //적카드전체체력
-                    BattleController.instance.DamageEnemy(finalAtk);//추가+++
-                }
+            Card targetCard = (!usePierce && enemyCardPoints[i].activeCard != null)
+                ? enemyCardPoints[i].activeCard
+                : null;
 
-                playerCardPoints[i].activeCard.anim.SetTrigger("Attack");//Attack불러오기
+            int damageToCard = 0;
+            int damageToLeader = 0;
 
-               
-                yield return new WaitForSeconds(timeBetweenAttacks);
-            }
-
-            if (BattleController.instance.battleEnded == true)
+            if (targetCard != null)
             {
-                i = playerCardPoints.Length;
+                var damageResult = targetCard.DamageCard(finalAtk, playerCard, DamageSourceKind.Attack);
+                damageToCard = damageResult.AppliedDamage;
             }
+            else
+            {
+                damageToLeader = BattleController.instance.DamageEnemy(finalAtk);
+            }
+
+            if (HandController.instance != null)
+                playerCard.SetCardScale(HandController.instance.GetBoardScale());
+
+            playerCard.anim.SetTrigger("Attack");
+
+            if (_effectService != null)
+            {
+                var context = new CardAttackContext(
+                    playerCard,
+                    attackerIsPlayer: true,
+                    laneIndex: i,
+                    baseAttack: finalAtk,
+                    damageToPrimary: damageToCard,
+                    damageToLeader: damageToLeader,
+                    primaryTarget: targetCard,
+                    hitCard: targetCard != null);
+                _effectService.HandleAttackResolved(context);
+            }
+
+            yield return new WaitForSeconds(timeBetweenAttacks);
+
+            if (BattleController.instance.battleEnded)
+                break;
         }
 
         CheckAssignedCards();
@@ -90,7 +111,9 @@ public class CardPointsController : MonoBehaviour
     }
     IEnumerator EnemyAttackCo()
     {
-        
+        if (_effectService == null)
+            _effectService = ServiceRegistry.Get<ICardEffectService>();
+
 
 
         yield return new WaitForSeconds(timeBetweenAttacks);
@@ -98,34 +121,54 @@ public class CardPointsController : MonoBehaviour
 
         for (int i = 0; i < enemyCardPoints.Length; i++)
         {
+            var enemyCard = enemyCardPoints[i].activeCard;
+            if (enemyCard == null)
+                continue;
 
+            int baseAtk = enemyCard.attackPower;
+            int finalAtk = GameEvents.ModifyEnemyAttack?.Invoke(baseAtk) ?? baseAtk;
+            bool usePierce = _effectService?.HasEffect(enemyCard, CardEffectType.Pierce) ?? false;
 
-            if (enemyCardPoints[i].activeCard != null)
+            Card targetCard = (!usePierce && playerCardPoints[i].activeCard != null)
+                ? playerCardPoints[i].activeCard
+                : null;
+
+            int damageToCard = 0;
+            int damageToLeader = 0;
+
+            if (targetCard != null)
             {
-                if (playerCardPoints[i].activeCard != null)
-                {
-                    //플레이어카드공격
-                    playerCardPoints[i].activeCard.DamageCard(enemyCardPoints[i].activeCard.attackPower);
-
-                    
-                }
-                else
-                {
-                    //플레이어전체체력
-                    BattleController.instance.DamagePlayer(enemyCardPoints[i].activeCard.attackPower);
-                }
-
-                enemyCardPoints[i].activeCard.anim.SetTrigger("Attack");//Attack불러오기
-
-                
-
-                yield return new WaitForSeconds(timeBetweenAttacks);
+                var damageResult = targetCard.DamageCard(finalAtk, enemyCard, DamageSourceKind.Attack);
+                damageToCard = damageResult.AppliedDamage;
+            }
+            else
+            {
+                damageToLeader = BattleController.instance.DamagePlayer(finalAtk);
             }
 
-            if(BattleController.instance.battleEnded == true)
+            if (HandController.instance != null)
+                enemyCard.SetCardScale(HandController.instance.GetBoardScale());
+
+            enemyCard.anim.SetTrigger("Attack");
+
+            if (_effectService != null)
             {
-                i = enemyCardPoints.Length;
+                var context = new CardAttackContext(
+                    enemyCard,
+                    attackerIsPlayer: false,
+                    laneIndex: i,
+                    baseAttack: finalAtk,
+                    damageToPrimary: damageToCard,
+                    damageToLeader: damageToLeader,
+                    primaryTarget: targetCard,
+                    hitCard: targetCard != null);
+                _effectService.HandleAttackResolved(context);
             }
+
+            yield return new WaitForSeconds(timeBetweenAttacks);
+
+            if (BattleController.instance.battleEnded)
+                break;
         }
 
         CheckAssignedCards();

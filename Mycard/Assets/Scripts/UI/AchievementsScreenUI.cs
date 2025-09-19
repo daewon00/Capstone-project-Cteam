@@ -6,6 +6,9 @@ using Game.Save;
 using System; // for StringComparer
 using UnityEngine.UI;
 
+/// <summary>
+/// 업적 목록 화면을 구성하고 새로 해금된 업적을 강조 표시하는 UI 컨트롤러입니다.
+/// </summary>
 public class AchievementsScreenUI : MonoBehaviour
 {
     [Header("Bindings")]
@@ -25,6 +28,9 @@ public class AchievementsScreenUI : MonoBehaviour
     private Dictionary<string, AchievementProgress> _progress = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _newly = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// 필요한 서비스와 UI 바인딩을 지연 초기화합니다.
+    /// </summary>
     private void EnsureInitialized()
     {
         if (_initialized) return;
@@ -49,6 +55,9 @@ public class AchievementsScreenUI : MonoBehaviour
         _initialized = true;
     }
 
+    /// <summary>
+    /// 업적 화면을 표시하고 내용을 갱신합니다.
+    /// </summary>
     public void Show()
     {
         EnsureInitialized();
@@ -56,11 +65,17 @@ public class AchievementsScreenUI : MonoBehaviour
         RefreshUI();
     }
 
+    /// <summary>
+    /// 업적 화면을 숨깁니다.
+    /// </summary>
     public void Hide()
     {
         if (screenRoot) screenRoot.SetActive(false);
     }
 
+    /// <summary>
+    /// 업적 정의와 진행도 스냅샷을 새로 로드하여 슬롯을 재구성합니다.
+    /// </summary>
     private void RefreshUI()
     {
         EnsureInitialized();

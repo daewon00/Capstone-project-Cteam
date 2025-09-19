@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Game.Save; // NodeType을 사용하기 위함
 
-// 1. 이벤트 원본 데이터를 담는 '설계도'
+/// <summary>
+/// 이벤트의 원본 데이터를 정의하는 설계도로, 선택지와 설명을 포함합니다.
+/// </summary>
 [CreateAssetMenu(fileName = "New Event", menuName = "Events/New Event")]
 public class EventScriptableObject : ScriptableObject
 {
@@ -12,7 +14,9 @@ public class EventScriptableObject : ScriptableObject
     public List<EventChoice> choices;
 }
 
-// 2. 이벤트 선택지 정보를 담는 클래스
+/// <summary>
+/// 이벤트 화면에 노출될 선택지 한 항목과 그 효과 목록을 나타냅니다.
+/// </summary>
 [System.Serializable]
 public class EventChoice
 {
@@ -21,16 +25,20 @@ public class EventChoice
     public List<EventEffect> effects;
 }
 
-// 3. 선택지의 효과를 담는 클래스
+/// <summary>
+/// 선택지를 통해 적용될 개별 효과 데이터를 표현합니다.
+/// </summary>
 [System.Serializable]
 public class EventEffect
 {
-    public string type; // "HpDelta", "GoldDelta", "AddCard" 등
+    public string type; // 예: "HpDelta", "GoldDelta", "AddCard"
     public int amount;
     public string refId; // 카드를 추가할 경우 CardId 등
 }
 
-// 4. '이어하기' 저장을 위한 데이터 묶음 (DTO)
+/// <summary>
+/// 이어하기 기능을 위해 현재 이벤트 진행 상황을 직렬화한 DTO입니다.
+/// </summary>
 [System.Serializable]
 public class EventSessionDTO
 {
@@ -41,6 +49,9 @@ public class EventSessionDTO
     public EventChoiceDTO[] choices;
 }
 
+/// <summary>
+/// 직렬화된 선택지 항목을 나타냅니다.
+/// </summary>
 [System.Serializable]
 public class EventChoiceDTO
 {
@@ -49,6 +60,9 @@ public class EventChoiceDTO
     public EventEffectDTO[] effects;
 }
 
+/// <summary>
+/// 직렬화된 선택지 효과 항목을 나타냅니다.
+/// </summary>
 [System.Serializable]
 public class EventEffectDTO
 {

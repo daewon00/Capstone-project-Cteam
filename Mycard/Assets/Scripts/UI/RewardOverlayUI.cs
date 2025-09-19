@@ -3,6 +3,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 전투 보상(골드/카드)을 표시하고 선택된 카드를 덱에 추가하는 오버레이 UI입니다.
+/// </summary>
 public class RewardOverlayUI : MonoBehaviour, IRewardUI
 {
     [Header("UI Elements")]
@@ -24,6 +27,9 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
         _deckService = ServiceRegistry.Get<IDeckService>();
     }
 
+    /// <summary>
+    /// 보상 컨테이너를 오버레이에 표시하고 닫힘 콜백을 설정합니다.
+    /// </summary>
     public void Show(RewardContainer rewards, Action onClosed)
     {
         _onClosedCallback = onClosed;

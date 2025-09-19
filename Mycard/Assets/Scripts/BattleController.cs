@@ -10,6 +10,7 @@ public class BattleController : MonoBehaviour
 
     public static BattleController instance;
     private IRunService _runService; // 전투 결과 보고 대상
+    private ICardEffectService _effectService;
     internal static bool SkipInitialSetup { get; set; }
 
     [Header("Dependencies")]
@@ -45,6 +46,12 @@ public class BattleController : MonoBehaviour
         else
         {
             Debug.LogWarning("[BattleController] IDeckService를 찾지 못했습니다. 추후 단계에서 연결 예정.");
+        }
+
+        _effectService = ServiceRegistry.Get<ICardEffectService>();
+        if (_effectService == null)
+        {
+            Debug.LogWarning("[BattleController] ICardEffectService를 찾지 못했습니다. 카드 효과가 적용되지 않습니다.");
         }
 
     }
@@ -340,6 +347,7 @@ public class BattleController : MonoBehaviour
             Debug.LogWarning($"[BattleController] PlayCard 실패: {(result==null?"null":result.Code.ToString())}");
             return false;
         }
+        _effectService?.RegisterBoardCard(card, true);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[BattleController] PlayCard success: instance={card.InstanceId}");
 #endif
@@ -432,52 +440,87 @@ public class BattleController : MonoBehaviour
     }
 
     //플레이어에게 데미지를 주는 함수
-    public void DamagePlayer(int damageAmount)
+    public int DamagePlayer(int damageAmount)
     {
-        if (playerHealth > 0 || !battleEnded)
+        if (playerHealth <= 0 || battleEnded)
+            return 0;
+
+        int appliedDamage = damageAmount;
+        if (_effectService != null)
         {
-            playerHealth -= damageAmount;
-            GameEvents.OnDamageDealt?.Invoke(damageAmount, false);  // +++ 적이 준 피해
-            if (playerHealth <= 0)   //체력이 0이하가 되면 배틀 종료
-            {
-                playerHealth = 0;
-
-                EndBattle();    //END BATTLE
-            }
-
-
-            UIController.instance.setPlayerHealthText(playerHealth);    //UI 체력 갱신
-
-            //데미지 숫자 표시
-            UIDamageIndicator damageClone = Instantiate(UIController.instance.playerDamage, UIController.instance.playerDamage.transform.parent);
-            damageClone.damageText.text = damageAmount.ToString();
-            damageClone.gameObject.SetActive(true);
-
-            AudioManager.instance.PlaySFX(6);   //6번 효과음 재생
+            var mitigation = _effectService.ProcessLeaderDamage(true, damageAmount);
+            appliedDamage = mitigation.RemainingDamage;
         }
+
+        if (appliedDamage <= 0)
+            return 0;
+
+        playerHealth -= appliedDamage;
+        GameEvents.OnDamageDealt?.Invoke(appliedDamage, false);
+        if (playerHealth <= 0)
+        {
+            playerHealth = 0;
+            EndBattle();
+        }
+
+        UIController.instance.setPlayerHealthText(playerHealth);
+
+        UIDamageIndicator damageClone = Instantiate(UIController.instance.playerDamage, UIController.instance.playerDamage.transform.parent);
+        damageClone.damageText.text = appliedDamage.ToString();
+        damageClone.gameObject.SetActive(true);
+
+        AudioManager.instance.PlaySFX(6);
+        return appliedDamage;
     }
 
     //적에게 데미지를 주는 함수
-    public void DamageEnemy(int damageAmount)
+    public int DamageEnemy(int damageAmount)
     {
-        if (enemyHealth > 0 || battleEnded == false)
+        if (enemyHealth <= 0 || battleEnded)
+            return 0;
+
+        int appliedDamage = damageAmount;
+        if (_effectService != null)
         {
-            enemyHealth -= damageAmount;
-            GameEvents.OnDamageDealt?.Invoke(damageAmount, true);   // +++ 플레이어가 준 피해
-            if (enemyHealth <= 0)
-            {
-                enemyHealth = 0;
+            var mitigation = _effectService.ProcessLeaderDamage(false, damageAmount);
+            appliedDamage = mitigation.RemainingDamage;
+        }
 
-                EndBattle();    //END BATTLE
-            }
+        if (appliedDamage <= 0)
+            return 0;
 
+        enemyHealth -= appliedDamage;
+        GameEvents.OnDamageDealt?.Invoke(appliedDamage, true);
+        if (enemyHealth <= 0)
+        {
+            enemyHealth = 0;
+            EndBattle();
+        }
+
+        UIController.instance.setEnemyHealthText(enemyHealth);
+
+        UIDamageIndicator damageClone = Instantiate(UIController.instance.enemyDamage, UIController.instance.enemyDamage.transform.parent);
+        damageClone.damageText.text = appliedDamage.ToString();
+        damageClone.gameObject.SetActive(true);
+
+        AudioManager.instance.PlaySFX(5);
+        return appliedDamage;
+    }
+
+    public void HealLeader(bool isPlayerLeader, int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        if (isPlayerLeader)
+        {
+            playerHealth += amount;
+            UIController.instance.setPlayerHealthText(playerHealth);
+        }
+        else
+        {
+            enemyHealth += amount;
             UIController.instance.setEnemyHealthText(enemyHealth);
-
-            UIDamageIndicator damageClone = Instantiate(UIController.instance.enemyDamage, UIController.instance.enemyDamage.transform.parent);
-            damageClone.damageText.text = damageAmount.ToString();
-            damageClone.gameObject.SetActive(true);
-
-            AudioManager.instance.PlaySFX(5);   //5번 효과음 재생
         }
     }
 

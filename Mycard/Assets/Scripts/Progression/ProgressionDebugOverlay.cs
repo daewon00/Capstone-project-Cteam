@@ -6,9 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine.SceneManagement;
 
-// Runtime debug overlay for testing progression without clearing the game each time.
-// Toggle with F10 (Editor or Development builds).
+// 매번 세이브를 초기화하지 않고도 진행도를 테스트하기 위한 런타임 디버그 오버레이입니다.
+// F10(에디터/개발 빌드) 또는 3손가락 터치로 토글합니다.
 [DefaultExecutionOrder(10000)]
+/// <summary>
+/// 진행도 관련 테스트를 위한 디버그 오버레이 UI를 제공하고 위험 작업을 수행합니다.
+/// </summary>
 public class ProgressionDebugOverlay : MonoBehaviour
 {
     private bool _visible;
@@ -23,14 +26,17 @@ public class ProgressionDebugOverlay : MonoBehaviour
     private float _userScale = 1f;
     private const string ScalePrefsKey = "dbg.overlay.scale";
 
-    // Danger Zone (data wipe) state
+    // 위험 구역(데이터 삭제) 상태 값
     private bool _dangerExpanded;
-    private string _dangerConfirm = string.Empty; // must type DELETE
+    private string _dangerConfirm = string.Empty; // "DELETE" 입력 확인용 텍스트
     private bool _alsoDeletePrefs = true;
     private bool _reloadMainMenuAfterWipe = true;
     private string _lastWipeLog = string.Empty;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    /// <summary>
+    /// 개발 빌드에서 오버레이 오브젝트를 자동 생성합니다.
+    /// </summary>
     private static void Bootstrap()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -41,6 +47,9 @@ public class ProgressionDebugOverlay : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// 필요한 서비스와 사용자 설정을 로드합니다.
+    /// </summary>
     private void Awake()
     {
         _db = ServiceRegistry.Get<IDatabase>();
@@ -50,6 +59,9 @@ public class ProgressionDebugOverlay : MonoBehaviour
         _userScale = Mathf.Clamp(PlayerPrefs.GetFloat(ScalePrefsKey, 1f), 0.5f, 4f);
     }
 
+    /// <summary>
+    /// 단축키나 멀티터치 입력으로 오버레이 토글을 감지합니다.
+    /// </summary>
     private void Update()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -80,6 +92,9 @@ public class ProgressionDebugOverlay : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// 디버그 오버레이 UI를 그립니다.
+    /// </summary>
     private void OnGUI()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -108,7 +123,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
         if (GUILayout.Button("닫기", GUILayout.Width(80))) _visible = false;
         GUILayout.EndHorizontal();
 
-        // Profile points
+        // 프로필 포인트 관리
         var profile = DatabaseManager.Instance.LoadProfile(_profileId);
         if (profile == null)
         {
@@ -126,7 +141,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
         if (_perk == null) { _perk = ServiceRegistry.Get<IPerkService>(); }
         GUILayout.Space(6);
 
-        // Achievements quick test
+        // 업적 간편 테스트
         GUILayout.Space(6);
         GUILayout.Label("Achievements quick test");
         if (GUILayout.Button("Unlock ACH_FIRST_WIN (+1pt)"))
@@ -134,7 +149,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
             ServiceRegistry.Get<IAchievementService>()?.UnlockDirect("ACH_FIRST_WIN", 1);
         }
 
-        // Snapshot preview for STARTING_GOLD
+        // STARTING_GOLD 스냅샷 미리보기
         GUILayout.Space(8);
         GUILayout.Label("Preview: STARTING_GOLD");
         float baseGold = 300f;
@@ -144,7 +159,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
         float preview = (baseGold + flat) * (1f + pct);
         GUILayout.Label($"Base={baseGold}, Flat={flat}, %={pct * 100f:F1} → {Mathf.Round(preview)}");
 
-        // Start new run fast with snapshot
+        // 스냅샷을 활용해 빠르게 새 런을 생성합니다.
         if (GUILayout.Button("Create New Run with Snapshot"))
         {
             var runId = System.Guid.NewGuid().ToString("N");
@@ -181,14 +196,14 @@ public class ProgressionDebugOverlay : MonoBehaviour
         GUILayout.Label($"Applied x{scale:0.00} / Raw x{rawScale:0.00}{clampTag}");
         GUILayout.Label("재열기: F10(PC) / 3손가락 터치(모바일)");
 
-        // --- Danger Zone: destructive test tools ---
+        // --- 위험 구역: 파괴적인 테스트 도구 ---
         GUILayout.Space(10);
         GUILayout.Label("[Danger Zone] 테스트용 데이터 삭제");
         _dangerExpanded = GUILayout.Toggle(_dangerExpanded, _dangerExpanded ? "접기" : "펼치기", GUILayout.Width(80));
         if (_dangerExpanded)
         {
             GUILayout.BeginVertical(GUI.skin.box);
-            // Current Run delete
+            // 현재 런 데이터 삭제
             GUILayout.Label("현재 런 데이터 삭제 (Run-only)");
             if (GUILayout.Button("Delete Current Run", GUILayout.Height(24)))
             {
@@ -196,7 +211,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
             }
             GUILayout.Space(6);
 
-            // Full wipe
+            // 전체 삭제 옵션
             GUILayout.Label("전체 저장 데이터 삭제 (DB + 옵션: PlayerPrefs)");
             GUILayout.BeginHorizontal();
             _alsoDeletePrefs = GUILayout.Toggle(_alsoDeletePrefs, "PlayerPrefs도 삭제", GUILayout.Width(160));
@@ -232,7 +247,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
                 GUILayout.Label(_lastWipeLog);
             }
 
-            // DB path hint
+            // DB 파일 위치 안내
             GUILayout.Space(4);
             GUILayout.Label($"DB 위치: {Application.persistentDataPath}/game_save.db");
 
@@ -243,13 +258,16 @@ public class ProgressionDebugOverlay : MonoBehaviour
 #endif
     }
 
-    // --- Hidden toggle by clicking a specific UI element name ---
+    // --- 특정 UI 요소를 클릭해 숨김 토글 ---
     private const string TitleObjectName = "Txt_Title"; // 클릭 타겟 이름
     private const int ClicksToToggle = 5;                // 누적 클릭 수
     private const float ClickWindowSeconds = 1.5f;       // 누적 허용 시간 간격
     private int _titleClickCount;
     private float _lastTitleClickAt;
 
+    /// <summary>
+    /// 특정 UI 요소를 빠르게 클릭했을 때 오버레이를 토글합니다.
+    /// </summary>
     private void TryHandleTitleClickToggle()
     {
         if (!Input.GetMouseButtonDown(0)) return;
@@ -284,6 +302,9 @@ public class ProgressionDebugOverlay : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 현재 런과 관련된 저장 데이터를 삭제합니다.
+    /// </summary>
     private void TryDeleteCurrentRun()
     {
         try
@@ -291,10 +312,10 @@ public class ProgressionDebugOverlay : MonoBehaviour
             var runId = PlayerPrefs.GetString("lastRunId", "");
             if (!string.IsNullOrEmpty(runId))
             {
-                // Clean shop/event session rows first (defensive)
+                // 방어적으로 상점과 이벤트 세션을 먼저 정리합니다.
                 DatabaseManager.Instance.DeleteActiveShopSession(runId);
                 DatabaseManager.Instance.DeleteActiveEventSession(runId);
-                // Delete run rows
+                // 런 관련 행을 삭제합니다.
                 DatabaseManager.Instance.DeleteCurrentRun(runId);
                 Debug.Log($"[ProgressionDebug] Current run deleted: {runId}");
             }
@@ -308,24 +329,27 @@ public class ProgressionDebugOverlay : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// DB와 관련 PlayerPrefs 키를 삭제해 진행도를 초기화합니다.
+    /// </summary>
     private void WipeAllData(bool alsoPrefs)
     {
         var sb = new System.Text.StringBuilder();
         try { ServiceRegistry.Get<IAchievementService>()?.Flush(); } catch { }
 
-        // Close DB to release file handles
+        // 파일 잠금을 해제하기 위해 DB 연결을 닫습니다.
         try { DatabaseManager.Instance.Close(); } catch { }
 
         var dir = Application.persistentDataPath;
         var candidates = new System.Collections.Generic.List<string>();
         try
         {
-            // Target known files
+            // 기본 경로의 파일을 우선 삭제합니다.
             candidates.Add(Path.Combine(dir, "game_save.db"));
             candidates.Add(Path.Combine(dir, "game_save.db.bak"));
             candidates.Add(Path.Combine(dir, "game_save.db-wal"));
             candidates.Add(Path.Combine(dir, "game_save.db-shm"));
-            // Also sweep any matching pattern, just in case
+            // 동일 패턴의 잔여 파일도 모두 제거합니다.
             foreach (var f in Directory.GetFiles(dir, "game_save.db*"))
                 if (!candidates.Contains(f)) candidates.Add(f);
         }
@@ -344,7 +368,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
             }
         }
 
-        // Optionally clear PlayerPrefs keys (safer than DeleteAll in case of unrelated keys)
+        // 필요 시 관련 PlayerPrefs 키만 선별적으로 삭제합니다.
         if (alsoPrefs)
         {
             try
@@ -361,7 +385,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
             }
         }
 
-        // Reconnect to recreate a clean schema
+        // 스키마를 재생성하기 위해 다시 연결합니다.
         try { DatabaseManager.Instance.Connect(); sb.AppendLine("DB reconnected and schema ensured."); }
         catch (System.Exception e) { sb.AppendLine($"Reconnect failed: {e.Message}"); }
 
@@ -369,6 +393,9 @@ public class ProgressionDebugOverlay : MonoBehaviour
         Debug.Log($"[ProgressionDebug] Full data wipe complete. Deleted files={deleted}\n{_lastWipeLog}");
     }
 
+    /// <summary>
+    /// 전체 데이터를 삭제한 뒤 메인 메뉴 씬을 재로드합니다.
+    /// </summary>
     private void TryReloadMainMenu()
     {
         try
@@ -383,7 +410,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
     }
 }
 
-// Lightweight GUI color scope helper
+// GUI.color를 임시로 변경하기 위한 간단한 도우미입니다.
 internal readonly struct GuiColorScope : System.IDisposable
 {
     private readonly Color _prev;

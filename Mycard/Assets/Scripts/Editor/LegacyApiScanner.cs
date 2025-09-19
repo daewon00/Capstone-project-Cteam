@@ -37,6 +37,9 @@ public static class LegacyApiScanner
         "Assets/Scripts/Deck/DeckController.cs"
     };
 
+    /// <summary>
+    /// 에디터 메뉴에서 호출되어 금지된 레거시 API 사용 여부를 검사합니다.
+    /// </summary>
     [MenuItem("Tools/Validate/Scan for Legacy APIs")]
     public static void ScanFromMenu()
     {
@@ -45,6 +48,9 @@ public static class LegacyApiScanner
         else Debug.LogWarning("❌ 레거시 API 스캐너: 금지된 패턴 발견 (Console 확인)");
     }
 
+    /// <summary>
+    /// CI 파이프라인에서 호출되어 위반이 발견되면 비정상 종료합니다.
+    /// </summary>
     public static void CIScan()
     {
         bool ok = RunScan();
@@ -54,6 +60,9 @@ public static class LegacyApiScanner
         }
     }
 
+    /// <summary>
+    /// 지정된 확장자의 에셋을 순회하며 금지된 정규식 패턴이 있는지 검사합니다.
+    /// </summary>
     private static bool RunScan()
     {
         bool clean = true;

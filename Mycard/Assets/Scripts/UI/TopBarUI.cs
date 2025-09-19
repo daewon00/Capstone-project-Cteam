@@ -2,7 +2,9 @@ using UnityEngine;
 using TMPro;
 using System.Collections;
 
-// 맵 상단 골드 표시 전용 UI 컴포넌트
+/// <summary>
+/// 맵 상단에 골드 수치를 표시하고 지갑 서비스 변화를 반영하는 UI 컴포넌트입니다.
+/// </summary>
 [DisallowMultipleComponent]
 public class TopBarUI : MonoBehaviour
 {

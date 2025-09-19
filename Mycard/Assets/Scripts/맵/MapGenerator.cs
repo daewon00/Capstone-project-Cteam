@@ -9,6 +9,9 @@ using UnityEditor;
 using UnityEngine.UI;
 using Game.Save;
 
+/// <summary>
+/// 맵 노드와 경로를 절차적으로 생성하고 배치 프리팹을 인스턴스화하는 제너레이터입니다.
+/// </summary>
 public class MapGenerator : MonoBehaviour
 {
     private bool _isMapBuilt = false; // 맵 생성 여부
