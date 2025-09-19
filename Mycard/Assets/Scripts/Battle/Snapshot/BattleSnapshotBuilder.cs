@@ -15,6 +15,7 @@ public static class BattleSnapshotBuilder
         var enemy = EnemyController.instance;
         var deckService = ServiceRegistry.Get<IDeckService>();
         var rngService = ServiceRegistry.Get<IRngService>();
+        var effectService = ServiceRegistry.Get<ICardEffectService>();
 
         if (battle == null || hand == null || board == null)
         {
@@ -44,12 +45,18 @@ public static class BattleSnapshotBuilder
             },
             enemy = CaptureEnemyState(enemy),
             playerField = CapturePlayerField(board),
-            enemyField = CaptureEnemyField(board.enemyCardPoints, true),
-            enemyBench = CaptureEnemyField(board.enemyStayPoints, false),
+            enemyField = CaptureEnemyField(board.enemyCardPoints, true, effectService),
+            enemyBench = CaptureEnemyField(board.enemyStayPoints, false, effectService),
             rngStates = CaptureRng(rngService),
             reason = reason,
             savedAtUtc = DateTime.UtcNow.ToString("o")
         };
+
+        if (effectService != null && dto.turn != null)
+        {
+            dto.turn.playerShield = effectService.GetLeaderShield(true);
+            dto.turn.enemyShield = effectService.GetLeaderShield(false);
+        }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[BattleSnapshotBuilder] Capture reason='{reason}' turn={dto.turn.turnNumber} phase={dto.turn.phase} handCount={dto.player.handInstanceIds?.Count ?? 0} playerField={dto.playerField?.Count ?? 0} enemyField={dto.enemyField?.Count ?? 0} playerMana={dto.turn.playerMana}/{dto.turn.playerMaxMana} enemyMana={dto.turn.enemyMana}/{dto.turn.enemyMaxMana}");
@@ -128,7 +135,7 @@ public static class BattleSnapshotBuilder
         return list;
     }
 
-    private static List<EnemyBoardSlotState> CaptureEnemyField(CardPlacePoint[] points, bool isFrontline)
+    private static List<EnemyBoardSlotState> CaptureEnemyField(CardPlacePoint[] points, bool isFrontline, ICardEffectService effectService)
     {
         var list = new List<EnemyBoardSlotState>();
         if (points == null) return list;
@@ -143,7 +150,8 @@ public static class BattleSnapshotBuilder
                 cardId = card.cardSO != null ? card.cardSO.CardId : string.Empty,
                 slotIndex = i,
                 currentHp = card.currentHealth,
-                attack = card.attackPower
+                attack = card.attackPower,
+                effectState = effectService?.CaptureCardState(card)
             });
         }
         return list;

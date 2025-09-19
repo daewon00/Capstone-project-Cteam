@@ -1,6 +1,6 @@
 public interface ICardEffectService
 {
-    void RegisterBoardCard(Card card, bool isPlayerOwner);
+    void RegisterBoardCard(Card card, bool isPlayerOwner, CardEffectRuntimeSnapshot snapshot = null);
     void UnregisterBoardCard(Card card);
     DamageMitigationResult ProcessCardDamage(Card card, Card attacker, int incomingDamage, DamageSourceKind sourceKind);
     void HandleCardDamaged(Card card, Card attacker, int appliedDamage, DamageSourceKind sourceKind);
@@ -10,6 +10,9 @@ public interface ICardEffectService
     bool HasEffect(Card card, CardEffectType effectType);
     void ForceDestroyCard(Card target, Card killer = null);
     void ResetAll();
+    CardEffectRuntimeSnapshot CaptureCardState(Card card);
+    int GetLeaderShield(bool isPlayerLeader);
+    void RestoreLeaderShield(bool isPlayerLeader, int shieldValue);
 }
 
 /// <summary>

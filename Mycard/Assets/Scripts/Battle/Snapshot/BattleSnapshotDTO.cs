@@ -28,6 +28,8 @@ namespace BattleSnapshot
         public int enemyMana;
         public int enemyMaxMana;
         public bool battleEnded;
+        public int playerShield;
+        public int enemyShield;
     }
 
     [Serializable]
@@ -74,6 +76,7 @@ namespace BattleSnapshot
         public int slotIndex;
         public int currentHp;
         public int attack;
+        public CardEffectRuntimeSnapshot effectState;
     }
 
     [Serializable]

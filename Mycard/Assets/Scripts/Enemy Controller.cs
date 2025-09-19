@@ -383,6 +383,7 @@ public class EnemyController : MonoBehaviour
     public void RestoreStateFromSnapshot(EnemyCombatState enemyState, List<EnemyBoardSlotState> frontline, List<EnemyBoardSlotState> bench, BattleSceneContext context)
     {
         var catalog = context.CardCatalog;
+        var effectService = ServiceRegistry.Get<ICardEffectService>();
         activeCards.Clear();
         cardsInHand.Clear();
 
@@ -415,6 +416,7 @@ public class EnemyController : MonoBehaviour
                 var slot = board.enemyCardPoints[i];
                 if (slot != null && slot.activeCard != null)
                 {
+                    effectService?.UnregisterBoardCard(slot.activeCard);
                     Destroy(slot.activeCard.gameObject);
                     slot.activeCard = null;
                 }
@@ -425,6 +427,7 @@ public class EnemyController : MonoBehaviour
                 var slot = board.enemyStayPoints[i];
                 if (slot != null && slot.activeCard != null)
                 {
+                    effectService?.UnregisterBoardCard(slot.activeCard);
                     Destroy(slot.activeCard.gameObject);
                     slot.activeCard = null;
                 }
@@ -455,6 +458,7 @@ public class EnemyController : MonoBehaviour
                 card.SetInteractable(false);
                 card.assignedPlace = slot;
                 slot.activeCard = card;
+                effectService?.RegisterBoardCard(card, false, slotState.effectState);
             }
         }
 

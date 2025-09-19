@@ -14,6 +14,7 @@ public class BattleSceneContext
     public Card CardPrefab { get; }
     public IRngService RngService { get; }
     private readonly EffectIconDatabase _iconDatabase;
+    private readonly ICardEffectService _effectService;
     public HandServiceBinder HandBinder { get; }
 
     public BattleSceneContext(BattleController battle, HandController hand, CardPointsController board, EnemyController enemy,
@@ -31,8 +32,9 @@ public class BattleSceneContext
         _iconDatabase = iconDatabase != null ? iconDatabase : ServiceRegistry.Get<EffectIconDatabase>();
         if (_iconDatabase == null)
         {
-            _iconDatabase = Resources.Load<EffectIconDatabase>("EffectIconDatabase");
+            _iconDatabase = Resources.Load<EffectIconDatabase>("Cards/EffectIconDatabase");
         }
+        _effectService = ServiceRegistry.Get<ICardEffectService>();
     }
 
     public void ClearHand()
@@ -80,6 +82,7 @@ public class BattleSceneContext
             if (slot == null) continue;
             if (slot.activeCard != null)
             {
+                _effectService?.UnregisterBoardCard(slot.activeCard);
                 Object.Destroy(slot.activeCard.gameObject);
                 slot.activeCard = null;
             }
@@ -128,6 +131,7 @@ public class BattleSceneContext
         slot.activeCard = card;
 
         var modifiers = BattleDeckRuntimeSync.ParseModifiers(runtime.ModifiersJson);
+        CardEffectRuntimeSnapshot effectSnapshot = modifiers?.effectState;
         if (modifiers != null)
         {
             card.currentHealth = modifiers.currentHp;
@@ -135,6 +139,7 @@ public class BattleSceneContext
             card.UpdateCardDisplay();
         }
 
+        _effectService?.RegisterBoardCard(card, true, effectSnapshot);
         BattleDeckRuntimeSync.UpdateCardState(card);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[BattleSceneContext] SpawnPlayerFieldCard index={slotIndex} pos={card.transform.position} rot={card.transform.rotation.eulerAngles}");

@@ -271,7 +271,7 @@ public class HandServiceBinder : MonoBehaviour
         if (_iconDatabase != null)
             return _iconDatabase;
 
-        _iconDatabase = Resources.Load<EffectIconDatabase>("EffectIconDatabase");
+        _iconDatabase = Resources.Load<EffectIconDatabase>("Cards/EffectIconDatabase");
         if (_iconDatabase == null)
         {
             Debug.LogWarning("[HandServiceBinder] EffectIconDatabase를 찾을 수 없습니다. 아이콘이 표시되지 않습니다.");

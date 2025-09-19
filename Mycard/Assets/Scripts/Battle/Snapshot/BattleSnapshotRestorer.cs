@@ -36,6 +36,9 @@ public static class BattleSnapshotRestorer
     {
         if (turn == null || battle == null) return;
         battle.SetTurnStateFromSnapshot(turn.turnNumber, (BattleController.TurnOrder)turn.phase, turn.playerMana, turn.playerMaxMana, turn.enemyMana, turn.enemyMaxMana, turn.battleEnded);
+        var effectService = ServiceRegistry.Get<ICardEffectService>();
+        effectService?.RestoreLeaderShield(true, turn.playerShield);
+        effectService?.RestoreLeaderShield(false, turn.enemyShield);
     }
 
     private static void RestorePlayerCombat(PlayerCombatState player, BattleSceneContext context)

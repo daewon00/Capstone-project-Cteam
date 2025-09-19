@@ -28,7 +28,7 @@ public sealed class CardEffectService : ICardEffectService
         _iconDatabase = ServiceRegistry.Get<EffectIconDatabase>();
         if (_iconDatabase == null)
         {
-            _iconDatabase = Resources.Load<EffectIconDatabase>("EffectIconDatabase");
+            _iconDatabase = Resources.Load<EffectIconDatabase>("Cards/EffectIconDatabase");
             if (_iconDatabase != null)
             {
                 ServiceRegistry.Register<EffectIconDatabase>(_iconDatabase);
@@ -36,7 +36,7 @@ public sealed class CardEffectService : ICardEffectService
         }
     }
 
-    public void RegisterBoardCard(Card card, bool isPlayerOwner)
+    public void RegisterBoardCard(Card card, bool isPlayerOwner, CardEffectRuntimeSnapshot snapshot = null)
     {
         if (card == null || card.cardSO == null)
             return;
@@ -54,8 +54,25 @@ public sealed class CardEffectService : ICardEffectService
         CategorizeEffects(card.cardSO.Effects, state);
         _cardStates[key] = state;
 
-        ExecuteOnPlay(state);
-        ActivateAuras(state);
+        if (snapshot != null)
+        {
+            state.ShieldValue = Mathf.Max(0, snapshot.shield);
+            state.ActiveAuraBonuses = Mathf.Max(0, snapshot.auraBonus);
+            if (state.ActiveAuraBonuses != 0)
+            {
+                if (state.IsPlayerOwner)
+                    _playerRallyBonus += state.ActiveAuraBonuses;
+                else
+                    _enemyRallyBonus += state.ActiveAuraBonuses;
+            }
+        }
+        else
+        {
+            ExecuteOnPlay(state);
+            ActivateAuras(state);
+        }
+
+        state.View.UpdateCardDisplay();
     }
 
     public void UnregisterBoardCard(Card card)
@@ -85,9 +102,9 @@ public sealed class CardEffectService : ICardEffectService
 
         if (state.ShieldValue > 0 && remaining > 0)
         {
-            blocked = Mathf.Min(remaining, state.ShieldValue);
-            remaining -= blocked;
-            state.ShieldValue -= blocked;
+            blocked = remaining;
+            remaining = 0;
+            state.ShieldValue = Mathf.Max(0, state.ShieldValue - 1);
         }
 
         return new DamageMitigationResult(remaining, blocked);
@@ -128,9 +145,9 @@ public sealed class CardEffectService : ICardEffectService
         int blocked = 0;
         if (leaderState.Shield > 0 && remaining > 0)
         {
-            blocked = Mathf.Min(remaining, leaderState.Shield);
-            remaining -= blocked;
-            leaderState.Shield -= blocked;
+            blocked = remaining;
+            remaining = 0;
+            leaderState.Shield = Mathf.Max(0, leaderState.Shield - 1);
         }
 
         return new DamageMitigationResult(remaining, blocked);
@@ -216,6 +233,33 @@ public sealed class CardEffectService : ICardEffectService
 
         UnregisterBoardCard(target);
         target.ForceKill(killer);
+    }
+
+    public CardEffectRuntimeSnapshot CaptureCardState(Card card)
+    {
+        if (card == null)
+            return null;
+
+        if (!_cardStates.TryGetValue(GetCardKey(card), out var state))
+            return null;
+
+        return new CardEffectRuntimeSnapshot
+        {
+            shield = Mathf.Max(0, state.ShieldValue),
+            auraBonus = Mathf.Max(0, state.ActiveAuraBonuses)
+        };
+    }
+
+    public int GetLeaderShield(bool isPlayerLeader)
+    {
+        var leader = isPlayerLeader ? _playerLeader : _enemyLeader;
+        return Mathf.Max(0, leader.Shield);
+    }
+
+    public void RestoreLeaderShield(bool isPlayerLeader, int shieldValue)
+    {
+        var leader = isPlayerLeader ? _playerLeader : _enemyLeader;
+        leader.Shield = Mathf.Max(0, shieldValue);
     }
 
     public void ResetAll()
@@ -389,7 +433,14 @@ public sealed class CardEffectService : ICardEffectService
 
         targetPoint.activeCard = state.View;
         state.View.assignedPlace = targetPoint;
-        state.View.MoveToPoint(targetPoint.transform.position, targetPoint.transform.rotation);
+        // 재배치 시에도 카드가 슬롯의 자식으로 유지되어 핸드 배치와 동일한 구조를 갖도록 보장한다.
+        state.View.transform.SetParent(targetPoint.transform, true);
+        // 필드 이동은 기존 월드 회전을 유지하여 카드가 비정상적으로 세워지지 않도록 한다.
+        state.View.MoveToPoint(targetPoint.transform.position, state.View.transform.rotation);
+        if (HandController.instance != null)
+        {
+            state.View.SetCardScale(HandController.instance.GetBoardScale());
+        }
         BattleDeckRuntimeSync.UpdateCardState(state.View);
     }
 

@@ -29,6 +29,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     [SerializeField] private Image characterArt;
     [SerializeField] private Image bgArt;
     [SerializeField] private Image skillEffectImage;
+    [SerializeField] private TMP_Text skillEffectValueText;
     [SerializeField] private EffectIconDatabase iconDatabaseOverride;
 
     //카드 움직임 관련
@@ -234,6 +235,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             }
 #endif
             effectService?.HandleCardDamaged(this, attacker, 0, sourceKind);
+            if (mitigation.BlockedDamage > 0)
+            {
+                UpdateCardDisplay();
+                BattleDeckRuntimeSync.UpdateCardState(this);
+            }
             return new CardDamageResult(0, false);
         }
 
@@ -323,11 +329,36 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             return;
 
         Sprite icon = _iconDatabase != null ? _iconDatabase.GetIcon(effect.Type) : null;
+        int value = effect != null ? (effect.Value != 0 ? effect.Value : effect.Potency) : 0;
+        if (effect != null && effect.Type == CardEffectType.AddShield)
+        {
+            var effectService = ServiceRegistry.Get<ICardEffectService>();
+            var runtime = effectService?.CaptureCardState(this);
+            if (runtime != null)
+                value = runtime.shield;
+        }
+        if (value == 0 && _iconDatabase != null)
+        {
+            // Fallback to database default when the effect definition does not provide a number.
+            value = _iconDatabase.GetValue(effect.Type);
+        }
         if (icon == null)
             return;
 
         skillEffectImage.sprite = icon;
         skillEffectImage.gameObject.SetActive(true);
+        if (skillEffectValueText != null)
+        {
+            if (value != 0)
+            {
+                skillEffectValueText.text = value > 0 ? $"+{value}" : value.ToString();
+                skillEffectValueText.gameObject.SetActive(true);
+            }
+            else
+            {
+                skillEffectValueText.gameObject.SetActive(false);
+            }
+        }
     }
 
     public void SetCardScale(Vector3 scale)

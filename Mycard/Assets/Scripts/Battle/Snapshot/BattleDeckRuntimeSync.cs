@@ -8,6 +8,7 @@ public static class BattleDeckRuntimeSync
     {
         if (card == null) return;
         var deckService = ServiceRegistry.Get<IDeckService>();
+        var effectService = ServiceRegistry.Get<ICardEffectService>();
         if (deckService == null) return;
 
         var battleState = new BattleCardState
@@ -17,7 +18,8 @@ public static class BattleDeckRuntimeSync
             currentHp = card.currentHealth,
             attack = card.attackPower,
             slotIndex = ResolveSlotIndex(card),
-            isPlayer = card.isPlayer
+            isPlayer = card.isPlayer,
+            effectState = effectService?.CaptureCardState(card)
         };
 
         var location = ResolveLocation(card);
