@@ -358,7 +358,22 @@ public sealed class CardEffectService : ICardEffectService
             return;
         }
 
-        Card token = UnityEngine.Object.Instantiate(prefab, targetPoint.transform.position, targetPoint.transform.rotation);
+        Quaternion boardRotation;
+
+        if (ownerState != null && ownerState.View != null)
+        {
+            boardRotation = ownerState.View.transform.rotation;
+        }
+        else if (HandController.instance != null && HandController.instance.minpos != null)
+        {
+            boardRotation = HandController.instance.minpos.rotation;
+        }
+        else
+        {
+            boardRotation = targetPoint.transform.rotation;
+        }
+
+        Card token = UnityEngine.Object.Instantiate(prefab, targetPoint.transform.position, boardRotation);
         string instanceId = Guid.NewGuid().ToString("N");
         token.Initialize(instanceId, tokenData, deck, _iconDatabase);
         token.inHand = false;
@@ -366,7 +381,7 @@ public sealed class CardEffectService : ICardEffectService
         token.isPlayer = ownerState.IsPlayerOwner;
         token.SetInteractable(false);
         token.transform.SetParent(targetPoint.transform, true);
-        token.MoveToPoint(targetPoint.transform.position, targetPoint.transform.rotation);
+        token.MoveToPoint(targetPoint.transform.position, boardRotation);
         if (HandController.instance != null)
             token.SetCardScale(HandController.instance.GetBoardScale());
 

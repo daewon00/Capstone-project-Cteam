@@ -337,11 +337,6 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             if (runtime != null)
                 value = runtime.shield;
         }
-        if (value == 0 && _iconDatabase != null)
-        {
-            // Fallback to database default when the effect definition does not provide a number.
-            value = _iconDatabase.GetValue(effect.Type);
-        }
         if (icon == null)
             return;
 

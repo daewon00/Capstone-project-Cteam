@@ -29,6 +29,6 @@ MonoBehaviour:
   - CARD_BANNER_BEARER
   StartingRelicIds: []
   StartingPotionIds: []
-  MaxHpBonus: 0
-  GoldBonus: 0
-  EnergyMaxBonus: 10
+  MaxHpBonus: 100
+  GoldBonus: 1000
+  EnergyMaxBonus: 20

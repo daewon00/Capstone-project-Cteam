@@ -91,6 +91,33 @@ public class BattleSceneBootstrap : MonoBehaviour
         var cardCatalog = ServiceRegistry.Get<ICardCatalog>();
         var rngService = ServiceRegistry.Get<IRngService>();
 
+        RunLoadResult runData = null;
+        CurrentRun runRow = null;
+        if (!string.IsNullOrEmpty(runId))
+        {
+            try
+            {
+                runData = DatabaseManager.Instance.LoadCurrentRun(runId);
+                runRow = runData?.Run;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[BattleSceneBootstrap] LoadCurrentRun failed: {e.Message}");
+            }
+        }
+
+        if (runRow != null)
+        {
+            int maxHp = runRow.MaxHpBase + runRow.MaxHpFromPerks + runRow.MaxHpFromRelics;
+            _battleController.ApplyRunStats(runRow.CurrentHp, maxHp, runRow.EnergyMax);
+        }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        else if (!string.IsNullOrEmpty(runId))
+        {
+            Debug.LogWarning("[BattleSceneBootstrap] Run data missing; using inspector defaults for battle stats.");
+        }
+#endif
+
         var stageService = ServiceRegistry.Get<IRunStageService>();
         if (stageService != null)
         {
@@ -98,7 +125,17 @@ public class BattleSceneBootstrap : MonoBehaviour
             RunStagePayloads.Battle payload;
             if (!stageService.TryGetPayload(out payload) || payload == null)
             {
-                var runData = string.IsNullOrEmpty(runId) ? null : DatabaseManager.Instance.LoadCurrentRun(runId);
+                if (runData == null && !string.IsNullOrEmpty(runId))
+                {
+                    try
+                    {
+                        runData = DatabaseManager.Instance.LoadCurrentRun(runId);
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogWarning($"[BattleSceneBootstrap] Reload current run failed: {e.Message}");
+                    }
+                }
                 payload = new RunStagePayloads.Battle
                 {
                     act = runData?.Run?.Act ?? 0,

@@ -32,12 +32,6 @@ public class EffectIconDatabase : ScriptableObject
         return data != null ? data.effectIcon : null;
     }
 
-    public int GetValue(CardEffectType effectType)
-    {
-        var data = GetData(effectType);
-        return data != null ? data.effectValue : 0;
-    }
-
     public EffectIconData GetData(CardEffectType effectType)
     {
         if (_iconMap == null || _iconMap.Count == 0)

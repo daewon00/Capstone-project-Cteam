@@ -251,8 +251,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1537858457}
   m_HandleRect: {fileID: 1537858456}
   m_Direction: 0
-  m_Value: 1
-  m_Size: 1
+  m_Value: 0
+  m_Size: 0.99999994
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -1563,6 +1563,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mapScene: Map Scene
+  startingAct: 1
+  startingFloor: 0
+  startingNodeIndex: 0
+  baseMaxHp: 30
+  baseEnergyMax: 3
+  baseStartingGold: 300
   gridParent: {fileID: 1919773344}
   cardPrefab: {fileID: 99227144}
   startButton: {fileID: 1479247938}

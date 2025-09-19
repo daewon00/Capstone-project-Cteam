@@ -13,6 +13,14 @@ public class CompanionSelectController : MonoBehaviour
 {
     [SerializeField] private string mapScene = "Map Scene";
     
+    [Header("Run Defaults")]
+    [SerializeField] private int startingAct = 1;
+    [SerializeField] private int startingFloor = 0;
+    [SerializeField] private int startingNodeIndex = 0;
+    [SerializeField] private int baseMaxHp = 80;
+    [SerializeField] private int baseEnergyMax = 3;
+    [SerializeField] private float baseStartingGold = 300f;
+
     [Header("UI")]
     public Transform gridParent;
     public CompanionCardView cardPrefab;
@@ -85,17 +93,19 @@ public class CompanionSelectController : MonoBehaviour
         // 1) 런 스냅샷 생성 및 모디파이어 런 바인딩
         perkSvc?.ComputeRunSnapshotAndPersist(profileId, runId);
         modSvc?.RebindRun(runId);
-        // 2) 시작 골드 계산: 기본값(300) + 동료 보너스 → 모디파이어 적용
-        float baseGold = 300 + _selected.GoldBonus;
+        // 2) 시작 골드 계산: 기본값(인스펙터 설정) + 동료 보너스 → 모디파이어 적용
+        float baseGold = baseStartingGold + _selected.GoldBonus;
         float finalGold = modSvc != null ? modSvc.Apply("STARTING_GOLD", baseGold, ModifierScope.CurrentRun) : baseGold;
 
         var run = new CurrentRun {
             RunId = runId, ProfileId = profileId, // ProfileId는 나중에 로그인 시스템과 연동
-            Act = 1, Floor = 0, NodeIndex = 0,
+            Act = startingAct,
+            Floor = startingFloor,
+            NodeIndex = startingNodeIndex,
             Gold = Mathf.RoundToInt(finalGold),
-            CurrentHp = 80 + _selected.MaxHpBonus,
-            MaxHpBase = 80 + _selected.MaxHpBonus,
-            EnergyMax = 3 + _selected.EnergyMaxBonus,
+            CurrentHp = baseMaxHp + _selected.MaxHpBonus,
+            MaxHpBase = baseMaxHp + _selected.MaxHpBonus,
+            EnergyMax = baseEnergyMax + _selected.EnergyMaxBonus,
             CreatedAtUtc = System.DateTime.UtcNow.ToString("o"),
             UpdatedAtUtc = System.DateTime.UtcNow.ToString("o"),
         };
@@ -184,13 +194,15 @@ public class CompanionSelectController : MonoBehaviour
         var run = new CurrentRun {
             RunId = runId,
             ProfileId = GameContext.I.ProfileId,
-            Act = 1, Floor = 0, NodeIndex = 0,
-            Gold = 99 + comp.GoldBonus,
-            CurrentHp = 70 + comp.MaxHpBonus,
-            MaxHpBase = 80 + comp.MaxHpBonus,
+            Act = startingAct,
+            Floor = startingFloor,
+            NodeIndex = startingNodeIndex,
+            Gold = Mathf.RoundToInt(baseStartingGold) + comp.GoldBonus,
+            CurrentHp = baseMaxHp + comp.MaxHpBonus,
+            MaxHpBase = baseMaxHp + comp.MaxHpBonus,
             MaxHpFromPerks = 0,
             MaxHpFromRelics = 0,
-            EnergyMax = 3 + comp.EnergyMaxBonus,
+            EnergyMax = baseEnergyMax + comp.EnergyMaxBonus,
             Keys = 0,
             CreatedAtUtc = System.DateTime.UtcNow.ToString("o"),
             UpdatedAtUtc = System.DateTime.UtcNow.ToString("o"),

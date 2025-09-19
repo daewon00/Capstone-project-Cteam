@@ -70,14 +70,31 @@ public class BattleController : MonoBehaviour
         }
     }
 
-    // --- 전투 기본 설정 변수들 ---
-    public int startingMana = 3,playermaxMana = 3, enemymaxMana = 3, startingEnemeyMana = 3;  //시작마나, 최대 마나
-    public int playerMana, enemyMana;   //플레이어 마나, 적 마나
-    public int currentPlayerMaxMana, currentEnemyMaxMana;  // 플레이어와 적의 현재 턴의 최대 마나 (턴마다 1씩 증가)
+    [Header("Player Fallback Defaults")]
+    [SerializeField] private int _fallbackPlayerHealth = 30;
+    [SerializeField] private int _fallbackPlayerMaxMana = 3;
+    [SerializeField] private int _fallbackPlayerStartingMana = 3;
 
+    [Header("Enemy Defaults")]
+    [SerializeField] private int _fallbackEnemyHealth = 10;
+    public int enemymaxMana = 3;
+    public int startingEnemeyMana = 3;
 
+    [Header("Turn Draw Settings")]
     public int startingcardAmount = 5;  //첫 드로우 카드 수
     public int cardToDrawPerTurn = 2;   //매턴 드로우 카드 수
+
+    // --- 전투 중 갱신되는 런타임 값들 ---
+    public int playerMana { get; set; }   //플레이어 마나
+    public int enemyMana { get; set; }    //적 마나
+    public int playermaxMana { get; set; } // 플레이어 최대 마나(턴 성장 상한)
+    public int currentPlayerMaxMana { get; set; } // 현재 턴 플레이어 최대 마나
+    public int currentEnemyMaxMana { get; set; }   // 현재 턴 적 최대 마나
+
+    public int playerHealth { get; set; }   //플레이어 체력
+    public int enemyHealth { get; set; }    //적 체력
+
+    private bool _playerStatsInitialized;
 
     public enum TurnOrder { playerActive, playerCardAttacks, enemyActive, enemyCardAttacks }    //전투 단계
     public TurnOrder currentPhase;  // 지금 단계 저장
@@ -90,12 +107,34 @@ public class BattleController : MonoBehaviour
         BattleSnapshotScheduler.Instance?.RequestSnapshot(reason);
     }
 
+    /// <summary>
+    /// 런 저장 데이터를 반영해 체력과 에너지 최대치를 전투 컨트롤러에 주입합니다.
+    /// </summary>
+    public void ApplyRunStats(int currentHp, int maxHp, int energyMax)
+    {
+        int resolvedMaxHp = Mathf.Max(1, maxHp);
+        playerHealth = Mathf.Clamp(currentHp, 0, resolvedMaxHp);
+
+        int resolvedEnergy = Mathf.Max(1, energyMax);
+        playermaxMana = resolvedEnergy;
+        currentPlayerMaxMana = resolvedEnergy;
+        
+        FillPlayerMana();
+        UIController.instance?.setPlayerHealthText(playerHealth);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BattleController] ApplyRunStats hp={playerHealth}/{resolvedMaxHp} energy={resolvedEnergy}");
+#endif
+        _playerStatsInitialized = true;
+    }
+
     public void SetTurnStateFromSnapshot(int turnNumber, TurnOrder phase, int playerManaValue, int playerMaxManaValue, int enemyManaValue, int enemyMaxManaValue, bool ended)
     {
         _turnCounter = Mathf.Max(1, turnNumber);
         currentPhase = phase;
-        playerMana = playerManaValue;
-        currentPlayerMaxMana = playerMaxManaValue;
+        int resolvedPlayerMax = Mathf.Max(1, playerMaxManaValue);
+        playermaxMana = resolvedPlayerMax;
+        currentPlayerMaxMana = resolvedPlayerMax;
+        playerMana = Mathf.Clamp(playerManaValue, 0, currentPlayerMaxMana);
         enemyMana = enemyManaValue;
         currentEnemyMaxMana = enemyMaxManaValue;
         battleEnded = ended;
@@ -105,15 +144,16 @@ public class BattleController : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[BattleController] SetTurnStateFromSnapshot: turn={_turnCounter}, phase={currentPhase}, playerMana={playerMana}/{currentPlayerMaxMana}, enemyMana={enemyMana}/{currentEnemyMaxMana}");
 #endif
+        _playerStatsInitialized = true;
     }
 
     public void MarkRestored()
     {
         _battleStarted = true;
+        _playerStatsInitialized = true;
     }
 
     public Transform discardPoint;  //파괴 카드 위치
-    public int playerHealth, enemyHealth;   //플레이어 체력, 적 체력
 
     public bool battleEnded;    //전투 끝 참거짓
 
@@ -138,15 +178,23 @@ public class BattleController : MonoBehaviour
         }
 
         GameEvents.OnBattleStart?.Invoke(); // 추가 +++
-        //playerMana = startingMana;
-        //UIController.instance.SetPlayerManaText(playerMana);
 
-        currentPlayerMaxMana = startingMana;    //마나값을 시작 마나값으로 초기화
-
-        FillPlayerMana();   //플레이어 마나를 채운다
+        if (!_playerStatsInitialized)
+        {
+            ApplyFallbackPlayerStats();
+            FillPlayerMana();
+        }
+        else
+        {
+            playerMana = Mathf.Clamp(playerMana, 0, currentPlayerMaxMana);
+            UIController.instance?.SetPlayerManaText(playerMana);
+        }
 
         // 초기 드로우는 BattleSceneBootstrap -> StartBattle() 경로에서 처리됩니다.
         
+        if (enemyHealth <= 0)
+            enemyHealth = Mathf.Max(0, _fallbackEnemyHealth);
+
         UIController.instance.setPlayerHealthText(playerHealth);    //플레이어 체력 UI 표기
         UIController.instance.setEnemyHealthText(enemyHealth);  //적 체력 UI 표기
 
@@ -161,6 +209,16 @@ public class BattleController : MonoBehaviour
         AudioManager.instance.StopMusic();
         AudioManager.instance.PlayBGM();
 
+    }
+
+    private void ApplyFallbackPlayerStats()
+    {
+        int maxManaCap = Mathf.Max(1, _fallbackPlayerMaxMana);
+        playermaxMana = maxManaCap;
+        currentPlayerMaxMana = Mathf.Clamp(_fallbackPlayerStartingMana, 1, maxManaCap);
+        playerMana = currentPlayerMaxMana;
+        playerHealth = Mathf.Max(0, _fallbackPlayerHealth);
+        _playerStatsInitialized = true;
     }
 
     // Update is called once per frame
@@ -189,7 +247,6 @@ public class BattleController : MonoBehaviour
     //플레이어의 마나를 최대치까지 채움
     public void FillPlayerMana()
     {
-        //playerMana = startingMana;
         playerMana = currentPlayerMaxMana;
 
         if (GameEvents.ModifyPlayerMana != null)           //추가  +++ 마나 수정 체인 적용
@@ -570,6 +627,8 @@ public class BattleController : MonoBehaviour
         
         UIController.instance.EnemyUI.SetActive(false);
 
+        PersistPlayerHealth();
+
         // 전투 결과를 런 서비스에 보고하여 DB/라우팅을 위임합니다.
         try
         {
@@ -616,4 +675,36 @@ public class BattleController : MonoBehaviour
     }
 #endif
 
+    private void PersistPlayerHealth()
+    {
+        string runId = (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
+            ? GameContext.I.RunId
+            : PlayerPrefs.GetString("lastRunId", string.Empty);
+
+        if (string.IsNullOrEmpty(runId))
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[BattleController] PersistPlayerHealth skipped: runId missing.");
+#endif
+            return;
+        }
+
+        var db = ServiceRegistry.Get<IDatabase>();
+        if (db == null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[BattleController] PersistPlayerHealth skipped: IDatabase not available.");
+#endif
+            return;
+        }
+
+        try
+        {
+            db.UpdateRunHp(runId, playerHealth);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[BattleController] PersistPlayerHealth failed: {e.Message}");
+        }
+    }
 }
