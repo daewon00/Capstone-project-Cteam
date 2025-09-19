@@ -19,8 +19,17 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public int attackPower, manaCost;   //카드 공격력, 마나 코스트
 
     //카드 UI 연결
-    public TMP_Text healthText, attackText, costText, nameText, actionDescriptionText, loreText;
-    public Image characterArt, bgArt;
+    [Header("UI References")]
+    [SerializeField] private TMP_Text healthText;
+    [SerializeField] private TMP_Text attackText;
+    [SerializeField] private TMP_Text costText;
+    [SerializeField] private TMP_Text nameText;
+    [SerializeField] private TMP_Text actionDescriptionText;
+    [SerializeField] private TMP_Text loreText;
+    [SerializeField] private Image characterArt;
+    [SerializeField] private Image bgArt;
+    [SerializeField] private Image skillEffectImage;
+    [SerializeField] private EffectIconDatabase iconDatabaseOverride;
 
     //카드 움직임 관련
     private Vector3 targetPoint;
@@ -44,6 +53,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public string InstanceId { get; private set; }
     [SerializeField] private string _battleInstanceId;
     private IDeckService _deckService;
+    private EffectIconDatabase _iconDatabase;
     private bool _isInteractable = true;
     private bool _destroyBroadcasted; // 업적/메타 이벤트 중복 방지
 
@@ -68,6 +78,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         _originalScale = transform.localScale;
         instance = this; 
+        if (_iconDatabase == null && iconDatabaseOverride != null)
+            _iconDatabase = iconDatabaseOverride;
     }
 
 
@@ -97,12 +109,19 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         UpdateCardDisplay();
 
-        nameText.text = cardSO.cardName;
-        actionDescriptionText.text = cardSO.actionDescription;
-        loreText.text = cardSO.cardLore;
+        if (nameText != null)
+            nameText.text = cardSO.cardName;
+        if (actionDescriptionText != null)
+            actionDescriptionText.text = cardSO.actionDescription;
+        if (loreText != null)
+            loreText.text = cardSO.cardLore;
 
-        characterArt.sprite = cardSO.characterSprite;
-        bgArt.sprite = cardSO.bgSprite;
+        if (characterArt != null)
+            characterArt.sprite = cardSO.characterSprite;
+        if (bgArt != null)
+            bgArt.sprite = cardSO.bgSprite;
+
+        UpdateSkillIcon();
         //ApplyAttackBuffOutline(isPlayer && PlayerBuffs.instance != null && PlayerBuffs.instance.attackBonus > 0);
     }
 
@@ -120,7 +139,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     }
 
     // 서비스/식별자/데이터를 주입하는 초기화 진입점
-    public void Initialize(string instanceId, CardScriptableObject so, IDeckService deckService)
+    public void Initialize(string instanceId, CardScriptableObject so, IDeckService deckService, EffectIconDatabase iconDatabase)
     {
         if (string.IsNullOrEmpty(instanceId) || so == null || deckService == null)
         {
@@ -132,6 +151,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         _battleInstanceId = instanceId;
         cardSO = so;
         _deckService = deckService;
+        _iconDatabase = iconDatabase != null ? iconDatabase : iconDatabaseOverride;
         SetupCard();
         SetInteractable(true);
     }
@@ -187,6 +207,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         ClearHoverHighlight();
         theCol.enabled = true;
         MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
+        if (HandController.instance != null)
+            SetCardScale(HandController.instance.GetHandScale());
 
         // 카드 반납 시 카메라 원위치
         CameraController.instance.MoveTo(CameraController.instance.homeTransform);
@@ -196,67 +218,140 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     }
 
     //다른 카드로 부터 데미지를 받을때
-    public void DamageCard(int damageAmount)
+    public CardDamageResult DamageCard(int damageAmount, Card attacker = null, DamageSourceKind sourceKind = DamageSourceKind.Attack)
     {
-        currentHealth -= damageAmount;
-        if (currentHealth <= 0) // 죽을시
+        var effectService = ServiceRegistry.Get<ICardEffectService>();
+        var mitigation = effectService?.ProcessCardDamage(this, attacker, damageAmount, sourceKind)
+            ?? new DamageMitigationResult(damageAmount, 0);
+
+        int appliedDamage = mitigation.RemainingDamage;
+        if (appliedDamage <= 0)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (mitigation.BlockedDamage > 0)
+            {
+                Debug.Log($"[Card] Damage fully blocked by effects. instance={InstanceId}, blocked={mitigation.BlockedDamage}");
+            }
+#endif
+            effectService?.HandleCardDamaged(this, attacker, 0, sourceKind);
+            return new CardDamageResult(0, false);
+        }
+
+        currentHealth -= appliedDamage;
+        bool destroyed = currentHealth <= 0;
+
+        effectService?.HandleCardDamaged(this, attacker, appliedDamage, sourceKind);
+
+        if (destroyed)
         {
             currentHealth = 0;
-            assignedPlace.activeCard = null;    // 자리 비우고
-
-            // 적 카드 파괴 브로드캐스트(중복 1회 보장)
-            if (!_destroyBroadcasted && !isPlayer)
-            {
-                _destroyBroadcasted = true;
-                try
-                {
-                    var runId = (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
-                        ? GameContext.I.RunId
-                        : PlayerPrefs.GetString("lastRunId", "");
-                    if (!string.IsNullOrEmpty(runId))
-                    {
-                        string cid = string.Empty;
-                        if (cardSO != null)
-                        {
-                            cid = !string.IsNullOrEmpty(cardSO.CardId) ? cardSO.CardId : (cardSO.cardName ?? string.Empty);
-                        }
-                        MetaEvents.RaiseEnemyCardDestroyed(new MetaEvents.EnemyCardDestroyedPayload
-                        {
-                            RunId = runId,
-                            CardId = cid,
-                            InstanceId = InstanceId
-                        });
-                    }
-                }
-                catch { }
-            }
-            MoveToPoint(BattleController.instance.discardPoint.position, BattleController.instance.discardPoint.rotation);  // 묘지로 이동
-            anim.SetTrigger("Jump");    // 점프 애니메이션
-            Destroy(gameObject, 5f);    // 5초뒤 카드 제거
-            AudioManager.instance.PlaySFX(2);   //2번 효과음
-        }
-        else // 살았다면 효과음 1 재생
-        {
-            AudioManager.instance.PlaySFX(1);
+            HandleDeath(effectService, attacker);
+            return new CardDamageResult(appliedDamage, true);
         }
 
-        anim.SetTrigger("Hurt");    // 맞는 애니메이션
-        UpdateCardDisplay();    //체력 UI 수정
+        AudioManager.instance.PlaySFX(1);
+        anim.SetTrigger("Hurt");
+        UpdateCardDisplay();
         BattleDeckRuntimeSync.UpdateCardState(this);
+        return new CardDamageResult(appliedDamage, false);
+    }
+
+    public void ForceKill(Card killer = null)
+    {
+        var effectService = ServiceRegistry.Get<ICardEffectService>();
+        HandleDeath(effectService, killer);
+    }
+
+    private void HandleDeath(ICardEffectService effectService, Card killer)
+    {
+        if (assignedPlace != null && assignedPlace.activeCard == this)
+        {
+            assignedPlace.activeCard = null;
+        }
+
+        effectService?.UnregisterBoardCard(this);
+
+        if (!_destroyBroadcasted && !isPlayer)
+        {
+            _destroyBroadcasted = true;
+            try
+            {
+                var runId = (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
+                    ? GameContext.I.RunId
+                    : PlayerPrefs.GetString("lastRunId", "");
+                if (!string.IsNullOrEmpty(runId))
+                {
+                    string cid = string.Empty;
+                    if (cardSO != null)
+                    {
+                        cid = !string.IsNullOrEmpty(cardSO.CardId) ? cardSO.CardId : (cardSO.cardName ?? string.Empty);
+                    }
+                    MetaEvents.RaiseEnemyCardDestroyed(new MetaEvents.EnemyCardDestroyedPayload
+                    {
+                        RunId = runId,
+                        CardId = cid,
+                        InstanceId = InstanceId
+                    });
+                }
+            }
+            catch { }
+        }
+
+        MoveToPoint(BattleController.instance.discardPoint.position, BattleController.instance.discardPoint.rotation);
+        anim.SetTrigger("Jump");
+        AudioManager.instance.PlaySFX(2);
+        BattleDeckRuntimeSync.UpdateCardState(this);
+        Destroy(gameObject, 5f);
+    }
+
+    private void UpdateSkillIcon()
+    {
+        if (skillEffectImage == null)
+            return;
+
+        skillEffectImage.gameObject.SetActive(false);
+
+        if (cardSO == null)
+            return;
+
+        var effects = cardSO.Effects;
+        if (effects == null || effects.Count == 0)
+            return;
+
+        var effect = effects[0];
+        if (effect == null)
+            return;
+
+        Sprite icon = _iconDatabase != null ? _iconDatabase.GetIcon(effect.Type) : null;
+        if (icon == null)
+            return;
+
+        skillEffectImage.sprite = icon;
+        skillEffectImage.gameObject.SetActive(true);
+    }
+
+    public void SetCardScale(Vector3 scale)
+    {
+        transform.localScale = scale;
+        _originalScale = scale;
     }
 
     //카드 현 상태 UI 텍스트 설정
     public void UpdateCardDisplay()
     {
         var shownAtk = GetEffectiveAttack(); //추가+++
-        attackText.text = shownAtk.ToString();//추가+++ 공격력증가
-        healthText.text = currentHealth.ToString();
+        if (attackText != null)
+            attackText.text = shownAtk.ToString();//추가+++ 공격력증가
+        if (healthText != null)
+            healthText.text = currentHealth.ToString();
         //attackText.text = attackPower.ToString(); //기존
-        costText.text = manaCost.ToString();
+        if (costText != null)
+            costText.text = manaCost.ToString();
 
         // (선택) 버프면 초록색 등 시각효과
         //bool buffed = isPlayer && shownAtk > attackPower;
         //attackText.color = buffed ? new Color(0.2f, 1f, 0.2f) : Color.white;
+        UpdateSkillIcon();
     }
 
     // 플레이어 카드면 유물 체인을 통과한 "표시용 공격력"을 돌려줌
@@ -345,7 +440,6 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         // 프레스/드래그 시각 효과 원복
         transform.DOKill(false);
-        transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
 
         // 드래그 종료 시 하이라이트 정리
         ClearHoverHighlight();
@@ -386,6 +480,12 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                     // 보드 컨테이너로 부모 변경(핸드 재정렬의 간섭 차단)
                     transform.SetParent(selectedPoint.transform, true);
                     MoveToPoint(selectedPoint.transform.position, transform.rotation);
+                    if (HandController.instance != null)
+                    {
+                        SetCardScale(HandController.instance.GetBoardScale());
+                        transform.DOKill(false);
+                        transform.localScale = HandController.instance.GetBoardScale();
+                    }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"[Card] Placed: instance={InstanceId}, parent={(transform.parent != null ? transform.parent.name : "<none>")}, pos={transform.position}");
 #endif
@@ -403,6 +503,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 inHand = true;
                 if (theHC != null) theHC.ResumeLayoutFor(this);
                 UIController.instance?.SetDragModeUIVisibility(true);
+                transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
                 ReturnToHand();
                 return;
             }
@@ -422,6 +523,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             {
                 if (theHC != null) theHC.ResumeLayoutFor(this);
                 UIController.instance?.SetDragModeUIVisibility(true);
+                transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
                 ReturnToHand();
                 return;
             }

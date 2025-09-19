@@ -188,6 +188,9 @@ public class GameInitializer : MonoBehaviour
         deckService.LoadAndPrepareDeck(runId);
         ServiceRegistry.Register<IDeckService>(deckService);
 
+        var cardEffectService = new CardEffectService();
+        ServiceRegistry.Register<ICardEffectService>(cardEffectService);
+
         // relicserivce
         //var relicService = new RelicService(dbFacade);
         //ServiceRegistry.Register<IRelicService>(relicService);

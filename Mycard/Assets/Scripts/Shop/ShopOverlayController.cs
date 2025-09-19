@@ -3,11 +3,14 @@ using UnityEngine;
 using Game.Save;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// 상점 UI를 열고 닫으며 세션 상태를 DB와 메모리에 저장·복원하는 컨트롤러입니다.
+/// </summary>
 public class ShopOverlayController : MonoBehaviour
 {
     [SerializeField] private ShopUI shopUI;
 
-    // 각 노드 주소별 상점 상태를 기억할 '기억 노트'
+    // 각 노드 주소별 상점 상태를 기억할 메모리 캐시
     private readonly Dictionary<(int floor, int index), ShopSessionDTO> _sessionMemory = new();
     private (int floor, int index) _currentKey;
     private CurrentRun _currentRun; // 현재 플레이어의 런 데이터
@@ -43,7 +46,9 @@ public class ShopOverlayController : MonoBehaviour
         shopUI.OnSessionChanged += SaveCurrentShopSession;
     }
 
-    // "특정 주소의 상점 문을 열어라!"
+    /// <summary>
+    /// 특정 노드 좌표에 해당하는 상점 세션을 불러오고 UI를 엽니다.
+    /// </summary>
     public void OpenForNode(int floor, int index)
     {
         _currentKey = (floor, index);
@@ -70,7 +75,7 @@ public class ShopOverlayController : MonoBehaviour
                 catch (System.Exception e) { Debug.LogWarning($"[Shop] JSON parse fail: {e.Message}", this); }
             }
         }
-        // [추가] DB에 데이터가 있었지만 위치가 다른 경우에 대한 처리
+        // DB에 데이터가 있었지만 위치가 다른 경우에는 즉시 삭제해 동기화를 맞춥니다.
         else if (savedSession != null)
         {
             // DB에 저장된 정보가 '이전 상점'의 낡은 정보라면, 즉시 삭제하여 DB를 깨끗하게 유지합니다.
@@ -78,21 +83,21 @@ public class ShopOverlayController : MonoBehaviour
             DatabaseManager.Instance.DeleteActiveShopSession(_currentRun.RunId);
         }
 
-        // [DB 데이터가 dto로 옮겨졌다면]
+        // DB 데이터가 dto로 옮겨졌다면 해당 정보로 상점을 복원합니다.
         if (dto != null)
         {
             Debug.Log($"<color=green>SUCCESS: Loaded from DATABASE.</color>", this);
             _sessionMemory[_currentKey] = dto; // 메모리 캐시도 최신 정보로 갱신해줍니다.
             shopUI.ImportSession(dto);  // 상점에 정보를 넣는다.
         }
-        // [2순위] DB에 데이터가 없을 때만, 메모리 캐시(단기 기억)를 확인합니다.
+        // DB에 데이터가 없을 때는 메모리 캐시를 확인합니다.
         else if (_sessionMemory.TryGetValue(_currentKey, out var memDto))
         {
             // 같은 게임 세션 내에서 재방문한 경우, 메모리 정보로 상점을 복원합니다.
             Debug.Log($"<color=green>SUCCESS: Loaded from MEMORY CACHE.</color>", this);
             shopUI.ImportSession(memDto);
         }
-        // [3순위] DB와 메모리 두 곳 모두에 데이터가 없을 경우입니다.
+        // DB와 메모리 두 곳 모두에 데이터가 없으면 새 세션을 초기화합니다.
         else
         {
             // '완전 최초 방문'이므로, 새로운 상점으로 초기화합니다.
@@ -116,9 +121,7 @@ public class ShopOverlayController : MonoBehaviour
             stageService.SetStage(RunStageType.ShopOverlay, SceneManager.GetActiveScene().name, RunStageService.ToJson(payload));
         }
 
-        // '완전 최초 방문'이었는지 최종적으로 다시 확인합니다.
-        // (dto == null) → DB에 데이터가 없었다는 뜻.
-        // (!_sessionMemory.ContainsKey(...)) → 메모리에도 데이터가 없었다는 뜻.
+        // 완전 최초 방문이라면 초기 상태를 DB에 저장합니다.
         if (dto == null && !_sessionMemory.ContainsKey(_currentKey))
         {
             // 두 조건이 모두 참일 때만, 방금 생성된 초기 상태를 DB에 저장합니다.
@@ -127,7 +130,9 @@ public class ShopOverlayController : MonoBehaviour
         }
     }
 
-    // 현재 상점의 상태를 '기억 노트'에 저장하는 함수
+    /// <summary>
+    /// 현재 상점 세션을 DB와 메모리 캐시에 저장합니다.
+    /// </summary>
     public void SaveCurrentShopSession()
     {
         if (_currentRun == null)
@@ -149,7 +154,9 @@ public class ShopOverlayController : MonoBehaviour
         _sessionMemory[_currentKey] = dto;
     }
 
-    // 상점 다시 진입을 거짓으로 만들어 상점 처음 진입 상태로 만듦 (데이터랑은 관계 없음)
+    /// <summary>
+    /// 상점 세션 초기화 플래그를 해제합니다.
+    /// </summary>
     public void ResetShopSession()
     {
         shopUI?.ResetSession();

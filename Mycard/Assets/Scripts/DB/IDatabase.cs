@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using Game.Save;
 
-// '의존성 주입'을 위해, DB가 제공해야 할 기능의 목록을 정의하는 인터페이스입니다.
-// 지금은 이벤트와 관련된 기능만 구현되어 있지만 확장 될 수 있습니다.
+/// <summary>
+/// DatabaseManager가 제공하는 저장소 기능을 의존성 주입 방식으로 노출하기 위한 계약입니다.
+/// 런 상태, 이벤트, RNG, 업적 등 저장/불러오기 동작을 정의합니다.
+/// </summary>
 public interface IDatabase
 {
     // --- 프로필 ---

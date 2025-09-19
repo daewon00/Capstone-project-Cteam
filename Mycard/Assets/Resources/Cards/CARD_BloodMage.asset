@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
+  m_Name: CARD_BloodMage
+  m_EditorClassIdentifier: 
+  cardName: "혈마법사"
+  CardId: CARD_BLOOD_MAGE
+  actionDescription: "공격으로 준 피해만큼 리더 회복"
+  cardLore: 
+  currentHealth: 2
+  attackPower: 2
+  manaCost: 3
+  characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
+  bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
+  effects:
+  - type: 6
+    timing: 1
+    target: 4
+    potency: 0
+    value: 0
+    payloadId: 
+    stackable: 0
+    maxStacks: 0

@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 카드 원본 데이터를 조회할 수 있는 카탈로그 인터페이스입니다.
+/// </summary>
 public interface ICardCatalog
 {
     /// <summary>
@@ -24,6 +27,9 @@ public interface ICardCatalog
     System.Collections.Generic.IReadOnlyList<string> GetAllCardIds();
 }
 
+/// <summary>
+/// Resources 폴더에서 카드 데이터를 로드해 인메모리 인덱스를 제공하는 구현체입니다.
+/// </summary>
 public sealed class CardCatalog : ICardCatalog
 {
     private readonly Dictionary<string, CardScriptableObject> _database = new Dictionary<string, CardScriptableObject>();

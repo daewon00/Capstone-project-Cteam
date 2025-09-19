@@ -3,9 +3,10 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections.Generic;
 
-/// 에디터(UGUI) 기반 런 클리어 패널 컨트롤러
-/// - Battle_android 씬의 Canvas 아래에 프리팹/패널을 배치하고 이 스크립트를 붙여주세요.
-/// - 시작 시 비활성화 상태로 두고, 보스전 승리 후 MetaEvents.OnRunEnded(cleared=true) 신호를 수신하면 자동으로 켜집니다.
+/// <summary>
+/// 런 클리어 시 메타 이벤트를 수신해 승리 패널을 표시하는 UGUI 컨트롤러입니다.
+/// Battle_android 씬의 Canvas 하위에 배치하여 사용합니다.
+/// </summary>
 public class RunClearedView : MonoBehaviour
 {
     [Header("Root")]

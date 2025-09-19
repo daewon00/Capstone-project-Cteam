@@ -11,8 +11,9 @@ using Game.Save;
     }
     */
 
-    // 이 클래스는 MonoBehaviour를 상속받지 않습니다.
-    // 데이터만 담는 설계도
+    /// <summary>
+    /// 맵 노드의 타입, 좌표, 연결 정보를 저장하는 순수 데이터 클래스입니다.
+    /// </summary>
     public class MapDataNode
     {
         public NodeType nodeType;  // 이 노드의 종류 (전투, 상점 등)
@@ -26,7 +27,9 @@ using Game.Save;
 
         public bool isVisited = false;
 
-        // 생성자: 노드를 처음 만들 때 타입/위치/층 인덱스를 지정
+        /// <summary>
+        /// 노드 타입, 좌표, 층 인덱스로 새 노드를 생성합니다.
+        /// </summary>
         public MapDataNode(NodeType type, Vector2 pos, int layerIdx)
         {
             nodeType = type;
@@ -35,7 +38,6 @@ using Game.Save;
         }
 
         // (선택적 호환) 레거시 생성자: 층 인덱스 미지정 시 -1로 둠
-        // 향후 사용 금지 권장
         public MapDataNode(NodeType type, Vector2 pos)
         {
             nodeType = type;

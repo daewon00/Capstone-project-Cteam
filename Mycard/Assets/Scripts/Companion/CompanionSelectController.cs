@@ -6,6 +6,9 @@ using TMPro;
 using Game.Save;
 using System.Collections.Generic;
 
+/// <summary>
+/// 동료 선택 흐름을 관리하고 초기 런 상태를 구성한 뒤 맵 씬으로 전환합니다.
+/// </summary>
 public class CompanionSelectController : MonoBehaviour
 {
     [SerializeField] private string mapScene = "Map Scene";
@@ -19,6 +22,9 @@ public class CompanionSelectController : MonoBehaviour
     private CompanionDefinition _selected;
     private CompanionDefinition[] _all;
 
+    /// <summary>
+    /// 데이터베이스 연결을 보장하고 동료 카드 목록을 구성한 뒤 UI 이벤트를 초기화합니다.
+    /// </summary>
     void Start()
     {
         // DB 연결 보장(한 번만)
@@ -38,6 +44,9 @@ public class CompanionSelectController : MonoBehaviour
         UpdateUI();
     }
 
+    /// <summary>
+    /// 선택된 동료 정보를 저장하고 전역 컨텍스트를 갱신한 뒤 UI를 새로고침합니다.
+    /// </summary>
     void OnSelect(CompanionDefinition data)
     {
         _selected = data;
@@ -45,12 +54,18 @@ public class CompanionSelectController : MonoBehaviour
         UpdateUI();
     }
 
+    /// <summary>
+    /// 동료 선택 여부에 따라 버튼 활성 상태를 조정하고 라벨에 현재 선택을 표시합니다.
+    /// </summary>
     void UpdateUI()
     {
         startButton.interactable = _selected != null;
         if (selectedLabel) selectedLabel.text = _selected ? $"선택: {_selected.DisplayName}" : "동료를 선택하세요";
     }
 
+    /// <summary>
+    /// 선택된 동료를 기반으로 새 런을 생성·저장하고 관련 서비스를 재바인딩한 뒤 맵 씬을 로드합니다.
+    /// </summary>
     void OnClickStart()
     {
         if (_selected == null) return;
@@ -156,6 +171,9 @@ public class CompanionSelectController : MonoBehaviour
         SceneManager.LoadScene(mapScene);
     }
 
+    /// <summary>
+    /// UI 없이 동료 정의만으로 런을 시작하던 이전 버전의 진입점입니다.
+    /// </summary>
     void StartNewRunWithCompanion(CompanionDefinition comp)
     {
         // 새 런 ID

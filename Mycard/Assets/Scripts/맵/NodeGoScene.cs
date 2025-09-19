@@ -6,6 +6,9 @@ using UnityEngine.UI;
 using Game.Save; // NodeType 충돌 방지 
 
 
+/// <summary>
+/// 맵 노드 버튼을 나타내며 이동 가능 상태와 할당된 씬 정보를 관리합니다.
+/// </summary>
 public class NodeGoScene : MonoBehaviour
 {
     // --- 버튼이 로드할 씬 이름들 (씬이 아직 없어도 있다고 가정하고 필드만 만들어 둡니다) ---

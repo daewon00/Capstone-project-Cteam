@@ -1,6 +1,9 @@
 using UnityEngine;
 using TMPro;
 
+/// <summary>
+/// 덱 서비스에서 더미 카드 수 변화를 받아 상단 카운터를 갱신합니다.
+/// </summary>
 public class CountersUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI _drawPileCountText;
@@ -31,6 +34,9 @@ public class CountersUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 덱 서비스에서 전달한 더미 카드 수를 텍스트에 반영합니다.
+    /// </summary>
     private void UpdateCounters(PileCounts counts)
     {
         if (_drawPileCountText != null)

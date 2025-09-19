@@ -2,28 +2,41 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// 동료 선택 화면에서 음악과 카드 선택 입력을 관리하는 UI 컨트롤러입니다.
+/// </summary>
 public class CompanionUI : MonoBehaviour
 {
     public static CompanionUI instance;
     private bool hasPressed = false;
+    /// <summary>
+    /// 싱글턴 인스턴스를 등록합니다.
+    /// </summary>
     private void Awake()
     {
         instance = this;
     }
 
-    // Start is called before the first frame update
+    /// <summary>
+    /// 화면 진입 시 배경 음악을 전환합니다.
+    /// </summary>
     void Start()
     {
         AudioManager.instance.StopMusic();
         AudioManager.instance.PlayBattleSelectMusic();
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// 현재는 프레임별 처리가 필요 없어 비워 둡니다.
+    /// </summary>
     void Update()
     {
         
     }
 
+    /// <summary>
+    /// legacy 버튼 클릭 경로로 호출되며 새 덱 생성 흐름 사용을 안내합니다.
+    /// </summary>
     public void CompanionCardAdd1()
     {
         if (hasPressed) return;

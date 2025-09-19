@@ -3,6 +3,9 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 
+/// <summary>
+/// 특전 슬롯 하나를 표시하고 레벨 조정 버튼을 처리하는 UI 컴포넌트입니다.
+/// </summary>
 public class PerkSlotUI : MonoBehaviour
 {
     [Header("Bindings")]
@@ -21,6 +24,9 @@ public class PerkSlotUI : MonoBehaviour
     private int _availablePointsAfterStaging; // 남은 포인트(추가 1레벨 가능 판단)
     private Action<string, int> _onAdjustRequested; // (perkId, delta)
 
+    /// <summary>
+    /// 특전 정의와 현재/스테이징 레벨을 바인딩하고 버튼 콜백을 설정합니다.
+    /// </summary>
     public void Init(
         PerkDefinition perkDef,
         int currentLevel,
@@ -109,6 +115,9 @@ public class PerkSlotUI : MonoBehaviour
     }
 
     // 상위에서 포인트만 갱신하고 싶을 때 사용할 수 있는 보조 메서드(선택)
+    /// <summary>
+    /// 외부에서 스테이징 값을 갱신했을 때 UI를 새로고침합니다.
+    /// </summary>
     public void SetDisplayAndRefresh(int stagedLevel, int pointsAfterStaging)
     {
         _stagedLevel = Mathf.Max(0, stagedLevel);

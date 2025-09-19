@@ -1,7 +1,9 @@
 using UnityEngine;
 using System;
 
-// 플레이어 골드의 단일 출입구. DB-우선 전략으로 일관성 보장.
+/// <summary>
+/// 플레이어 골드를 DB-우선 전략으로 관리하고 메타 이벤트를 발행하는 지갑 서비스입니다.
+/// </summary>
 public sealed class WalletService : IWalletService
 {
     private readonly IDatabase _db;
@@ -11,13 +13,18 @@ public sealed class WalletService : IWalletService
     public event Action<int> OnGoldChanged;
     public int Gold => _gold;
 
+    /// <summary>
+    /// 지갑 서비스에 DB 핸들과 초기 런 ID를 주입합니다.
+    /// </summary>
     public WalletService(IDatabase db, string runId)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
         RebindRun(runId);
     }
 
-    // 새로운 런으로 지갑 상태를 재설정하고 DB에서 최신 골드를 불러옵니다.
+    /// <summary>
+    /// 런을 재바인딩하고 DB에서 최신 골드를 동기화합니다.
+    /// </summary>
     public void RebindRun(string runId)
     {
         _runId = runId ?? string.Empty;
@@ -32,9 +39,9 @@ public sealed class WalletService : IWalletService
             }
             catch (Exception e)
             {
-                Debug.LogError($"[WalletService] LoadCurrentRun 실패: {e.Message}");
-                newGold = 0;
-            }
+            Debug.LogError($"[WalletService] LoadCurrentRun 실패: {e.Message}");
+            newGold = 0;
+        }
         }
 
         newGold = Mathf.Max(0, newGold);
@@ -58,7 +65,9 @@ public sealed class WalletService : IWalletService
         Set(_gold + amount);
     }
 
-    // DB를 먼저 갱신하고 성공 시 메모리/브로드캐스트를 수행합니다.
+    /// <summary>
+    /// DB에 먼저 기록하고 성공 시 메모리 값을 변경한 뒤 브로드캐스트합니다.
+    /// </summary>
     public bool Set(int amount)
     {
         int target = Mathf.Max(0, amount);
@@ -80,7 +89,7 @@ public sealed class WalletService : IWalletService
 
         _gold = target;
         OnGoldChanged?.Invoke(_gold);
-        // Broadcast gold change for achievements/progression hooks
+        // 업적/진행도 훅을 위해 골드 변화를 브로드캐스트합니다.
         try
         {
             if (!string.IsNullOrEmpty(_runId) && delta != 0)

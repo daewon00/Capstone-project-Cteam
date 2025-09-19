@@ -3,7 +3,9 @@ using UnityEngine.SceneManagement;
 using Game.Save;
 using BattleSnapshot;
 
-// 씬 조립자: 컨트롤러보다 먼저 실행되어 서비스 주입을 담당합니다.
+/// <summary>
+/// 전투 씬 진입 시 필요한 서비스와 컨트롤러를 조립하고 런 컨텍스트를 복원합니다.
+/// </summary>
 [DefaultExecutionOrder(-9000)]
 public class BattleSceneBootstrap : MonoBehaviour
 {
@@ -12,8 +14,14 @@ public class BattleSceneBootstrap : MonoBehaviour
     [SerializeField] private HandController _handController;
     [SerializeField] private Card _cardPrefab; // 핸드에 생성할 카드 프리팹(권장: 명시 지정)
 
+    /// <summary>
+    /// 전투 중 카드 인스턴스를 생성할 때 사용할 기본 카드 프리팹입니다.
+    /// </summary>
     public static Card CardPrefabReference { get; private set; }
 
+    /// <summary>
+    /// 필수 의존성을 검증하고 핸드/덱 서비스 바인딩을 준비합니다.
+    /// </summary>
     void Awake()
     {
         // 유효성 검사: 필수 컨트롤러 레퍼런스 확인
@@ -31,7 +39,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         if (cardCatalog == null) Debug.LogWarning("[BattleSceneBootstrap] ICardCatalog를 찾지 못했습니다.");
         if (deckService != null) GameServices.RegisterDeck(deckService);
         CardPrefabReference = _cardPrefab;
-        // HandServiceBinder 부착 및 초기화
+        // HandServiceBinder를 부착하고 즉시 초기화합니다.
         var binder = _handController.GetComponent<HandServiceBinder>();
         if (binder == null) binder = _handController.gameObject.AddComponent<HandServiceBinder>();
         // 카드 프리팹이 있다면 바인더에 설정
@@ -48,7 +56,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         if (_battleController != null && deckService != null)
         {
             _battleController.Initialize(deckService);
-            // Start에서 전투 개시(모든 Awake 완료 후)
+            // Start 단계에서 전투를 개시하도록 준비합니다.
         }
         else
         {
@@ -65,6 +73,9 @@ public class BattleSceneBootstrap : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 런 정보를 재구성하고 필요한 서비스를 재바인딩한 뒤 전투를 시작하거나 저장 상태를 복원합니다.
+    /// </summary>
     void Start()
     {
         if (!this.enabled || _battleController == null) return;

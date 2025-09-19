@@ -1,9 +1,11 @@
 using System;
 
-// Lightweight global event hub for broadcasting gameplay events to interested services
+/// <summary>
+/// 게임 진행 중 발생하는 주요 이벤트를 관심 있는 서비스에 전달하는 가벼운 전역 허브입니다.
+/// </summary>
 public static class MetaEvents
 {
-    // --- Payloads ---
+    // --- 페이로드 정의 ---
     public struct CombatVictoryPayload
     {
         public string RunId;
@@ -49,10 +51,10 @@ public static class MetaEvents
         public string Description;
         public int Points;
         public string UnlockedAtUtc;
-        public string RunId; // optional
+        public string RunId; // 선택적으로 사용되는 RunId
     }
 
-    // --- Events ---
+    // --- 이벤트 ---
     public static event Action<CombatVictoryPayload> OnCombatVictory;
     public static event Action<RunEndedPayload> OnRunEnded;
     public static event Action<FloorReachedPayload> OnFloorReached;
@@ -60,7 +62,7 @@ public static class MetaEvents
     public static event Action<EnemyCardDestroyedPayload> OnEnemyCardDestroyed;
     public static event Action<AchievementUnlockedPayload> OnAchievementUnlocked;
 
-    // --- Raisers ---
+    // --- 발생 함수 ---
     public static void RaiseCombatVictory(CombatVictoryPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

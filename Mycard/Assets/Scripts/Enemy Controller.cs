@@ -83,6 +83,8 @@ public class EnemyController : MonoBehaviour
                 {
                     var Ecard = CardPointsController.instance.enemyStayPoints[i].activeCard;
                     Ecard.MoveToPoint(CardPointsController.instance.enemyCardPoints[i].transform.position, CardPointsController.instance.enemyCardPoints[i].transform.rotation);
+                    if (HandController.instance != null)
+                        Ecard.SetCardScale(HandController.instance.GetBoardScale());
 
 
                     CardPointsController.instance.enemyCardPoints[i].activeCard = Ecard;
@@ -92,6 +94,9 @@ public class EnemyController : MonoBehaviour
                     GameEvents.OnCardPlayed?.Invoke(Ecard);
                     Ecard.SetInteractable(false); // 적 카드 상호작용 비활성화
                     BattleDeckRuntimeSync.UpdateCardState(Ecard);
+
+                    var effectService = ServiceRegistry.Get<ICardEffectService>();
+                    effectService?.RegisterBoardCard(Ecard, false);
 
 
                     CardPointsController.instance.enemyStayPoints[i].activeCard = null;
@@ -152,6 +157,8 @@ public class EnemyController : MonoBehaviour
                 newCard.SetupCard();
                 newCard.SetBattleInstanceId(Guid.NewGuid().ToString("N"));
                 newCard.MoveToPoint(selectedPoint.transform.position, selectedPoint.transform.rotation);
+        if (HandController.instance != null)
+            newCard.SetCardScale(HandController.instance.GetBoardScale());
 
                 selectedPoint.activeCard = newCard;
                 newCard.assignedPlace = selectedPoint;
@@ -329,6 +336,8 @@ public class EnemyController : MonoBehaviour
         newCard.SetupCard();
         newCard.SetBattleInstanceId(Guid.NewGuid().ToString("N"));
         newCard.MoveToPoint(placePoint.transform.position, placePoint.transform.rotation);
+        if (HandController.instance != null)
+            newCard.SetCardScale(HandController.instance.GetBoardScale());
 
         placePoint.activeCard = newCard;
         newCard.assignedPlace = placePoint;

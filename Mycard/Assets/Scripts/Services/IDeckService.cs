@@ -37,9 +37,12 @@ public sealed class DrawResult
 
 #endregion
 
+/// <summary>
+/// 런 덱의 런타임 상태를 제어하고 전투 중 카드 이동을 지원하는 서비스 계약입니다.
+/// </summary>
 public interface IDeckService
 {
-    // 이벤트(컨텍스트 포함). 구현은 Phase 2에서 점진 추가 예정.
+    // 이벤트(컨텍스트 포함). 구현은 점진적으로 확장될 예정입니다.
     event System.Action<PlayResult> OnCardPlayed;
     event System.Action<DrawResult> OnCardsDrawn;
     event System.Action<PileCounts> OnPileCountsChanged;

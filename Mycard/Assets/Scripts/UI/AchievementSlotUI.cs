@@ -3,6 +3,9 @@ using UnityEngine.UI;
 using TMPro;
 using Game.Save;
 
+/// <summary>
+/// 개별 업적 정보를 표시하고 진행도에 따라 뷰를 업데이트하는 슬롯 UI입니다.
+/// </summary>
 public class AchievementSlotUI : MonoBehaviour
 {
     [Header("Bindings")]
@@ -15,6 +18,9 @@ public class AchievementSlotUI : MonoBehaviour
     [SerializeField] private TMP_Text unlockedAtText;
     [SerializeField] private GameObject newTag;
 
+    /// <summary>
+    /// 업적 정의와 진행도를 받아 슬롯을 초기화합니다.
+    /// </summary>
     public void Init(AchievementDefinition def, AchievementProgress prog, bool isNew)
     {
         bool hiddenAndLocked = def.Hidden && (prog == null || !prog.IsUnlocked);

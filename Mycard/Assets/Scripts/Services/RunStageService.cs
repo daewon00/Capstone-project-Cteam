@@ -2,6 +2,9 @@ using System;
 using Game.Save;
 using UnityEngine;
 
+/// <summary>
+/// 런 진행 단계 정보를 DB에 저장하고 씬 재개를 위한 데이터를 제공하는 서비스입니다.
+/// </summary>
 public sealed class RunStageService : IRunStageService
 {
     private readonly IDatabase _db;
@@ -10,6 +13,9 @@ public sealed class RunStageService : IRunStageService
 
     private const string LogTag = "[RunStageService]";
 
+    /// <summary>
+    /// 런 스테이지 서비스에 사용할 데이터베이스를 주입합니다.
+    /// </summary>
     public RunStageService(IDatabase database)
     {
         _db = database;
@@ -20,12 +26,18 @@ public sealed class RunStageService : IRunStageService
     public string CurrentSceneHint => _current?.SceneHint ?? string.Empty;
     public string CurrentPayloadJson => _current?.PayloadJson ?? string.Empty;
 
+    /// <summary>
+    /// 현재 런 ID를 바인딩하고 저장된 단계 정보를 로드합니다.
+    /// </summary>
     public void RebindRun(string runId)
     {
         _runId = runId ?? string.Empty;
         _current = string.IsNullOrEmpty(_runId) ? null : _db.LoadRunStageState(_runId);
     }
 
+    /// <summary>
+    /// 진행 중인 스테이지 정보를 삭제합니다.
+    /// </summary>
     public void ClearStage()
     {
         if (string.IsNullOrEmpty(_runId)) return;
@@ -33,6 +45,9 @@ public sealed class RunStageService : IRunStageService
         _current = null;
     }
 
+    /// <summary>
+    /// 현재 스테이지 정보를 저장하고 스냅샷을 갱신합니다.
+    /// </summary>
     public void SetStage(RunStageType stage, string sceneHint = null, string payloadJson = null)
     {
         if (string.IsNullOrEmpty(_runId)) return;
@@ -55,6 +70,9 @@ public sealed class RunStageService : IRunStageService
         }
     }
 
+    /// <summary>
+    /// 재개 시 사용할 씬 이름과 페이로드 정보를 반환합니다.
+    /// </summary>
     public RunStageResumeDecision GetResumeDecision()
     {
         if (_current == null)
@@ -75,6 +93,9 @@ public sealed class RunStageService : IRunStageService
         };
     }
 
+    /// <summary>
+    /// 현재 저장된 페이로드를 지정한 타입으로 역직렬화합니다.
+    /// </summary>
     public bool TryGetPayload<T>(out T payload) where T : class
     {
         payload = null;
@@ -93,11 +114,17 @@ public sealed class RunStageService : IRunStageService
         }
     }
 
+    /// <summary>
+    /// 페이로드 객체를 JSON 문자열로 직렬화합니다.
+    /// </summary>
     public static string ToJson<T>(T payload) where T : class
     {
         return payload == null ? string.Empty : JsonUtility.ToJson(payload);
     }
 
+    /// <summary>
+    /// JSON 문자열을 지정한 타입으로 역직렬화합니다.
+    /// </summary>
     public static bool TryParse<T>(string json, out T payload) where T : class
     {
         payload = null;

@@ -1,8 +1,8 @@
 using System;
 
-// 런(게임 세션) 동안 플레이어의 골드를 관리하는 서비스입니다.
-// - DB 우선 업데이트로 일관성을 보장합니다.
-// - UI 동기화를 위한 변경 브로드캐스트(OnGoldChanged)를 제공합니다.
+/// <summary>
+/// 런 진행 중 플레이어 골드를 DB-우선으로 관리하고 변경 이벤트를 제공하는 서비스 계약입니다.
+/// </summary>
 public interface IWalletService
 {
     int Gold { get; }
@@ -11,10 +11,13 @@ public interface IWalletService
     bool TrySpend(int amount);
     void Add(int amount);
 
-    // DB-우선 적용 후 성공 시 메모리/이벤트를 갱신합니다.
+    /// <summary>
+    /// DB를 먼저 갱신한 뒤 성공 시 메모리 값과 이벤트를 갱신합니다.
+    /// </summary>
     bool Set(int amount);
 
-    // 새로운 runId로 재바인딩하고 DB에서 최신 값을 동기화합니다.
+    /// <summary>
+    /// 런 ID를 변경하고 DB에서 최신 골드를 다시 읽어옵니다.
+    /// </summary>
     void RebindRun(string runId);
 }
-

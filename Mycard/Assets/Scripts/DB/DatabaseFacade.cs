@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using Game.Save;
 
-// 기존의 DatabaseManager 싱글턴을 'IDatabase'라는 표준 규격에 맞게 감싸주는 어댑터 클래스입니다.
+/// <summary>
+/// DatabaseManager 싱글턴을 IDatabase 인터페이스로 노출해 서비스 레이어에서 안전하게 사용할 수 있도록 감싸는 어댑터입니다.
+/// 모든 메서드는 DatabaseManager.Instance에 위임합니다.
+/// </summary>
 public sealed class DatabaseFacade : IDatabase
 {
     public PlayerProfile LoadProfile(string profileId)

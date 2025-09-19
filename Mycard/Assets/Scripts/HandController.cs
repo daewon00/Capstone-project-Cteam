@@ -15,6 +15,9 @@ public class HandController : MonoBehaviour
 
     public Transform minpos, maxpos;
     public List<Vector3> cardPositions = new List<Vector3>();
+    [Header("Visual")]
+    [SerializeField] private Vector3 handScale = Vector3.one;
+    [SerializeField] private Vector3 boardScale = Vector3.one;
     
     // 드래그 중 레이아웃에서 일시 제외할 카드 목록
     private readonly HashSet<Card> _layoutLocked = new HashSet<Card>();
@@ -52,6 +55,7 @@ public class HandController : MonoBehaviour
 
             //카드가 움직이면 사용됩니다
             card.MoveToPoint(cardPositions[i], minpos.rotation);
+            card.SetCardScale(handScale);
 
             card.inHand = true;
             card.handPosition = i;
@@ -129,8 +133,12 @@ public class HandController : MonoBehaviour
         {
             heldCard.inHand = false;
             heldCard.MoveToPoint(BattleController.instance.discardPoint.position, heldCard.transform.rotation);
+            heldCard.SetCardScale(boardScale);
 
         }
         heldCards.Clear();
     }
+
+    public Vector3 GetBoardScale() => boardScale;
+    public Vector3 GetHandScale() => handScale;
 }

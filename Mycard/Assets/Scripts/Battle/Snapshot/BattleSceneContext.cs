@@ -13,10 +13,11 @@ public class BattleSceneContext
     public ICardCatalog CardCatalog { get; }
     public Card CardPrefab { get; }
     public IRngService RngService { get; }
+    private readonly EffectIconDatabase _iconDatabase;
     public HandServiceBinder HandBinder { get; }
 
     public BattleSceneContext(BattleController battle, HandController hand, CardPointsController board, EnemyController enemy,
-        IDeckService deckService, ICardCatalog catalog, Card cardPrefab, IRngService rng)
+        IDeckService deckService, ICardCatalog catalog, Card cardPrefab, IRngService rng, EffectIconDatabase iconDatabase = null)
     {
         Battle = battle;
         Hand = hand;
@@ -27,6 +28,11 @@ public class BattleSceneContext
         CardPrefab = cardPrefab;
         RngService = rng;
         HandBinder = hand != null ? hand.GetComponent<HandServiceBinder>() : null;
+        _iconDatabase = iconDatabase != null ? iconDatabase : ServiceRegistry.Get<EffectIconDatabase>();
+        if (_iconDatabase == null)
+        {
+            _iconDatabase = Resources.Load<EffectIconDatabase>("EffectIconDatabase");
+        }
     }
 
     public void ClearHand()
@@ -55,7 +61,7 @@ public class BattleSceneContext
         }
         var card = Object.Instantiate(CardPrefab, Hand.transform.position, CardPrefab.transform.rotation);
         card.gameObject.SetActive(true);
-        card.Initialize(state.InstanceId, so, DeckService);
+        card.Initialize(state.InstanceId, so, DeckService, _iconDatabase);
         card.isPlayer = true;
         card.inHand = true;
         card.transform.SetParent(Hand.transform, true);
@@ -108,7 +114,7 @@ public class BattleSceneContext
         }
         var card = Object.Instantiate(CardPrefab);
         card.gameObject.SetActive(true);
-        card.Initialize(runtime.InstanceId, so, DeckService);
+        card.Initialize(runtime.InstanceId, so, DeckService, _iconDatabase);
         card.isPlayer = true;
         card.inHand = false;
         card.assignedPlace = slot;
@@ -117,6 +123,8 @@ public class BattleSceneContext
         card.transform.position = slot.transform.position;
         card.transform.rotation = CardPrefab.transform.rotation;
         card.MoveToPoint(slot.transform.position, card.transform.rotation);
+        if (HandController.instance != null)
+            card.SetCardScale(HandController.instance.GetBoardScale());
         slot.activeCard = card;
 
         var modifiers = BattleDeckRuntimeSync.ParseModifiers(runtime.ModifiersJson);

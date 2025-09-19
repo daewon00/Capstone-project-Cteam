@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
+  m_Name: CARD_SwiftScout
+  m_EditorClassIdentifier: 
+  cardName: "날쌘 정찰병"
+  CardId: CARD_SWIFT_SCOUT
+  actionDescription: "턴 종료 시 오른쪽 칸으로 이동"
+  cardLore: 
+  currentHealth: 1
+  attackPower: 1
+  manaCost: 1
+  characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
+  bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
+  effects:
+  - type: 8
+    timing: 3
+    target: 0
+    potency: 0
+    value: 1
+    payloadId: 
+    stackable: 0
+    maxStacks: 0

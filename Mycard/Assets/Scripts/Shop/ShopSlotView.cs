@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro; 
 
+/// <summary>
+/// 상점 슬롯 하나를 구성하고 클릭 시 콜백을 호출하는 뷰입니다.
+/// </summary>
 public class ShopSlotView : MonoBehaviour 
 {
     public Button button; // 임시 상점 여는버튼
@@ -24,6 +27,9 @@ public class ShopSlotView : MonoBehaviour
         dealDiscountVisual = Mathf.Clamp01(v);
     }
 
+    /// <summary>
+    /// 슬롯 UI를 주어진 뷰 모델로 갱신하고 클릭 콜백을 설정합니다.
+    /// </summary>
     public void Bind(ShopSlotVM vm, System.Action onClick, bool canBuy = true)
     {
         _logName = vm.title;
@@ -90,6 +96,9 @@ public class ShopSlotView : MonoBehaviour
 }
 
 
+/// <summary>
+/// 상점 슬롯에 표시될 데이터를 담는 뷰 모델입니다.
+/// </summary>
 [System.Serializable]
 public struct ShopSlotVM {
     public CardScriptableObject cardData;   // 카드 원본(설계도)을 담아둘 공간

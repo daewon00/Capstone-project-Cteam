@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Game.Save;
 
-// IDeckService 이벤트를 구독해 HandController에 카드를 생성/제거하는 어댑터
+/// <summary>
+/// IDeckService 이벤트를 구독해 핸드 컨트롤러에 카드를 생성·제거하는 어댑터입니다.
+/// </summary>
 [DisallowMultipleComponent]
 public class HandServiceBinder : MonoBehaviour
 {
@@ -15,13 +17,18 @@ public class HandServiceBinder : MonoBehaviour
 
     private IDeckService _deckService;
     private ICardCatalog _cardCatalog;
+    [SerializeField] private EffectIconDatabase _iconDatabase;
 
     private readonly Dictionary<string, Card> _viewsById = new Dictionary<string, Card>();
     private readonly Stack<Card> _cardPool = new Stack<Card>();
     private bool _subscribed;
     private bool _initialized;
 
-    // Bootstrap에서 호출하는 초기화: 의존성 주입 + 즉시 구독(레이스 컨디션 방지)
+    public static Card SharedCardPrefab { get; private set; }
+
+    /// <summary>
+    /// 부트스트랩 단계에서 호출되어 의존성을 주입하고 덱 서비스 이벤트에 즉시 구독합니다.
+    /// </summary>
     public void Initialize(HandController hand, IDeckService deckService, ICardCatalog cardCatalog)
     {
         if (_initialized) return;
@@ -30,6 +37,8 @@ public class HandServiceBinder : MonoBehaviour
         _hand = hand != null ? hand : FindObjectOfType<HandController>();
         _deckService = deckService != null ? deckService : ServiceRegistry.Get<IDeckService>();
         _cardCatalog = cardCatalog != null ? cardCatalog : ServiceRegistry.Get<ICardCatalog>();
+        if (_cardPrefab != null)
+            SharedCardPrefab = _cardPrefab;
 
         if (_deckService != null && !_subscribed)
         {
@@ -43,6 +52,9 @@ public class HandServiceBinder : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 바인더가 비활성화될 때 덱 서비스 이벤트 구독을 해제합니다.
+    /// </summary>
     void OnDisable()
     {
         if (_deckService != null && _subscribed)
@@ -53,6 +65,9 @@ public class HandServiceBinder : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 덱 서비스에서 카드 드로우 이벤트를 받으면 핸드에 뷰를 생성합니다.
+    /// </summary>
     private void HandleCardsDrawn(DrawResult result)
     {
         if (result == null || result.DrawnCards == null || _hand == null || _cardPrefab == null || _cardCatalog == null) return;
@@ -67,7 +82,7 @@ public class HandServiceBinder : MonoBehaviour
             // TODO: 시각/청각 효과 트리거 (셔플 애니메이션, 사운드 등)
         }
 
-        // 초기 드로우는 장당 지연/스폰포인트를 사용해 연출
+        // 초기 드로우는 장당 지연과 스폰 지점을 활용해 연출합니다.
         if (result.Reason == DrawReason.TurnStart && (_initialDrawStagger > 0f || _drawSpawnPoint != null))
         {
             // 디버그: 어떤 스폰 위치를 사용하는지 기록
@@ -80,7 +95,7 @@ public class HandServiceBinder : MonoBehaviour
             return;
         }
 
-        // 일반 드로우(즉시 스폰)
+        // 일반 드로우는 즉시 스폰합니다.
         foreach (var state in result.DrawnCards)
         {
             SpawnAndRegister(state, immediateSpawnAt: _hand.transform.position);
@@ -89,6 +104,9 @@ public class HandServiceBinder : MonoBehaviour
         BattleSnapshotScheduler.Instance?.RequestSnapshot("AfterInitialDraw");
     }
 
+    /// <summary>
+    /// 초기 드로우 시 카드 뷰를 순차적으로 생성해 연출을 제공합니다.
+    /// </summary>
     private IEnumerator SpawnDrawnCardsStaggered(DrawResult result)
     {
         Vector3 spawnPos = (_drawSpawnPoint != null ? _drawSpawnPoint.position : _hand.transform.position);
@@ -102,6 +120,9 @@ public class HandServiceBinder : MonoBehaviour
         BattleSnapshotScheduler.Instance?.RequestSnapshot("AfterInitialDraw");
     }
 
+    /// <summary>
+    /// 카드 뷰를 풀에서 가져오거나 생성하고 핸드에 등록합니다.
+    /// </summary>
     private void SpawnAndRegister(CardRuntimeState state, Vector3 immediateSpawnAt)
     {
         var so = _cardCatalog.GetCardData(state.CardId);
@@ -115,12 +136,12 @@ public class HandServiceBinder : MonoBehaviour
         Debug.Log($"[HandServiceBinder] Spawn view: instance={state.InstanceId}, cardId={state.CardId}");
 #endif
 
-        // 풀에서 가져오거나 새로 생성
+        // 풀에서 가져오거나 새로 생성합니다.
         Card newCard = _cardPool.Count > 0 ? _cardPool.Pop() : Instantiate(_cardPrefab);
         newCard.gameObject.SetActive(true);
         newCard.transform.SetParent(_hand.transform, false);
         newCard.transform.position = immediateSpawnAt;
-        newCard.Initialize(state.InstanceId, so, _deckService);
+        newCard.Initialize(state.InstanceId, so, _deckService, ResolveIconDatabase());
         _hand.AddCardToHand(newCard);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // 스폰 위치와 목표(핸드 인덱스) 위치 비교 로그
@@ -142,23 +163,27 @@ public class HandServiceBinder : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// 플레이된 카드 정보를 받아 핸드 뷰에서 제거하고 풀에 반환합니다.
+    /// </summary>
     private void HandleCardPlayed(PlayResult result)
     {
         if (result == null || result.Code != PlayResult.ResultCode.Success) return;
         if (_hand == null) return;
 
-        // 1) 우선 매핑 테이블에서 뷰를 찾는다.
+        // 1) 먼저 매핑 테이블에서 뷰를 찾습니다.
         Card view = null;
         if (!_viewsById.TryGetValue(result.PlayedInstanceId, out view))
         {
-            // 2) 폴백: 핸드 목록에서 InstanceId로 직접 검색
+            // 2) 대안: 핸드 목록에서 InstanceId로 직접 검색합니다.
             if (_hand != null && _hand.heldCards != null)
             {
                 foreach (var c in _hand.heldCards)
                 {
                     if (c != null && c.InstanceId == result.PlayedInstanceId)
                     {
-                        view = c; break;
+                        view = c;
+                        break;
                     }
                 }
             }
@@ -174,7 +199,7 @@ public class HandServiceBinder : MonoBehaviour
         Debug.Log($"[HandServiceBinder] OnCardPlayed: id={result.PlayedInstanceId}, viewFound={view!=null}, assignedPlace={wasAssigned}");
 #endif
 
-        // 3) 뷰 제거 처리
+        // 3) 뷰 제거를 수행합니다.
         _viewsById.Remove(result.PlayedInstanceId);
         if (_hand != null)
         {
@@ -190,7 +215,7 @@ public class HandServiceBinder : MonoBehaviour
 #endif
         }
 
-        // 4) 보드 배치 여부에 따라 풀 반환 여부 결정
+        // 4) 보드 배치 여부에 따라 풀 반환 여부를 결정합니다.
         if (view != null && view.assignedPlace != null)
         {
             // 보드에 남겨둔다(카드 뷰는 배치 로직에서 부모/위치가 설정됨)
@@ -207,6 +232,9 @@ public class HandServiceBinder : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 카드 뷰를 비활성화하고 풀에 반환합니다.
+    /// </summary>
     private void ReleaseToPool(Card card)
     {
         if (card == null) return;
@@ -214,6 +242,9 @@ public class HandServiceBinder : MonoBehaviour
         _cardPool.Push(card);
     }
 
+    /// <summary>
+    /// 이미 존재하는 카드 뷰를 캐시에 등록합니다.
+    /// </summary>
     public void RegisterExistingCard(Card card)
     {
         if (card == null) return;
@@ -222,9 +253,34 @@ public class HandServiceBinder : MonoBehaviour
         _viewsById[id] = card;
     }
 
+    /// <summary>
+    /// 캐시와 풀을 초기화합니다.
+    /// </summary>
     public void ResetViewCache()
     {
         _viewsById.Clear();
         _cardPool.Clear();
+    }
+
+    private EffectIconDatabase ResolveIconDatabase()
+    {
+        if (_iconDatabase != null)
+            return _iconDatabase;
+
+        _iconDatabase = ServiceRegistry.Get<EffectIconDatabase>();
+        if (_iconDatabase != null)
+            return _iconDatabase;
+
+        _iconDatabase = Resources.Load<EffectIconDatabase>("EffectIconDatabase");
+        if (_iconDatabase == null)
+        {
+            Debug.LogWarning("[HandServiceBinder] EffectIconDatabase를 찾을 수 없습니다. 아이콘이 표시되지 않습니다.");
+        }
+        else
+        {
+            ServiceRegistry.Register<EffectIconDatabase>(_iconDatabase);
+        }
+
+        return _iconDatabase;
     }
 }
