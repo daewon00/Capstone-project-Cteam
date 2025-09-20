@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Save;
@@ -104,6 +105,9 @@ public class MapTraversalController : MonoBehaviour
                 }
             }
         }
+
+        // 전투 돌입 시 로딩 지연을 줄이기 위해 전투 씬 프리로드를 시작합니다.
+        StartCoroutine(DeferredBattlePreload());
     }
 
 
@@ -296,7 +300,9 @@ public class MapTraversalController : MonoBehaviour
             };
             stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
             ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
             SceneManager.LoadScene(battleSceneToLoad);
+            return;
         }
         else if (target.nodeType == NodeType.Elite)
         {
@@ -315,7 +321,9 @@ public class MapTraversalController : MonoBehaviour
             };
             stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
             ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
             SceneManager.LoadScene(battleSceneToLoad);
+            return;
         }
         else if (target.nodeType == NodeType.Boss)
         {
@@ -334,7 +342,9 @@ public class MapTraversalController : MonoBehaviour
             };
             stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
             ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
             SceneManager.LoadScene(battleSceneToLoad);
+            return;
         }
         else if (isMoveToChild) // 상점이 아닌 다른 노드는, '이동'했을 때만 씬을 전환합니다.
         {
@@ -518,5 +528,23 @@ public class MapTraversalController : MonoBehaviour
         node.RewardsJson = string.Empty;
         var db = ServiceRegistry.Get<IDatabase>();
         db?.UpsertNodeState(node);
+    }
+
+    /// <summary>
+    /// 프리로드된 전투 씬을 즉시 활성화할 수 있다면 true를 반환합니다.
+    /// </summary>
+    private bool TryEnterBattleViaPreload(string sceneName)
+    {
+        var manager = BattlePreloadManager.Instance;
+        if (manager == null) return false;
+        manager.EnsurePreloadStarted(sceneName);
+        var currentMapScene = SceneManager.GetActiveScene().name;
+        return manager.TryActivatePreloadedScene(sceneName, currentMapScene);
+    }
+
+    private IEnumerator DeferredBattlePreload()
+    {
+        yield return null;
+        BattlePreloadManager.Instance?.EnsurePreloadStarted(battleSceneName);
     }
 }
