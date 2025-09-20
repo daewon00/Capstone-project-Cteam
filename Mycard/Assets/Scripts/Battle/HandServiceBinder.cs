@@ -109,6 +109,7 @@ public class HandServiceBinder : MonoBehaviour
     /// </summary>
     private IEnumerator SpawnDrawnCardsStaggered(DrawResult result)
     {
+        yield return null;
         Vector3 spawnPos = (_drawSpawnPoint != null ? _drawSpawnPoint.position : _hand.transform.position);
         foreach (var state in result.DrawnCards)
         {
@@ -143,6 +144,7 @@ public class HandServiceBinder : MonoBehaviour
         newCard.transform.position = immediateSpawnAt;
         newCard.Initialize(state.InstanceId, so, _deckService, ResolveIconDatabase());
         _hand.AddCardToHand(newCard);
+        _hand.ResumeLayoutFor(newCard);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // 스폰 위치와 목표(핸드 인덱스) 위치 비교 로그
         int idx = newCard.handPosition;

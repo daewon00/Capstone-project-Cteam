@@ -51,7 +51,12 @@ public class HandController : MonoBehaviour
 
             // 잠긴 카드는 레이아웃에서 제외(위치/인덱스 변경 안 함)
             if (_layoutLocked.Contains(card))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[HandController] Layout locked card skipped: {card.GetBattleInstanceId()} index={i}");
+#endif
                 continue;
+            }
 
             //카드가 움직이면 사용됩니다
             card.MoveToPoint(cardPositions[i], minpos.rotation);
@@ -68,6 +73,9 @@ public class HandController : MonoBehaviour
     {
         if (card == null) return;
         _layoutLocked.Add(card);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[HandController] SuspendLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
+#endif
     }
 
     // 드래그 종료/취소 시 레이아웃 제외 해제
@@ -75,6 +83,9 @@ public class HandController : MonoBehaviour
     {
         if (card == null) return;
         _layoutLocked.Remove(card);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
+#endif
     }
 
     public bool IsLayoutLocked(Card card)
@@ -137,8 +148,17 @@ public class HandController : MonoBehaviour
 
         }
         heldCards.Clear();
+        _layoutLocked.Clear();
     }
 
     public Vector3 GetBoardScale() => boardScale;
     public Vector3 GetHandScale() => handScale;
+
+    /// <summary>
+    /// 모든 레이아웃 잠금 상태를 즉시 해제합니다.
+    /// </summary>
+    public void ClearLayoutLocks()
+    {
+        _layoutLocked.Clear();
+    }
 }

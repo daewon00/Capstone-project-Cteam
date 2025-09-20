@@ -118,6 +118,8 @@ public class BattleSceneBootstrap : MonoBehaviour
         }
 #endif
 
+        _handController.ClearLayoutLocks();
+
         var stageService = ServiceRegistry.Get<IRunStageService>();
         if (stageService != null)
         {
