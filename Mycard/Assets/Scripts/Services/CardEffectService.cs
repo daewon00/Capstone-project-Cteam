@@ -482,9 +482,15 @@ public sealed class CardEffectService : ICardEffectService
             {
                 int bonus = effect.Value != 0 ? effect.Value : Mathf.Max(1, effect.Potency);
                 if (state.IsPlayerOwner)
+                {
                     _playerRallyBonus += bonus;
+                    GameEvents.RaisePlayerAttackModifiersChanged();
+                }
                 else
+                {
                     _enemyRallyBonus += bonus;
+                    GameEvents.RaiseEnemyAttackModifiersChanged();
+                }
 
                 state.ActiveAuraBonuses += bonus;
             }
@@ -497,9 +503,15 @@ public sealed class CardEffectService : ICardEffectService
             return;
 
         if (state.IsPlayerOwner)
+        {
             _playerRallyBonus -= state.ActiveAuraBonuses;
+            GameEvents.RaisePlayerAttackModifiersChanged();
+        }
         else
+        {
             _enemyRallyBonus -= state.ActiveAuraBonuses;
+            GameEvents.RaiseEnemyAttackModifiersChanged();
+        }
 
         state.ActiveAuraBonuses = 0;
     }

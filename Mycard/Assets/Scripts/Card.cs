@@ -383,6 +383,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     // 플레이어 카드면 유물 체인을 통과한 "표시용 공격력"을 돌려줌
     public int GetEffectiveAttack()
     {
+        if (assignedPlace == null)
+        {
+            return attackPower;
+        }
+
         int value = attackPower;
         if (isPlayer)
             value = GameEvents.ApplyPlayerAttackModifiers(value);
@@ -404,15 +409,25 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (RelicSystem.Instance != null)
             RelicSystem.Instance.RelicsChanged += UpdateCardDisplay;
+        GameEvents.OnPlayerAttackModifiersChanged += HandleAttackModifiersChanged;
+        GameEvents.OnEnemyAttackModifiersChanged += HandleAttackModifiersChanged;
     }
 
     private void OnDisable()
     {
         if (RelicSystem.Instance != null)
             RelicSystem.Instance.RelicsChanged -= UpdateCardDisplay;
+        GameEvents.OnPlayerAttackModifiersChanged -= HandleAttackModifiersChanged;
+        GameEvents.OnEnemyAttackModifiersChanged -= HandleAttackModifiersChanged;
 
         // 비활성화 시 하이라이트 잔상 제거
         ClearHoverHighlight();
+    }
+
+    private void HandleAttackModifiersChanged()
+    {
+        if (assignedPlace != null)
+            UpdateCardDisplay();
     }
 
     // =============================

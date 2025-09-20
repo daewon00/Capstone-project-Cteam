@@ -129,7 +129,10 @@ public static class BattleSnapshotBuilder
             list.Add(new PlayerBoardSlotState
             {
                 instanceId = card.GetBattleInstanceId(),
-                slotIndex = i
+                slotIndex = i,
+                rotX = card.transform.eulerAngles.x,
+                rotY = card.transform.eulerAngles.y,
+                rotZ = card.transform.eulerAngles.z
             });
         }
         return list;

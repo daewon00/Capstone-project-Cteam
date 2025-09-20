@@ -217,10 +217,49 @@ public class DeckService : IDeckService
             }
         }
 
+        RemoveTemporaryCards();
         PersistAndBroadcast();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         var counts = GetCurrentPileCounts();
         Debug.Log($"[DeckService] CleanupAfterCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
+#endif
+    }
+
+    private void RemoveTemporaryCards()
+    {
+        var catalog = ServiceRegistry.Get<ICardCatalog>();
+        if (catalog == null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[DeckService] RemoveTemporaryCards: ICardCatalog를 찾을 수 없어 정리를 건너뜁니다.");
+#endif
+            return;
+        }
+
+        var toRemove = new List<string>();
+        foreach (var kvp in _cardsById)
+        {
+            var state = kvp.Value;
+            var so = catalog.GetCardData(state.CardId);
+            if (so != null && so.removeAfterCombat)
+            {
+                toRemove.Add(kvp.Key);
+            }
+        }
+
+        if (toRemove.Count == 0) return;
+
+        foreach (var id in toRemove)
+        {
+            if (!_cardsById.TryGetValue(id, out var state)) continue;
+            GetPileList(state.Location).Remove(id);
+            _cardsById.Remove(id);
+        }
+
+        SortAllPiles();
+        RecomputeNextOrderInPiles();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[DeckService] RemoveTemporaryCards: {toRemove.Count}장 제거 완료");
 #endif
     }
 
@@ -241,9 +280,10 @@ public class DeckService : IDeckService
             return result;
         }
 
-        // 기본 규칙: 사용하면 버림 더미로 이동(향후 카드 효과에 따라 exhaust 등으로 확장 가능)
-        MoveCard(instanceId, CardLocation.DiscardPile);
-        result.TargetPile = CardLocation.DiscardPile;
+        // 필드 배치 전까지는 덱 서비스가 임시로 위치를 플레이어 필드로 옮겨 핸드 카운트를 정리합니다.
+        // 실제 필드 슬롯과 순서는 BattleDeckRuntimeSync.UpdateCardState가 이어서 동기화합니다.
+        MoveCard(instanceId, CardLocation.PlayerField);
+        result.TargetPile = CardLocation.PlayerField;
         result.Code = PlayResult.ResultCode.Success;
 
         PersistAndBroadcast(playedResult: result);

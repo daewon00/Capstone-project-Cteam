@@ -360,8 +360,8 @@ public class BattleController : MonoBehaviour
         UIController.instance.endTurnButton.SetActive(false);
         UIController.instance.drawCardButton.SetActive(false);
 
+        RequestSnapshot("BeforePlayerEndTurn");
         GameEvents.RaiseTurnEnd(true);   // 추가 +++ 플레이어 턴 종료
-        RequestSnapshot("AfterPlayerEndTurn");
         AdvanceTurn();
     }
 

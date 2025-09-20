@@ -7,6 +7,12 @@ public static class BattleDeckRuntimeSync
     public static void UpdateCardState(Card card)
     {
         if (card == null) return;
+        // 플레이어 카드만 런타임 덱 상태에 등록합니다.
+        // 적 카드/소환물(ex: SummonAdjacentTokens)까지 등록하면 전투 종료 시 덱이 기하급수적으로 늘어납니다.
+        // 만약 향후 카드 소유권이 적→플레이어로 바뀌는 효과를 추가한다면, 그 시점에 isPlayer 값을 true로 설정한 뒤
+        // 이 메서드를 다시 호출하도록 해야 합니다. 반대로 플레이어 카드가 적에게 넘어가는 기능을 만들면 덱 서비스에서
+        // 해당 카드를 제외하는 별도 처리도 함께 필요합니다.
+        if (!card.isPlayer) return;
         var deckService = ServiceRegistry.Get<IDeckService>();
         var effectService = ServiceRegistry.Get<ICardEffectService>();
         if (deckService == null) return;

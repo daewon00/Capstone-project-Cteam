@@ -15,6 +15,8 @@ public static class GameEvents
     public static event Action<Card> OnCardDrawn;
     public static event Action<Card> OnCardPlayed;
     public static event Action<int, bool> OnDamageDealt;
+    public static event Action OnPlayerAttackModifiersChanged;
+    public static event Action OnEnemyAttackModifiersChanged;
 
     // Raise helpers
     public static void RaiseBattleStart() => OnBattleStart?.Invoke();
@@ -24,6 +26,8 @@ public static class GameEvents
     public static void RaiseCardDrawn(Card card) => OnCardDrawn?.Invoke(card);
     public static void RaiseCardPlayed(Card card) => OnCardPlayed?.Invoke(card);
     public static void RaiseDamageDealt(int damage, bool isFromPlayer) => OnDamageDealt?.Invoke(damage, isFromPlayer);
+    public static void RaisePlayerAttackModifiersChanged() => OnPlayerAttackModifiersChanged?.Invoke();
+    public static void RaiseEnemyAttackModifiersChanged() => OnEnemyAttackModifiersChanged?.Invoke();
 
     // Modifiers
     public static event Func<int, int> ModifyPlayerAttack;

@@ -66,6 +66,9 @@ namespace BattleSnapshot
     {
         public string instanceId;
         public int slotIndex;
+        public float rotX;
+        public float rotY;
+        public float rotZ;
     }
 
     [Serializable]

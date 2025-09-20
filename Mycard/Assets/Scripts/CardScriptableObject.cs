@@ -23,6 +23,9 @@ public class CardScriptableObject : ScriptableObject
 
     public IReadOnlyList<CardEffectDefinition> Effects => effects;
 
+    [Tooltip("전투 종료 시 덱에서 제거할 임시 카드인지 여부")]
+    public bool removeAfterCombat;
+
     /*
     public enum CardType //추가1
     {

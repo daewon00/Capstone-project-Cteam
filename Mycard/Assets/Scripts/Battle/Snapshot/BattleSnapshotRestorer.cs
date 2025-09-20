@@ -100,7 +100,7 @@ public static class BattleSnapshotRestorer
                 Debug.LogWarning($"[BattleSnapshotRestorer] Player field restore missing runtime for {slot.instanceId}");
                 continue;
             }
-            context.SpawnPlayerFieldCard(slot.slotIndex, runtime);
+            context.SpawnPlayerFieldCard(slot, runtime);
         }
     }
 

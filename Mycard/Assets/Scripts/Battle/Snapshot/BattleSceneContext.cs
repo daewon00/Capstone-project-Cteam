@@ -89,9 +89,12 @@ public class BattleSceneContext
         }
     }
 
-    public void SpawnPlayerFieldCard(int slotIndex, CardRuntimeState runtime)
+    public void SpawnPlayerFieldCard(PlayerBoardSlotState slotState, CardRuntimeState runtime)
     {
         if (Board == null || runtime == null || CardPrefab == null || CardCatalog == null || DeckService == null) return;
+        if (slotState == null) return;
+
+        int slotIndex = slotState.slotIndex;
         if (slotIndex < 0 || slotIndex >= Board.playerCardPoints.Length)
         {
             Debug.LogWarning($"[BattleSceneContext] Invalid slot index {slotIndex}");
@@ -133,6 +136,10 @@ public class BattleSceneContext
         if (modifiers != null)
         {
             boardRotation = Quaternion.Euler(modifiers.rotX, modifiers.rotY, modifiers.rotZ);
+        }
+        else if (slotState != null)
+        {
+            boardRotation = Quaternion.Euler(slotState.rotX, slotState.rotY, slotState.rotZ);
         }
         card.transform.rotation = boardRotation;
         card.MoveToPoint(slot.transform.position, boardRotation);
