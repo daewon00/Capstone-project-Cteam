@@ -26,6 +26,7 @@ using Game.Save;
         public List<MapDataNode> parents = new List<MapDataNode>();
 
         public bool isVisited = false;
+        public string eventIdOverride = string.Empty;
 
         /// <summary>
         /// 노드 타입, 좌표, 층 인덱스로 새 노드를 생성합니다.

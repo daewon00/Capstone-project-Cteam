@@ -317,14 +317,46 @@ public class DeckService : IDeckService
     {
         EnsureInitialized();
         if (state == null || string.IsNullOrEmpty(state.instanceId)) return;
-        if (!_cardsById.TryGetValue(state.instanceId, out var cardState))
-            return;
 
-        var fromList = GetPileList(cardState.Location);
-        fromList.Remove(state.instanceId);
+        bool isNew = false;
+        if (!_cardsById.TryGetValue(state.instanceId, out var cardState))
+        {
+            if (string.IsNullOrEmpty(state.cardId))
+            {
+                Debug.LogWarning("[DeckService] UpdateBattleCardState: cardId missing for new instance; ignored.");
+                return;
+            }
+
+            cardState = new CardRuntimeState
+            {
+                InstanceId = state.instanceId,
+                RunId = _currentRunId,
+                CardId = state.cardId,
+                Location = location,
+                OrderInPile = 0,
+                ModifiersJson = string.Empty
+            };
+            _cardsById[state.instanceId] = cardState;
+            isNew = true;
+        }
+
+        if (!isNew)
+        {
+            var fromList = GetPileList(cardState.Location);
+            fromList.Remove(state.instanceId);
+        }
 
         cardState.Location = location;
-        cardState.OrderInPile = state.slotIndex >= 0 ? state.slotIndex : cardState.OrderInPile;
+        if (state.slotIndex >= 0)
+        {
+            cardState.OrderInPile = state.slotIndex;
+        }
+        else
+        {
+            if (!_nextOrderInPile.TryGetValue(location, out var next)) next = 0;
+            cardState.OrderInPile = next;
+            _nextOrderInPile[location] = next + 1;
+        }
         cardState.ModifiersJson = JsonUtility.ToJson(state);
 
         var toList = GetPileList(location);

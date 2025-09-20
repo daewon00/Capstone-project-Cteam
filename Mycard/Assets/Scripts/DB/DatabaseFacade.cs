@@ -48,6 +48,15 @@ public sealed class DatabaseFacade : IDatabase
     public void UpsertNodeState(MapNodeState node)
         => DatabaseManager.Instance.UpsertNodeState(node);
 
+    public MapLayoutStorage LoadMapLayout(string runId, int act)
+        => DatabaseManager.Instance.LoadMapLayout(runId, act);
+
+    public void UpsertMapLayout(string runId, int act, string json)
+        => DatabaseManager.Instance.UpsertMapLayout(runId, act, json);
+
+    public void DeleteMapLayout(string runId)
+        => DatabaseManager.Instance.DeleteMapLayout(runId);
+
     public void ReplaceCardsInDeck(string runId, System.Collections.Generic.IEnumerable<CardInDeck> cards)
         => DatabaseManager.Instance.ReplaceCardsInDeck(runId, cards);
 

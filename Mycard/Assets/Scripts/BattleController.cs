@@ -177,7 +177,7 @@ public class BattleController : MonoBehaviour
             return;
         }
 
-        GameEvents.OnBattleStart?.Invoke(); // 추가 +++
+        GameEvents.RaiseBattleStart(); // 추가 +++
 
         if (!_playerStatsInitialized)
         {
@@ -249,8 +249,7 @@ public class BattleController : MonoBehaviour
     {
         playerMana = currentPlayerMaxMana;
 
-        if (GameEvents.ModifyPlayerMana != null)           //추가  +++ 마나 수정 체인 적용
-            playerMana = GameEvents.ModifyPlayerMana(playerMana);  //추가 +++ 마나 수정 체인 적용
+        playerMana = GameEvents.ApplyPlayerManaModifiers(playerMana);
 
         UIController.instance.SetPlayerManaText(playerMana);
     }
@@ -296,7 +295,7 @@ public class BattleController : MonoBehaviour
             switch (currentPhase)   //턴 단계에 따라 실행
             {
                 case TurnOrder.playerActive:
-                    GameEvents.OnTurnStart?.Invoke(true); // 추가  +++ 플레이어 턴 시작
+                    GameEvents.RaiseTurnStart(true); // 추가  +++ 플레이어 턴 시작
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
@@ -324,7 +323,7 @@ public class BattleController : MonoBehaviour
                     break;
 
                 case TurnOrder.enemyActive:
-                    GameEvents.OnTurnStart?.Invoke(false); // 추가 +++ 적 턴 시작
+                    GameEvents.RaiseTurnStart(false); // 추가 +++ 적 턴 시작
                     //Debug.Log("Skipping enemy actions");
                     //AdvanceTurn();
 
@@ -361,7 +360,7 @@ public class BattleController : MonoBehaviour
         UIController.instance.endTurnButton.SetActive(false);
         UIController.instance.drawCardButton.SetActive(false);
 
-        GameEvents.OnTurnEnd?.Invoke(true);   // 추가 +++ 플레이어 턴 종료
+        GameEvents.RaiseTurnEnd(true);   // 추가 +++ 플레이어 턴 종료
         RequestSnapshot("AfterPlayerEndTurn");
         AdvanceTurn();
     }
@@ -513,7 +512,7 @@ public class BattleController : MonoBehaviour
             return 0;
 
         playerHealth -= appliedDamage;
-        GameEvents.OnDamageDealt?.Invoke(appliedDamage, false);
+        GameEvents.RaiseDamageDealt(appliedDamage, false);
         if (playerHealth <= 0)
         {
             playerHealth = 0;
@@ -547,7 +546,7 @@ public class BattleController : MonoBehaviour
             return 0;
 
         enemyHealth -= appliedDamage;
-        GameEvents.OnDamageDealt?.Invoke(appliedDamage, true);
+        GameEvents.RaiseDamageDealt(appliedDamage, true);
         if (enemyHealth <= 0)
         {
             enemyHealth = 0;
@@ -585,7 +584,7 @@ public class BattleController : MonoBehaviour
     void EndBattle()
     {
         battleEnded = true;
-        GameEvents.OnBattleEnd?.Invoke();      // +++ 전투 종료 알림
+        GameEvents.RaiseBattleEnd();      // +++ 전투 종료 알림
         // 덱 서비스 측 상태 정리(남은 핸드 → Discard 등)
         try { _deckService?.CleanupAfterCombat(); } catch { }
         HandController.instance.EmptyHand();    //핸드 제거

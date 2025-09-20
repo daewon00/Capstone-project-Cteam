@@ -258,6 +258,19 @@ namespace Game.Save
     }
 
     /// <summary>
+    /// 생성된 맵 레이아웃 전체를 JSON으로 직렬화하여 보관합니다. (층/노드/경로/좌표)
+    /// </summary>
+    [Table("MapLayoutStorage")]
+    public class MapLayoutStorage
+    {
+        [PrimaryKey, AutoIncrement] public int Id { get; set; }
+        [Indexed] public string RunId { get; set; }
+        public int Act { get; set; }
+        public string Json { get; set; }
+        public string UpdatedAtUtc { get; set; }
+    }
+
+    /// <summary>
     /// 모든 무작위 결과의 '운명'을 미리 저장하여 세이브 스컴을 방지합니다.
     /// </summary>
     [Table("RngState")]

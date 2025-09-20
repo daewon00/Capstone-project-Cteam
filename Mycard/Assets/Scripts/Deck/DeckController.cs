@@ -188,7 +188,7 @@ public class DeckController : MonoBehaviour
         activeCards.RemoveAt(0);
 
         HandController.instance.AddCardToHand(newCard);
-        GameEvents.OnCardDrawn?.Invoke(newCard);      // +++ 추가 카드 뽑을 때
+        GameEvents.RaiseCardDrawn(newCard);      // +++ 추가 카드 뽑을 때
         AudioManager.instance.PlaySFX(3); //sfx3
     }
 

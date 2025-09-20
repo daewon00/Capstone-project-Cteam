@@ -124,14 +124,22 @@ public class BattleSceneContext
         card.SetInteractable(false);
         card.transform.SetParent(slot.transform, true);
         card.transform.position = slot.transform.position;
-        card.transform.rotation = CardPrefab.transform.rotation;
-        card.MoveToPoint(slot.transform.position, card.transform.rotation);
+
+        var modifiers = BattleDeckRuntimeSync.ParseModifiers(runtime.ModifiersJson);
+        CardEffectRuntimeSnapshot effectSnapshot = modifiers?.effectState;
+        var boardRotation = HandController.instance != null
+            ? HandController.instance.minpos.rotation
+            : CardPrefab.transform.rotation;
+        if (modifiers != null)
+        {
+            boardRotation = Quaternion.Euler(modifiers.rotX, modifiers.rotY, modifiers.rotZ);
+        }
+        card.transform.rotation = boardRotation;
+        card.MoveToPoint(slot.transform.position, boardRotation);
         if (HandController.instance != null)
             card.SetCardScale(HandController.instance.GetBoardScale());
         slot.activeCard = card;
 
-        var modifiers = BattleDeckRuntimeSync.ParseModifiers(runtime.ModifiersJson);
-        CardEffectRuntimeSnapshot effectSnapshot = modifiers?.effectState;
         if (modifiers != null)
         {
             card.currentHealth = modifiers.currentHp;

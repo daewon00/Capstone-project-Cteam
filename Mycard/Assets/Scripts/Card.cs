@@ -383,8 +383,21 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     // 플레이어 카드면 유물 체인을 통과한 "표시용 공격력"을 돌려줌
     public int GetEffectiveAttack()
     {
-        if (!isPlayer) return attackPower; // 적 카드는 원래 수치 표시
-        return GameEvents.ModifyPlayerAttack?.Invoke(attackPower) ?? attackPower;
+        int value = attackPower;
+        if (isPlayer)
+            value = GameEvents.ApplyPlayerAttackModifiers(value);
+        else
+            value = GameEvents.ApplyEnemyAttackModifiers(value);
+
+        var effectService = ServiceRegistry.Get<ICardEffectService>();
+        if (effectService != null)
+        {
+            var snapshot = effectService.CaptureCardState(this);
+            if (snapshot != null && snapshot.auraBonus > 0)
+                value = Mathf.Max(0, value - snapshot.auraBonus);
+        }
+
+        return value;
     }
 
     private void OnEnable()
@@ -497,7 +510,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 bool success = BattleController.instance.AttemptPlayCard(this);
                 if (success)
                 {
-                    GameEvents.OnCardPlayed?.Invoke(this);
+                    GameEvents.RaiseCardPlayed(this);
                     AudioManager.instance.PlaySFX(4);
 
                     if (assignedPlace.cameraFocusPoint != null)

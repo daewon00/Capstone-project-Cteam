@@ -11,6 +11,9 @@ namespace BattleSnapshot
         public int attack;
         public int slotIndex;
         public bool isPlayer;
+        public float rotX;
+        public float rotY;
+        public float rotZ;
         public CardEffectRuntimeSnapshot effectState;
     }
 }

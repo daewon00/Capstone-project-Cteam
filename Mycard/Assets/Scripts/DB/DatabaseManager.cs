@@ -95,6 +95,7 @@ public sealed class DatabaseManager
         _conn.CreateTable<RunPerkSnapshot>();
         _conn.CreateTable<RunStageState>();
         _conn.CreateTable<ActiveBattleState>();
+        _conn.CreateTable<MapLayoutStorage>();
 
         // ==== CardRuntimeState 핵심 인덱스 생성 ====
         try
@@ -344,6 +345,7 @@ public sealed class DatabaseManager
         conn.Table<RunPerkSnapshot>().Delete(x => x.RunId == runId);
         conn.Table<ActiveBattleState>().Delete(x => x.RunId == runId);
         conn.Table<RunStageState>().Delete(x => x.RunId == runId);
+        conn.Table<MapLayoutStorage>().Delete(x => x.RunId == runId);
         conn.Table<CurrentRun>().Delete(x => x.RunId == runId);
     }
 
@@ -478,6 +480,41 @@ public sealed class DatabaseManager
             node.Id = existing.Id; // 기존 데이터가 있으면 PK를 유지하여 덮어쓰기(Update)가 되도록 함
 
         _conn.InsertOrReplace(node);
+    }
+
+    public MapLayoutStorage LoadMapLayout(string runId, int act)
+    {
+        if (string.IsNullOrEmpty(runId)) return null;
+        return _conn.Table<MapLayoutStorage>().FirstOrDefault(x => x.RunId == runId && x.Act == act);
+    }
+
+    public void UpsertMapLayout(string runId, int act, string json)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+
+        var existing = _conn.Table<MapLayoutStorage>().FirstOrDefault(x => x.RunId == runId && x.Act == act);
+        if (existing != null)
+        {
+            existing.Json = json ?? string.Empty;
+            existing.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
+            _conn.Update(existing);
+            return;
+        }
+
+        var row = new MapLayoutStorage
+        {
+            RunId = runId,
+            Act = act,
+            Json = json ?? string.Empty,
+            UpdatedAtUtc = DateTime.UtcNow.ToString("o")
+        };
+        _conn.Insert(row);
+    }
+
+    public void DeleteMapLayout(string runId)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+        _conn.Table<MapLayoutStorage>().Delete(x => x.RunId == runId);
     }
 
     // --- 레거시 덱(CardInDeck)/유물/포션 교체 저장 (런 생성 시에만 사용) ---

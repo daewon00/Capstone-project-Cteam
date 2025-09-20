@@ -30,6 +30,7 @@ public class MapGenerator : MonoBehaviour
     // 랜덤 시드. -1이면 무작위, 특정 숫자면 고정된 맵 생성
     [SerializeField] private int mapSeed = -1;
     private System.Random random; // System.Random 사용
+    private int resolvedSeed = -1; // 실제로 사용된 시드 (저장/복원용)
 
     [Header("노드 위치 설정")]
     [SerializeField] private float layerSpacing = 300f; // 층(세로) 간격
@@ -113,10 +114,12 @@ public class MapGenerator : MonoBehaviour
     */
 
     // 맵 생성의 전체 과정을 지휘하는 메인 함수입니다.
+    public int ResolvedSeed => resolvedSeed;
+
     public void GenerateMap()
     {
         Debug.Log($"[MapGen] 맵 생성이 {Time.frameCount} 프레임에서 시작됩니다.");
-        
+
 
         // 파라미터 유효성 검사
         if (numberOfLayers < 8)
@@ -135,14 +138,19 @@ public class MapGenerator : MonoBehaviour
             return;
         }
         // 랜덤 시드 초기화: 고정 시드 제공 시 재현성 보장, 미지정 시 보안 난수 기반 시드 사용
+        int seedToUse;
         if (mapSeed != -1)
         {
-            random = new System.Random(mapSeed);
+            seedToUse = mapSeed;
         }
         else
         {
-            random = new System.Random(GenerateSeed());
+            seedToUse = GenerateSeed();
+            mapSeed = seedToUse; // 최초 생성 시 실제 시드를 기록
         }
+
+        resolvedSeed = seedToUse;
+        random = new System.Random(seedToUse);
 
         // 1단계: 맵의 뼈대(노드 위치) 생성
         CreateNodePositions();
@@ -158,6 +166,185 @@ public class MapGenerator : MonoBehaviour
 
         // 4단계: 화면에 실제 오브젝트 생성 (중앙 함수로 자동 배치/배선)
         InstantiateMapObjects();
+    }
+
+    /// <summary>
+    /// 지정된 시드로 맵을 생성하고 결과 스냅샷을 반환합니다. (이미 생성된 경우 현재 레이아웃을 돌려줌)
+    /// </summary>
+    public MapLayoutSnapshot BuildWithSeed(int seed)
+    {
+        if (_isMapBuilt)
+        {
+            Debug.LogWarning("[MapGen] BuildWithSeed가 중복 호출되었습니다. 현재 레이아웃 스냅샷을 반환합니다.");
+            return CaptureLayoutSnapshot();
+        }
+
+        _isMapBuilt = true;
+        mapSeed = seed;
+        resolvedSeed = seed;
+        GenerateMap();
+        return CaptureLayoutSnapshot();
+    }
+
+    /// <summary>
+    /// 저장된 레이아웃 스냅샷을 그대로 복원합니다.
+    /// </summary>
+    public void BuildFromSnapshot(MapLayoutSnapshot snapshot)
+    {
+        if (snapshot == null)
+        {
+            Debug.LogError("[MapGen] BuildFromSnapshot가 null 스냅샷으로 호출되었습니다.");
+            return;
+        }
+
+        resolvedSeed = snapshot.Seed;
+        if (resolvedSeed > 0)
+        {
+            mapSeed = resolvedSeed;
+        }
+
+        _isMapBuilt = true;
+        RebuildMapDataFromSnapshot(snapshot);
+        InstantiateMapObjects();
+    }
+
+    /// <summary>
+    /// 현재 메모리에 존재하는 맵 레이아웃을 JSON 직렬화용 스냅샷으로 변환합니다.
+    /// </summary>
+    private MapLayoutSnapshot CaptureLayoutSnapshot()
+    {
+        if (mapData == null || mapData.Count == 0)
+        {
+            return null;
+        }
+
+        var snapshot = new MapLayoutSnapshot
+        {
+            Seed = resolvedSeed
+        };
+
+        for (int layerIndex = 0; layerIndex < mapData.Count; layerIndex++)
+        {
+            var layer = mapData[layerIndex];
+            for (int nodeIndex = 0; nodeIndex < layer.Count; nodeIndex++)
+            {
+                var node = layer[nodeIndex];
+                if (node == null) continue;
+
+                var nodeSnapshot = new MapLayoutNodeSnapshot
+                {
+                    Floor = node.layerIndex,
+                    Index = nodeIndex,
+                    NodeType = node.nodeType,
+                    PositionX = node.position.x,
+                    PositionY = node.position.y,
+                    EventIdOverride = node.eventIdOverride
+                };
+
+                if (node.children != null)
+                {
+                    foreach (var child in node.children)
+                    {
+                        int childIndex = GetIndexInLayer(child);
+                        if (childIndex < 0) continue;
+                        nodeSnapshot.Children.Add(new MapLayoutEdge
+                        {
+                            Floor = child.layerIndex,
+                            Index = childIndex
+                        });
+                    }
+                }
+
+                snapshot.Nodes.Add(nodeSnapshot);
+            }
+        }
+
+        return snapshot;
+    }
+
+    private void RebuildMapDataFromSnapshot(MapLayoutSnapshot snapshot)
+    {
+        mapData = new List<List<MapDataNode>>();
+        if (snapshot.Nodes == null || snapshot.Nodes.Count == 0) return;
+
+        var lookup = new Dictionary<(int floor, int index), MapDataNode>();
+
+        foreach (var group in snapshot.Nodes.GroupBy(n => n.Floor).OrderBy(g => g.Key))
+        {
+            var ordered = group.OrderBy(n => n.Index).ToList();
+            var layerList = new List<MapDataNode>(ordered.Count);
+
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                var nodeSnap = ordered[i];
+                while (layerList.Count <= nodeSnap.Index)
+                {
+                    layerList.Add(null);
+                }
+
+                var node = new MapDataNode(nodeSnap.NodeType, new Vector2(nodeSnap.PositionX, nodeSnap.PositionY), nodeSnap.Floor)
+                {
+                    eventIdOverride = nodeSnap.EventIdOverride ?? string.Empty
+                };
+
+                layerList[nodeSnap.Index] = node;
+                lookup[(node.layerIndex, nodeSnap.Index)] = node;
+            }
+
+            // null 방지: 비어 있는 슬롯이 있으면 기본 전투 노드로 채움
+            for (int idx = 0; idx < layerList.Count; idx++)
+            {
+                if (layerList[idx] == null)
+                {
+                    var fallback = new MapDataNode(NodeType.Battle, Vector2.zero, ordered.First().Floor);
+                    layerList[idx] = fallback;
+                    lookup[(fallback.layerIndex, idx)] = fallback;
+                    Debug.LogWarning($"[MapGen] 스냅샷에 비어 있는 노드가 감지되어 기본 Battle 노드로 보정했습니다. floor={ordered.First().Floor}, index={idx}");
+                }
+            }
+
+            mapData.Add(layerList);
+        }
+
+        // 링크 재구성 전 부모/자식 초기화
+        foreach (var layer in mapData)
+        {
+            foreach (var node in layer)
+            {
+                node.children.Clear();
+                node.parents.Clear();
+            }
+        }
+
+        foreach (var nodeSnap in snapshot.Nodes)
+        {
+            if (!lookup.TryGetValue((nodeSnap.Floor, nodeSnap.Index), out var parent))
+            {
+                continue;
+            }
+
+            if (nodeSnap.Children == null) continue;
+
+            foreach (var childEdge in nodeSnap.Children)
+            {
+                if (lookup.TryGetValue((childEdge.Floor, childEdge.Index), out var child))
+                {
+                    Link(parent, child);
+                }
+            }
+        }
+
+        numberOfLayers = mapData.Count;
+    }
+
+    private int GetIndexInLayer(MapDataNode node)
+    {
+        if (node == null || node.layerIndex < 0 || node.layerIndex >= mapData.Count)
+        {
+            return -1;
+        }
+
+        return mapData[node.layerIndex].IndexOf(node);
     }
 
     // 주어진 위치에 가장 가까운 노드를 선형 스캔으로 찾습니다. (제곱거리 비교로 sqrt 회피)
@@ -195,11 +382,7 @@ public class MapGenerator : MonoBehaviour
 
     public void RegenerateWithSeed(int seed)
     {
-        if (_isMapBuilt) return; // 이미 맵이 만들어졌다면, 아무것도 하지 않고 즉시 퇴장!
-        _isMapBuilt = true;      // 맵을 이제 막 만들기 시작했다고 기록.
-
-        this.mapSeed = seed;
-        GenerateMap();
+        BuildWithSeed(seed);
     }
 
     #region --- 1단계: 맵 뼈대 생성 함수 ---
@@ -825,6 +1008,14 @@ public class MapGenerator : MonoBehaviour
                 // InitAddress 메서드를 만들어두었다면 해도 되고, 없으면 아래 두 줄처럼 직접 대입:
                 nodeGo.floor = node.layerIndex;
                 nodeGo.index = j;
+                if (!string.IsNullOrEmpty(node.eventIdOverride))
+                {
+                    nodeGo.eventIdOverride = node.eventIdOverride;
+                }
+                else
+                {
+                    node.eventIdOverride = nodeGo.eventIdOverride ?? string.Empty;
+                }
 
                 // 버튼은 '총괄'에게 이동 요청하도록 연결 (직접 씬 이동 X)
                 var button = go.GetComponent<Button>();

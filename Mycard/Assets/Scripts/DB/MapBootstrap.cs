@@ -2,6 +2,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using Game.Save;
+using Game.Utils;
 
 /// <summary>
 /// 맵 씬 진입 시 현재 런 데이터를 복원하고 덱과 맵 생성을 초기화합니다.
@@ -50,8 +51,35 @@ public class MapBootstrap : MonoBehaviour
         // 맵을 재현합니다.
         if (mapGenerator != null)
         {
-            // runId를 사용해 고유한 숫자 시드를 만들고, 맵을 다시 생성합니다.
-            mapGenerator.RegenerateWithSeed(runId.GetHashCode());
+            var db = DatabaseManager.Instance;
+            var storedLayout = db.LoadMapLayout(runId, data.Run.Act);
+
+            if (storedLayout != null && !string.IsNullOrEmpty(storedLayout.Json))
+            {
+                try
+                {
+                    var snapshot = JsonUtility.FromJson<MapLayoutSnapshot>(storedLayout.Json);
+                    if (snapshot != null && snapshot.Nodes != null && snapshot.Nodes.Count > 0)
+                    {
+                        mapGenerator.BuildFromSnapshot(snapshot);
+                        Debug.Log($"[MapBootstrap] 저장된 맵 레이아웃 복원 완료 (runId={runId}, act={data.Run.Act}, seed={snapshot.Seed}).");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[MapBootstrap] 저장된 맵 레이아웃이 비어 있어 재생성을 시도합니다.");
+                        BuildAndPersistNewLayout(db, runId, data.Run.Act);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[MapBootstrap] 저장된 맵 레이아웃 파싱 실패: {ex.Message}. 재생성합니다.");
+                    BuildAndPersistNewLayout(db, runId, data.Run.Act);
+                }
+            }
+            else
+            {
+                BuildAndPersistNewLayout(db, runId, data.Run.Act);
+            }
         }
         //
         RelicSystem.Instance?.LoadRelicsFromDb(runId, clearBeforeLoad: true);
@@ -59,5 +87,22 @@ public class MapBootstrap : MonoBehaviour
         Debug.Log($"[MapBootstrap] 런({runId}) 로드 완료. 카드: {data.Cards.Count}장");
 
         
+    }
+
+    private void BuildAndPersistNewLayout(DatabaseManager db, string runId, int act)
+    {
+        if (mapGenerator == null) return;
+
+        int seed = DeterministicHashUtility.HashToSeed(runId, $"map-act-{act}");
+        var snapshot = mapGenerator.BuildWithSeed(seed);
+        if (snapshot == null)
+        {
+            Debug.LogError("[MapBootstrap] 맵 스냅샷 생성에 실패했습니다.");
+            return;
+        }
+
+        var json = JsonUtility.ToJson(snapshot);
+        db.UpsertMapLayout(runId, act, json);
+        Debug.Log($"[MapBootstrap] 맵 레이아웃 생성 및 저장 완료 (runId={runId}, act={act}, seed={snapshot.Seed}).");
     }
 }

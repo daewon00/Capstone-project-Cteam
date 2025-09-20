@@ -19,6 +19,9 @@ public static class BattleDeckRuntimeSync
             attack = card.attackPower,
             slotIndex = ResolveSlotIndex(card),
             isPlayer = card.isPlayer,
+            rotX = card.transform.eulerAngles.x,
+            rotY = card.transform.eulerAngles.y,
+            rotZ = card.transform.eulerAngles.z,
             effectState = effectService?.CaptureCardState(card)
         };
 

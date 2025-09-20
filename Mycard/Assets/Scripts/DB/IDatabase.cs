@@ -37,6 +37,9 @@ public interface IDatabase
     // --- 노드 상태 (단일 행) ---
     // 이벤트 결과를 맵 노드에 기록하기 위한 기능입니다.
     void UpsertNodeState(MapNodeState node);
+    MapLayoutStorage LoadMapLayout(string runId, int act);
+    void UpsertMapLayout(string runId, int act, string json);
+    void DeleteMapLayout(string runId);
     void ReplaceCardsInDeck(string runId, IEnumerable<CardInDeck> cards);
     void ReplaceRelics(string runId, IEnumerable<RelicInPossession> relics);
     void ReplacePotions(string runId, IEnumerable<PotionInPossession> potions);

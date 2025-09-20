@@ -91,7 +91,7 @@ public class EnemyController : MonoBehaviour
                     Ecard.assignedPlace = CardPointsController.instance.enemyCardPoints[i];
 
                     Ecard.isPlayer = false; // 안전하게 적임을 명시
-                    GameEvents.OnCardPlayed?.Invoke(Ecard);
+                    GameEvents.RaiseCardPlayed(Ecard);
                     Ecard.SetInteractable(false); // 적 카드 상호작용 비활성화
                     BattleDeckRuntimeSync.UpdateCardState(Ecard);
 
