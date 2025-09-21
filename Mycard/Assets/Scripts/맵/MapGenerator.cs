@@ -57,6 +57,12 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private RectTransform viewportRect;
     [SerializeField] private float contentPadding = 120f;
 
+#if UNITY_EDITOR
+    [Header("테스트 도우미")]
+    [SerializeField] private bool forceTestLayerCount = false;
+    [SerializeField] [Range(8, 30)] private int testLayerCount = 12;
+#endif
+
     [Header("배치 정책")]
     [SerializeField] private int minEliteLayerPolicy = 1; // 엘리트 최소 레이어 정책(기본 1층)
 
@@ -98,6 +104,20 @@ public class MapGenerator : MonoBehaviour
         if (barycenterLerpAlpha < 0f) barycenterLerpAlpha = 0f;
         if (barycenterLerpAlpha > 1f) barycenterLerpAlpha = 1f;
         if (contentPadding < 0f) contentPadding = 0f;
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            if (forceTestLayerCount)
+            {
+                numberOfLayers = Mathf.Clamp(testLayerCount, 8, 30);
+            }
+            else if (numberOfLayers < 8)
+            {
+                numberOfLayers = 8;
+            }
+        }
+#endif
     }
 
     // 부모-자식 링크를 중복 없이 추가하는 헬퍼
