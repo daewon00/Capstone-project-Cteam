@@ -16,18 +16,18 @@ public abstract class Relic
     {
         if (!Data.stackable) return;
         Stacks = Mathf.Clamp(Stacks + n, 1, Data.maxStacks);
-        RelicSystem.Instance?.NotifyStackChanged(this);
+        //RelicSystem.Instance?.NotifyStackChanged(this);
         OnStacksChanged();
     }
 
     
-    #region »ı¸íÁÖ±â(È¹µæ/Á¦°Å)
+    #region ìƒëª…ì£¼ê¸°(íšë“/ì œê±°)
     public virtual void OnAdd() { }
     public virtual void OnRemove() { }
     protected virtual void OnStacksChanged() { }
     #endregion
 
-    #region ÀüÅõ/ÅÏ/Çàµ¿ ÈÅ
+    #region ì „íˆ¬/í„´/í–‰ë™ í›…
     public virtual void OnBattleStart() { }
     public virtual void OnBattleEnd() { }
     public virtual void OnTurnStart(bool isPlayerTurn) { }
@@ -36,7 +36,7 @@ public abstract class Relic
     public virtual void OnCardPlayed(Card card) { }
     public virtual void OnDamageDealt(int damage, bool isFromPlayer) { }
 
-    // ÇÊ¿ä½Ã ½ºÅÈ ¼öÁ¤ ÈÅ(Ã¼ÀÎ ¿¬°á¿ë)
+    // í•„ìš”ì‹œ ìŠ¤íƒ¯ ìˆ˜ì • í›…(ì²´ì¸ ì—°ê²°ìš©)
     public virtual int ModifyPlayerAttack(int baseAttack) => baseAttack;
     public virtual int ModifyPlayerMana(int currentMana) => currentMana;
     #endregion

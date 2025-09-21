@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,21 +25,21 @@ public class RelicSystem : MonoBehaviour
      
     public static RelicSystem Instance { get; private set; }
 
-    [SerializeField] private RelicsUI relicsUI;   // ¿É¼Ç(UI Ç¥½Ã)
+    [SerializeField] private RelicsUI relicsUI;   // Relic UIì—°ê²° (ì˜µì…˜)
 
-    [Header("Relic DB (Id ¡æ SO ¸ÅÇÎ¿ë)")]
-    [Tooltip("¿©±â¿¡ »ç¿ë °¡´ÉÇÑ ¸ğµç RelicData ¿¡¼ÂÀ» µî·ÏÇÏ¼¼¿ä.")]
+    [Header("Relic DB (Id -> SO)")]
+    [Tooltip("Soë¥¼ RelicDatabaseì— ì €ì¥.")]
     public List<RelicData> relicDatabase = new List<RelicData>();
 
-    // ºü¸¥ Á¶È¸¿ë: id -> SO
+    // id -> SO
     private readonly Dictionary<string, RelicData> dbById = new();
 
-    // ·±Å¸ÀÓ º¸À¯ À¯¹°(µ¿ÀÏ id´Â ½ºÅÃÀ¸·Î ÇÕÃÄÁø´Ù)
+    // 
     private readonly List<Relic> relics = new();
 
-    // (¼±ÅÃ) À¯¹° º¯È­ ¾Ë¸²: Ä«µå Ç¥½Ã °»½Å µî¿¡ »ç¿ë
-    public event Action RelicsChanged; //Ãß°¡+++
-    private void FireRelicsChanged() => RelicsChanged?.Invoke(); //Ãß°¡+++
+    // 
+    public event Action RelicsChanged;
+    private void FireRelicsChanged() => RelicsChanged?.Invoke(); 
 
     private const string PlayerPrefsKey = "relics_1";
 
@@ -48,26 +48,26 @@ public class RelicSystem : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        BuildIndex(); // DB ÀÎµ¦½Ì
+        BuildIndex(); // DB ï¿½Îµï¿½ï¿½ï¿½
         
     }
 
     private void Start()
     {
         var runId = PlayerPrefs.GetString("lastRunId", "");
-        //LoadRelics();//¾À ½ÃÀÛ ½Ã ÀÚµ¿À¸·Î ºÒ·¯¿À±â¿ë
-        LoadRelicsFromDb(runId, clearBeforeLoad: true); //¼öµ¿À¸·Î ºÒ·¯¿Ã °Å¸é ¾Æ¹« °÷¿¡¼­³ª È£Ãâ.
+        //LoadRelics();//ë¡œì»¬ ì €ì¥ì‹ìœ¼ë¡œ ë¶ˆëŸ¬ì˜¬ë•Œ ì‚¬ìš©
+        LoadRelicsFromDb(runId, clearBeforeLoad: true); //DBì— ì—°ê²°ë¨
     }
 
     public void AttachUI(RelicsUI ui)
     {
         relicsUI = ui;
-        relicsUI.Refresh(relics); // ÀÌ¹Ì °¡Áø À¯¹°µé·Î UI¸¦ Áï½Ã ¸ÂÃçÁÜ
+        relicsUI.Refresh(relics); // UI ìˆì„ì‹œ ìë™ìœ¼ë¡œ ë¶€ì°© ìƒˆë¡œê³ ì¹¨
     }
 
     private void OnEnable()
     {
-        // ÀÌº¥Æ® ±¸µ¶
+        // ì´ë²¤íŠ¸ê°€ ìˆìœ¼ë©´ ë¶ˆëŸ¬ì˜´
         GameEvents.OnBattleStart += HandleBattleStart;
         GameEvents.OnBattleEnd += HandleBattleEnd;
         GameEvents.OnTurnStart += HandleTurnStart;
@@ -76,7 +76,7 @@ public class RelicSystem : MonoBehaviour
         GameEvents.OnCardPlayed += HandleCardPlayed;
         GameEvents.OnDamageDealt += HandleDamageDealt;
 
-        // Ã¼ÀÎÇü ¼öÁ¤ÀÚ ¿¬°á(´©°¡ ¸ÕÀú ¿¬°áµÇµç null ¾ÈÀü)
+        
         GameEvents.ModifyPlayerAttack += ChainModifyPlayerAttack;
         GameEvents.ModifyPlayerMana += ChainModifyPlayerMana;
     }
@@ -102,20 +102,22 @@ public class RelicSystem : MonoBehaviour
         foreach (var so in relicDatabase)
         {
             if (so == null || string.IsNullOrEmpty(so.relicId)) continue;
-            dbById[so.relicId] = so; // ¸¶Áö¸· µî·Ï ¿ì¼±
+            dbById[so.relicId] = so; // Idë¡œ so ì¸ì‹
         }
     }
 
 
 
-    // id¿¡ µû¶ó ¿Ã¹Ù¸¥ ÆÄ»ı À¯¹° Å¬·¡½º¸¦ new ÇØ¼­ µ¹·ÁÁÜ
     private Relic CreateRelicFromId(string relicId, RelicData data)
     {
-        // ÇÊ¿äÇÒ ¶§ ¾Æ·¡ switch¸¦ È®ÀåÇÏ¼¼¿ä.
+        if (data != null && data.HasEffectDefinitions) // ScriptableObjectì— íš¨ê³¼ ì •ì˜ê°€ ìˆìœ¼ë©´ ë°ì´í„° ê¸°ë°˜ ìœ ë¬¼ì„ ìƒì„±
+            return new EffectDrivenRelic(data);
+
+        // switchë¬¸ìœ¼ë¡œ relic(ì»¤ìŠ¤í…€)ì¶”ê°€ì‹œë§ˆë‹¤ ëŠ˜ë ¤ì¤˜ì•¼í•¨
         switch (relicId)
         {
-            case "WarBanner": return new WarBannerRelic(data);//¿ö¹è³Ê
-            case "ManaGem": return new ManaGem(data);//ManaGemÀÌ ÀÖ¾î¾ßÇÔ
+            case "WarBanner": return new WarBannerRelic(data);//
+            case "ManaGem": return new ManaGem(data);//
             case "HappyFlower": return new HappyFlowerRelic(data);//
             case "ExtraDraw": return new ExtraDrawRelic(data);//
             case "SheildBanner": return new ShieldBannerRelic(data);//
@@ -123,27 +125,27 @@ public class RelicSystem : MonoBehaviour
             case "EnemyManaLeech": return new EnemyManaLeechRelic(data);//
             case "EnemyFirstCardWeakener": return new EnemyFirstCardWeakenerRelic(data);//
             case "COMP_COMP_Knight": return new COMP_COMP_KnightRelic(data);//
-            // TODO: »õ À¯¹°À» Ãß°¡ÇÒ ¶§ case Ãß°¡
+            // TODO: relicì´ ì¶”ê°€ë ë•Œë§ˆë‹¤ ë„£ì–´ì£¼ê¸°(ì»¤ìŠ¤í…€relicì¼ ê²½ìš°ë§Œ)
             default:
-                Debug.LogWarning($"[RelicSystem] ¾Ë ¼ö ¾ø´Â relicId: {relicId}");
+                Debug.LogWarning($"[RelicSystem] ì €ì¥ë˜ì§€ ì•ŠëŠ” relicì…ë‹ˆë‹¤ relicId: {relicId}");
                 return null;
         }
     }
 
     #endregion
 
-    #region Public: ÆíÇÑ ID ±â¹İ Ãß°¡/»èÁ¦
+    #region Public: Relic IDë¡œ ì¶”ê°€
 
     public bool AddRelicById(string relicId, int stacks = 1, bool save = true)
     {
         if (string.IsNullOrEmpty(relicId)) return false;
         if (!dbById.TryGetValue(relicId, out var data))
         {
-            Debug.LogWarning($"[RelicSystem] DB¿¡ ¾ø´Â relicId: {relicId}");
+            Debug.LogWarning($"[RelicSystem] DBì— ì—†ëŠ” relicId: {relicId}");
             return false;
         }
 
-        // µ¿ÀÏ id À¯¹° ÀÖÀ¸¸é ½ºÅÃ¸¸ ´Ã¸²
+        
         var existing = relics.Find(r => r.Data.relicId == relicId);
         if (existing != null)
         {
@@ -156,13 +158,13 @@ public class RelicSystem : MonoBehaviour
             return true;
         }
 
-        // »õ·Î »ı¼º
+        // 
         var relic = CreateRelicFromId(relicId, data);
         if (relic == null) return false;
 
         relics.Add(relic);
         relic.OnAdd();
-        // stacks°¡ 1º¸´Ù Å©¸é Ãß°¡ ½ºÅÃ ¹İ¿µ
+        // stacksì´ ì¦ê°€ë ë•Œë§ˆë‹¤
         for (int k = 1; k < Mathf.Max(1, stacks); k++)
             relic.AddStack();
 
@@ -201,77 +203,30 @@ public class RelicSystem : MonoBehaviour
 
     #endregion
 
-    public void NotifyStackChanged(Relic r)
-    {
-        relicsUI?.UpdateStacks(r);
-        FireRelicsChanged();
-    }
+    #region Save/Load
 
-
-    #region Public API
-    public void AddRelic(Relic newRelic)
-    {
-        // µ¿ÀÏ ID ½ºÅÃ Ã³¸®
-        var existing = relics.Find(r => r.Data.relicId == newRelic.Data.relicId);
-        if (existing != null && existing.Data.stackable)
-        {
-            existing.AddStack();
-            relicsUI?.UpdateStacks(existing); // ½ºÅÃ ÅØ½ºÆ®¸¸ °»½Å
-            FireRelicsChanged();              // <- Ãß°¡
-            return;
-        }
-
-        relics.Add(newRelic);
-        newRelic.OnAdd();
-        relicsUI?.AddOrStack(newRelic);
-        FireRelicsChanged();              // <- Ãß°¡
-    }
-    /*
-    public void RemoveRelic(string relicId)
-    {
-        var idx = relics.FindIndex(r => r.Data.relicId == relicId);
-        if (idx >= 0)
-        {
-            relics[idx].OnRemove();
-            relics.RemoveAt(idx);
-            //relicsUI?.Refresh(relics);
-            relicsUI?.Remove(relicId);
-            FireRelicsChanged();              // <- Ãß°¡
-        }
-    }*/
-    #endregion
-
-    #region Save / Load (PlayerPrefs + JSON)
     public void SaveRelics()
     {
-        // ¡Ú DB°¡ °¡´ÉÇÑ »óÈ²(·± ÁøÇà Áß)ÀÌ¸é DB¿¡ ÀúÀå
-        var runId = PlayerPrefs.GetString("lastRunId", "");
-        if (!string.IsNullOrEmpty(runId))
-        {
-            SaveRelicsToDb(runId);
-            return;
-        }
-        /*
-        // ---- ÀÌÇÏ: ±âÁ¸ PlayerPrefs JSON ÀúÀå (¸Ş´º/Å×½ºÆ®¿ë Æú¹é) ----
         var data = new RelicSaveData();
         foreach (var r in relics)
         {
-            if (r?.Data == null || string.IsNullOrEmpty(r.Data.relicId)) continue;
-            data.entries.Add(new RelicSaveEntry { id = r.Data.relicId, stacks = Mathf.Max(1, r.Stacks) });
+            if (r == null || r.Data == null || string.IsNullOrEmpty(r.Data.relicId)) continue;
+            data.entries.Add(new RelicSaveEntry { id = r.Data.relicId, stacks = r.Stacks });
         }
-        string json = JsonUtility.ToJson(data);
-        PlayerPrefs.SetString(PlayerPrefsKey, json);
-        PlayerPrefs.Save();*/
+        PlayerPrefs.SetString(PlayerPrefsKey, JsonUtility.ToJson(data));
+        PlayerPrefs.Save();
     }
 
     public bool LoadRelics(bool clearBeforeLoad = true)
     {
-        // ¡Ú ·±ÀÌ ÀÖÀ¸¸é DB¿¡¼­ ºÒ·¯¿À±â ¿ì¼±
+        // TODO: runIdë¥¼ DBì—ì„œ ë¶ˆëŸ¬ì˜µë‹ˆë‹¤
+
         var runId = PlayerPrefs.GetString("lastRunId", "");
+
         if (!string.IsNullOrEmpty(runId))
             return LoadRelicsFromDb(runId, clearBeforeLoad);
 
-        // ---- ÀÌÇÏ: ±âÁ¸ PlayerPrefs JSON ·Îµå (¸Ş´º/Å×½ºÆ®¿ë Æú¹é) ----
+        // 
         if (!PlayerPrefs.HasKey(PlayerPrefsKey)) return false;
         string json = PlayerPrefs.GetString(PlayerPrefsKey);
         var data = JsonUtility.FromJson<RelicSaveData>(json);
@@ -335,11 +290,11 @@ public class RelicSystem : MonoBehaviour
     /*
      
 
-    // Áö±Ş
-    RelicSystem.Instance.AddRelicById("war_banner", stacks: 1);   // ½ºÅÃ ¿©·¯ °³¸é 2,3...
-    // »èÁ¦
+    // ì¶”ê°€ì‹œ
+    RelicSystem.Instance.AddRelicById("war_banner", stacks: 1);   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 2,3...
+    // ì‚­ì œì‹œ
     RelicSystem.Instance.RemoveRelic("war_banner");
-    // ÀúÀå/·Îµå
+    // ì €ì¥/ë¶ˆëŸ¬ì˜¤ê¸°
     RelicSystem.Instance.SaveRelics();
     RelicSystem.Instance.LoadRelics();
      
@@ -347,11 +302,11 @@ public class RelicSystem : MonoBehaviour
      */
     private void TryPersistToDbOrPrefs()
     {
-        // GameInitializer/Map µî¿¡¼­ ¼¼ÆÃÇÑ ÇöÀç ·± ID¸¦ PlayerPrefs·Î ÀĞ½À´Ï´Ù.
+        // GameInitializer/Map ì‹œì‘ì‹œ idìƒì„±í›„ ë¶ˆëŸ¬ì™€ì§
         var runId = PlayerPrefs.GetString("lastRunId", "");
         if (string.IsNullOrEmpty(runId))
         {
-            // ·±ÀÌ ¾øÀ¸¸é ¸Ş´º/¿¡µğÅÍ Å×½ºÆ® »óÈ² ¡æ ±âÁ¸ PlayerPrefs ÀúÀå À¯Áö
+            // 
             SaveRelics();
             return;
         }
@@ -368,8 +323,8 @@ public class RelicSystem : MonoBehaviour
                 RunId = runId,
                 RelicId = r.Data.relicId,
                 Stacks = Mathf.Max(1, r.Stacks),
-                Cooldown = 0,        // ÇÊ¿ä ½Ã À¯¹° ±¸Çö¿¡ ¸ÂÃç Ã¤¿ì±â
-                UsesLeft = -1,       // -1 = ¹«Á¦ÇÑ (±Ô¾à)
+                Cooldown = 0,        // 
+                UsesLeft = -1,       //
                 StateJson = string.Empty
             });
         }
@@ -385,7 +340,7 @@ public class RelicSystem : MonoBehaviour
 
         foreach (var row in rows)
         {
-            // DB°¡ ¡®À¯¹°ID + ½ºÅÃ¡¯À» µé°í ÀÖÀ¸¹Ç·Î ±âÁ¸ ÆíÀÇ ÇÔ¼ö·Î Àç±¸¼º
+            
             AddRelicById(row.RelicId, Mathf.Max(1, row.Stacks), save: false);
         }
 
