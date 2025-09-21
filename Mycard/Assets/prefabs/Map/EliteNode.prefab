@@ -37,7 +37,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 1128, y: 91}
-  m_SizeDelta: {x: 150, y: 30}
+  m_SizeDelta: {x: 130, y: 29}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3746170317643304517
 CanvasRenderer:
@@ -153,3 +153,9 @@ MonoBehaviour:
   restSceneName: Rest
   cardRemoveSceneName: CardRemove
   mapSceneName: Map Scene
+  reachableHighlight: {fileID: 0}
+  floor: 0
+  index: 0
+  children: []
+  assignedScene: 
+  eventIdOverride: 
