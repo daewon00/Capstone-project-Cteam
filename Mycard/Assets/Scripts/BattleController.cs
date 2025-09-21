@@ -487,7 +487,7 @@ public class BattleController : MonoBehaviour
         // 씬 전환 등으로 파괴될 때, 전투가 시작된 상태였다면 남은 핸드 정리를 보장
         try
         {
-            if (_isInitialized && _battleStarted && _deckService != null)
+            if (_isInitialized && _battleStarted && _deckService != null && battleEnded)
             {
                 _deckService.CleanupAfterCombat();
             }
