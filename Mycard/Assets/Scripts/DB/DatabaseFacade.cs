@@ -27,6 +27,9 @@ public sealed class DatabaseFacade : IDatabase
     public void UpdateRunPosition(string runId, int act, int floor, int nodeIndex)
         => DatabaseManager.Instance.UpdateRunPosition(runId, act, floor, nodeIndex);
 
+    public void DeleteCurrentRun(string runId)
+        => DatabaseManager.Instance.DeleteCurrentRun(runId);
+
     public void UpsertActiveEventSession(string runId, string json)
         => DatabaseManager.Instance.UpsertActiveEventSession(runId, json);
 
@@ -44,6 +47,9 @@ public sealed class DatabaseFacade : IDatabase
 
     public void DeleteRunStageState(string runId)
         => DatabaseManager.Instance.DeleteRunStageState(runId);
+
+    public void DeleteActiveShopSession(string runId)
+        => DatabaseManager.Instance.DeleteActiveShopSession(runId);
 
     public void UpsertNodeState(MapNodeState node)
         => DatabaseManager.Instance.UpsertNodeState(node);

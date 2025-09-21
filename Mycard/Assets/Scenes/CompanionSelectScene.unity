@@ -1573,6 +1573,8 @@ MonoBehaviour:
   cardPrefab: {fileID: 99227144}
   startButton: {fileID: 1479247938}
   selectedLabel: {fileID: 1615248004}
+  confirmModalPrefab: {fileID: 7891399394588447016, guid: 17a6018524043f64085ffa140efc7b0e, type: 3}
+  modalParent: {fileID: 0}
 --- !u!4 &1398709423
 Transform:
   m_ObjectHideFlags: 0

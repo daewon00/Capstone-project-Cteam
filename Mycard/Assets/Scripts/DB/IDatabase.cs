@@ -18,6 +18,7 @@ public interface IDatabase
     void UpdateRunHp(string runId, int newHp);
     void UpsertCurrentRun(CurrentRun run);
     void UpdateRunPosition(string runId, int act, int floor, int nodeIndex);
+    void DeleteCurrentRun(string runId);
     
     /// <summary>
     /// 현재 진행 중인 런을 요약 저장하고 이어하기 데이터를 정리(삭제)합니다.
@@ -33,6 +34,7 @@ public interface IDatabase
     RunStageState LoadRunStageState(string runId);
     void UpsertRunStageState(RunStageState state);
     void DeleteRunStageState(string runId);
+    void DeleteActiveShopSession(string runId);
 
     // --- 노드 상태 (단일 행) ---
     // 이벤트 결과를 맵 노드에 기록하기 위한 기능입니다.

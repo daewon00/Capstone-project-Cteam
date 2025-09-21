@@ -77,6 +77,21 @@ public class GameInitializer : MonoBehaviour
             }
         }
 
+        var lifecycleService = new RunLifecycleService(dbFacade);
+        ServiceRegistry.Register<IRunLifecycleService>(lifecycleService);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BossFlow][GI] Registered IRunLifecycleService (runId='{runId}').");
+#endif
+        if (!string.IsNullOrEmpty(runId))
+        {
+            var companionId = PlayerPrefs.GetString("selectedCompanionId", string.Empty);
+            lifecycleService.RegisterNewRun(runId, companionId);
+        }
+        else
+        {
+            lifecycleService.ResetActiveRun();
+        }
+
         // 4. RNG 서비스 등록: 기존 상태를 불러오고, 필수 도메인 시드가 없으면 RunId 기반으로 보정
         var loadedRngStates = string.IsNullOrEmpty(runId) ? null : _db.LoadRngStates(runId);
         _rng = new RngService(loadedRngStates);

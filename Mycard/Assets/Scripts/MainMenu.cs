@@ -15,6 +15,13 @@ public class MainMenu : MonoBehaviour
     public string companionSelectScene = "CompanionSelectScene";
     public string mapScene = "MapScene";
 
+    [Header("Confirmation")]
+    [SerializeField] private RunResetConfirmModal confirmModalPrefab;
+    [SerializeField] private Transform modalParent;
+
+    private const string ResetWarningMessage = "이미 진행 중인 런이 있습니다. 새 게임을 시작하면 해당 진행이 삭제됩니다. 계속하시겠습니까?";
+    private RunResetConfirmModal _activeModal;
+
     void Start()
     {
         AudioManager.instance.PlayMenuMusic();//노래 시작
@@ -89,10 +96,43 @@ public class MainMenu : MonoBehaviour
     // "새 게임" 버튼을 눌렀을 때
     void OnClickNewGame()
     {
-        // (선택사항) 만약 이어하기 데이터가 남아있다면,
-        // "새 게임을 시작하면 이전 데이터가 지워집니다" 라는 경고창을 띄우고
-        // 기존 런 데이터를 삭제하는 로직을 여기에 추가할 수 있습니다.
+        var lifecycle = ServiceRegistry.Get<IRunLifecycleService>();
+        if (lifecycle != null && lifecycle.HasActiveRun())
+        {
+            if (confirmModalPrefab == null)
+            {
+                lifecycle.ResetActiveRun();
+                SceneManager.LoadScene(companionSelectScene);
+                return;
+            }
 
+            if (_activeModal != null) return;
+
+            if (newGameButton != null)
+            {
+                newGameButton.interactable = false;
+            }
+
+            var parent = ResolveModalParent();
+            _activeModal = Instantiate(confirmModalPrefab, parent, false);
+            _activeModal.Show(
+                ResetWarningMessage,
+                () =>
+                {
+                    lifecycle.ResetActiveRun();
+                    if (newGameButton != null) newGameButton.interactable = true;
+                    _activeModal = null;
+                    SceneManager.LoadScene(companionSelectScene);
+                },
+                () =>
+                {
+                    if (newGameButton != null) newGameButton.interactable = true;
+                    _activeModal = null;
+                });
+            return;
+        }
+
+        lifecycle?.ResetActiveRun();
         SceneManager.LoadScene(companionSelectScene);
     }
 
@@ -167,5 +207,13 @@ public class MainMenu : MonoBehaviour
         Debug.Log("Quit game");
 
         AudioManager.instance.PlaySFX(0);
+    }
+
+    Transform ResolveModalParent()
+    {
+        if (modalParent != null) return modalParent;
+
+        var canvas = GetComponentInParent<Canvas>();
+        return canvas != null ? canvas.transform : transform;
     }
 }
