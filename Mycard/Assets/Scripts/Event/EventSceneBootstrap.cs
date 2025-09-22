@@ -19,8 +19,8 @@ public class EventSceneBootstrap : MonoBehaviour
     [SerializeField] private TMP_Text choice2Label;   // 버튼 안의 텍스트를 직접 연결 2
 
     [Header("씬 이름/기본값")]
-    [SerializeField] private string mapSceneName = "Scenes/Map Scene"; // 하드코딩 제거
-    [SerializeField] private string fallbackEventId = "GenericEvent01";
+    [SerializeField] private string mapSceneName = "Map Scene"; // 하드코딩 제거
+    [SerializeField] private string fallbackEventId = "GoldenIdolEvent";
 
 
     private IEventManager _eventManager;

@@ -157,7 +157,7 @@ MonoBehaviour:
   choiceButton2: {fileID: 1790768781}
   choice2Label: {fileID: 1400210101}
   mapSceneName: Map Scene
-  fallbackEventId: GenericEvent01
+  fallbackEventId: GoldenIdolEvent
 --- !u!4 &469293042
 Transform:
   m_ObjectHideFlags: 0

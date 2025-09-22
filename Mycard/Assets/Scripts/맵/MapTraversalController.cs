@@ -19,8 +19,8 @@ public class MapTraversalController : MonoBehaviour
     private bool _isMoving = false; // 노드 이동 중 재진입 방지
 
     [SerializeField] private ShopOverlayController _shopOverlay; //상점 오버레이 저장
-    [SerializeField] private string eventSceneName = "Scenes/Event";     // 공통 이벤트 씬 이름
-    [SerializeField] private string defaultEventId = "GenericEvent01"; // 기본 이벤트 ID
+    [SerializeField] private string eventSceneName = "Event";            // 공통 이벤트 씬 이름
+    [SerializeField] private string defaultEventId = "GoldenIdolEvent"; // 기본 이벤트 ID
     [SerializeField] private string battleSceneName = "Battle_android"; // 전투 씬의 이름을 에디터에서 설정
 
 

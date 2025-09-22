@@ -717,8 +717,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerMarker: {fileID: 27845220}
   _shopOverlay: {fileID: 0}
-  eventSceneName: Scenes/Event
-  defaultEventId: GenericEvent01
+  eventSceneName: Event
+  defaultEventId: GoldenIdolEvent
   battleSceneName: Battle_android
 --- !u!4 &70686780
 Transform:
