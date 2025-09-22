@@ -35,18 +35,26 @@ public sealed class EventManager : IEventManager
         var json = _db.LoadActiveEventSessionJson(_run.RunId);
         if (!string.IsNullOrEmpty(json))
         {
-            var dto = JsonUtility.FromJson<EventSessionDTO>(json);
-
-            // 과거 저장본에 설명이 없으면, 원본에서 찾아 보충해줍니다.
-            if (string.IsNullOrEmpty(dto.description) && !string.IsNullOrEmpty(dto.eventId))
+            try
             {
-                var so = Resources.Load<EventScriptableObject>($"Events/{dto.eventId}");
-                if (so != null)
+                var dto = JsonUtility.FromJson<EventSessionDTO>(json);
+
+                // 과거 저장본에 설명이 없으면, 원본에서 찾아 보충해줍니다.
+                if (string.IsNullOrEmpty(dto.description) && !string.IsNullOrEmpty(dto.eventId))
                 {
-                    dto.description = so.description;
+                    var so = Resources.Load<EventScriptableObject>($"Events/{dto.eventId}");
+                    if (so != null)
+                    {
+                        dto.description = so.description;
+                    }
                 }
+                return dto;
             }
-            return dto;
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[EventManager] 활성 이벤트 세션 JSON 파싱 실패 - 기존 데이터를 삭제합니다. {e.Message}");
+                _db.DeleteActiveEventSession(_run.RunId);
+            }
         }
 
         // 2. DB에 데이터가 없으면 새로 생성합니다.
@@ -63,7 +71,7 @@ public sealed class EventManager : IEventManager
             description = eventSO.description, // 새로 만들 때 설명을 채워 넣습니다.
             choices = eventSO.choices.Select(c => new EventChoiceDTO {
                 id = c.id, label = c.label,
-                effects = c.effects.Select(e => new EventEffectDTO { type = e.type, amount = e.amount, refId = e.refId }).ToArray()
+                effects = c.effects.Select(e => new EventEffectDTO { type = e.type, amount = e.amount, refId = e.refId, quantity = e.quantity, upgrade = e.upgrade }).ToArray()
             }).ToArray()
         };
 
@@ -88,9 +96,10 @@ public sealed class EventManager : IEventManager
         {
             return JsonUtility.FromJson<EventSessionDTO>(json);
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
-            Debug.LogWarning($"[EventManager] 활성 이벤트 JSON 파싱 실패: {e.Message}");
+            Debug.LogWarning($"[EventManager] 활성 이벤트 JSON 파싱 실패 - 기존 데이터를 삭제합니다. {e.Message}");
+            _db.DeleteActiveEventSession(_run.RunId);
             return null;
         }
     }

@@ -36,6 +36,8 @@ public class EventEffect
     public EventEffectType type; // 예: HpDelta, GoldDelta, AddCard
     public int amount;
     public string refId; // 카드를 추가할 경우 CardId 등
+    public int quantity = 1; // AddCard 타입에서 사용할 카드 장수
+    public bool upgrade;     // AddCard 타입에서 사용할 업그레이드 여부
 }
 
 /// <summary>
@@ -72,6 +74,8 @@ public class EventEffectDTO
     public EventEffectType type;
     public int amount;
     public string refId;
+    public int quantity;
+    public bool upgrade;
 }
 
 /// <summary>

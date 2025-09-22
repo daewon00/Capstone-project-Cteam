@@ -22,9 +22,13 @@ MonoBehaviour:
     - type: 1
       amount: 100
       refId: 
+      quantity: 1
+      upgrade: 0
     - type: 0
       amount: -5
       refId: 
+      quantity: 1
+      upgrade: 0
   - id: take_damage
     label: "\uC544\uBB34 \uC77C\uB3C4 \uC77C\uC5B4\uB098\uC9C0 \uC54A\uB294\uB2E4"
     effects: []
