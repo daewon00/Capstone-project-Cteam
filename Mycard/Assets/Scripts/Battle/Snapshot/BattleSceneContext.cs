@@ -1,3 +1,4 @@
+// 전투 장면에서 스냅샷 복원에 필요한 핵심 컨트롤러/서비스를 모아 카드 스폰과 정리를 돕습니다.
 using System.Collections.Generic;
 using BattleSnapshot;
 using Game.Save;
@@ -37,6 +38,9 @@ public class BattleSceneContext
         _effectService = ServiceRegistry.Get<ICardEffectService>();
     }
 
+    /// <summary>
+    /// 현재 손패에 존재하는 카드를 모두 제거하고 뷰 캐시를 초기화합니다.
+    /// </summary>
     public void ClearHand()
     {
         Debug.Log($"[BattleSceneContext] ClearHand (before) count={(Hand != null ? Hand.heldCards.Count : -1)}");
@@ -52,6 +56,9 @@ public class BattleSceneContext
         Debug.Log("[BattleSceneContext] ClearHand completed");
     }
 
+    /// <summary>
+    /// 런타임 카드 상태를 기반으로 손패에 카드를 생성하고 UI를 갱신합니다.
+    /// </summary>
     public void SpawnCardInHand(CardRuntimeState state)
     {
         if (Hand == null || state == null || CardPrefab == null || CardCatalog == null || DeckService == null) return;
@@ -74,6 +81,9 @@ public class BattleSceneContext
         Debug.Log($"[BattleSceneContext] SpawnCardInHand -> heldCards={Hand.heldCards.Count}");
     }
 
+    /// <summary>
+    /// 플레이어 필드 슬롯에 존재하는 카드를 제거하고 효과 서비스를 정리합니다.
+    /// </summary>
     public void ClearPlayerField()
     {
         if (Board == null) return;
@@ -89,6 +99,9 @@ public class BattleSceneContext
         }
     }
 
+    /// <summary>
+    /// 스냅샷 슬롯 정보와 런타임 상태를 이용해 플레이어 필드에 카드를 복원합니다.
+    /// </summary>
     public void SpawnPlayerFieldCard(PlayerBoardSlotState slotState, CardRuntimeState runtime)
     {
         if (Board == null || runtime == null || CardPrefab == null || CardCatalog == null || DeckService == null) return;

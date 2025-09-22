@@ -1,3 +1,4 @@
+// 현재 전투 장면의 주요 상태를 수집해 BattleSnapshotDTO로 직렬화하는 유틸리티입니다.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,9 @@ using UnityEngine;
 
 public static class BattleSnapshotBuilder
 {
+    /// <summary>
+    /// 전투 진행 상황을 캡처하여 저장 가능한 DTO를 생성합니다.
+    /// </summary>
     public static BattleSnapshotDTO Capture(string reason = "")
     {
         var battle = BattleController.instance;
@@ -69,6 +73,9 @@ public static class BattleSnapshotBuilder
         return dto;
     }
 
+    /// <summary>
+    /// 현재 손패 카드들의 인스턴스 ID 목록을 수집합니다.
+    /// </summary>
     private static List<string> CollectHandInstanceIds(HandController hand)
     {
         var list = new List<string>(hand.heldCards.Count);
@@ -80,6 +87,9 @@ public static class BattleSnapshotBuilder
         return list;
     }
 
+    /// <summary>
+    /// 적 컨트롤러 상태를 기반으로 적 전투 정보를 기록합니다.
+    /// </summary>
     private static EnemyCombatState CaptureEnemyState(EnemyController enemy)
     {
         var state = new EnemyCombatState
@@ -117,6 +127,9 @@ public static class BattleSnapshotBuilder
         return state;
     }
 
+    /// <summary>
+    /// 플레이어 필드 슬롯에 있는 카드 인스턴스를 기록합니다.
+    /// </summary>
     private static List<PlayerBoardSlotState> CapturePlayerField(CardPointsController board)
     {
         var list = new List<PlayerBoardSlotState>();
@@ -138,6 +151,9 @@ public static class BattleSnapshotBuilder
         return list;
     }
 
+    /// <summary>
+    /// 적 필드 또는 벤치 슬롯을 순회하여 카드 상태와 효과 정보를 수집합니다.
+    /// </summary>
     private static List<EnemyBoardSlotState> CaptureEnemyField(CardPlacePoint[] points, bool isFrontline, ICardEffectService effectService)
     {
         var list = new List<EnemyBoardSlotState>();
@@ -160,6 +176,9 @@ public static class BattleSnapshotBuilder
         return list;
     }
 
+    /// <summary>
+    /// RNG 서비스에 등록된 도메인 상태를 추출합니다.
+    /// </summary>
     private static List<RngDomainState> CaptureRng(IRngService rng)
     {
         var list = new List<RngDomainState>();

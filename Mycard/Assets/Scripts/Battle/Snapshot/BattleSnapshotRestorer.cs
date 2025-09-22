@@ -1,3 +1,4 @@
+// BattleSnapshotDTO 데이터를 활용해 전투 장면을 원상 복원하는 책임을 맡습니다.
 using System;
 using System.Collections.Generic;
 using BattleSnapshot;
@@ -6,6 +7,9 @@ using UnityEngine;
 
 public static class BattleSnapshotRestorer
 {
+    /// <summary>
+    /// 저장된 스냅샷과 컨텍스트를 바탕으로 전투 장면 전체를 복원합니다.
+    /// </summary>
     public static void Apply(BattleSnapshotDTO snapshot, BattleSceneContext context)
     {
         if (snapshot == null || context == null)
@@ -32,6 +36,9 @@ public static class BattleSnapshotRestorer
 #endif
     }
 
+    /// <summary>
+    /// 턴 정보와 리더 실드 상태를 회복합니다.
+    /// </summary>
     private static void RestoreTurn(TurnState turn, BattleController battle)
     {
         if (turn == null || battle == null) return;
@@ -41,6 +48,9 @@ public static class BattleSnapshotRestorer
         effectService?.RestoreLeaderShield(false, turn.enemyShield);
     }
 
+    /// <summary>
+    /// 플레이어 체력, 손패, 덱 서비스 상태를 복원합니다.
+    /// </summary>
     private static void RestorePlayerCombat(PlayerCombatState player, BattleSceneContext context)
     {
         if (player == null) return;
@@ -82,6 +92,9 @@ public static class BattleSnapshotRestorer
         }
     }
 
+    /// <summary>
+    /// 플레이어 필드 슬롯에 스냅샷된 카드를 다시 배치합니다.
+    /// </summary>
     private static void RestorePlayerField(List<PlayerBoardSlotState> board, BattleSceneContext context)
     {
         var cardPoints = CardPointsController.instance;
@@ -104,6 +117,9 @@ public static class BattleSnapshotRestorer
         }
     }
 
+    /// <summary>
+    /// 적 체력과 벤치/전열 카드를 EnemyController로 전달해 복구합니다.
+    /// </summary>
     private static void RestoreEnemyCombat(EnemyCombatState enemy, List<EnemyBoardSlotState> frontline, List<EnemyBoardSlotState> bench, BattleSceneContext context)
     {
         var enemyController = EnemyController.instance;
@@ -115,6 +131,9 @@ public static class BattleSnapshotRestorer
         enemyController.RestoreStateFromSnapshot(enemy, frontline, bench, context);
     }
 
+    /// <summary>
+    /// RNG 역직렬화 포인트를 남겨 향후 구현을 용이하게 합니다.
+    /// </summary>
     private static void RestoreRng(List<RngDomainState> rngStates, IRngService rngService)
     {
         // IRngService currently does not expose state injection; skip until supported.

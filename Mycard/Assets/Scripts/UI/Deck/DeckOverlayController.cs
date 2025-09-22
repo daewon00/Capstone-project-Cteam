@@ -42,6 +42,16 @@ public class DeckOverlayController : MonoBehaviour
     // --- 공개 API: 버튼에 연결 ---
     public void Show()
     {
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        if (!enabled)
+        {
+            enabled = true;
+        }
+
         if (panelRoot == null || cardItemPrefab == null || contentParent == null)
         {
             Debug.LogError("[DeckOverlay] 필수 참조가 비어있습니다. panelRoot/contentParent/cardItemPrefab 확인", this);
