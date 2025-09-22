@@ -21,8 +21,13 @@ public sealed class DatabaseFacade : IDatabase
     public void UpdateRunHp(string runId, int newHp)
         => DatabaseManager.Instance.UpdateRunHp(runId, newHp);
 
+    public void UpdateRunMaxHp(string runId, int newMaxHpBase, int newCurrentHp)
+        => DatabaseManager.Instance.UpdateRunMaxHp(runId, newMaxHpBase, newCurrentHp);
+
     public void UpsertCurrentRun(CurrentRun run)
         => DatabaseManager.Instance.UpsertCurrentRun(run);
+    public void CreateNewRunSnapshot(CurrentRun run, IEnumerable<CardInDeck> cards, IEnumerable<RelicInPossession> relics, IEnumerable<PotionInPossession> potions)
+        => DatabaseManager.Instance.CreateNewRunSnapshot(run, cards, relics, potions);
 
     public void UpdateRunPosition(string runId, int act, int floor, int nodeIndex)
         => DatabaseManager.Instance.UpdateRunPosition(runId, act, floor, nodeIndex);

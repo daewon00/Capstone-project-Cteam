@@ -97,6 +97,8 @@ public sealed class DatabaseManager
         _conn.CreateTable<ActiveBattleState>();
         _conn.CreateTable<MapLayoutStorage>();
 
+        EnsureCurrentRunCompanionColumn();
+
         // ==== CardRuntimeState 핵심 인덱스 생성 ====
         try
         {
@@ -126,6 +128,28 @@ public sealed class DatabaseManager
 
         try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_RunPerkSnapshot ON RunPerkSnapshot (RunId, EffectKey)"); }
         catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_RunPerkSnapshot 생성 경고: {e.Message}"); }
+    }
+
+    private void EnsureCurrentRunCompanionColumn()
+    {
+        try
+        {
+            var columns = _conn.GetTableInfo("CurrentRun");
+            bool hasColumn = columns.Any(c => string.Equals(c.Name, "CompanionId", StringComparison.OrdinalIgnoreCase));
+            if (!hasColumn)
+            {
+                _conn.Execute("ALTER TABLE CurrentRun ADD COLUMN CompanionId TEXT NOT NULL DEFAULT '';");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[DB] Added CompanionId column to CurrentRun.");
+#endif
+            }
+
+            _conn.Execute("CREATE INDEX IF NOT EXISTS IX_CurrentRun_Companion ON CurrentRun (CompanionId);");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DB] EnsureCurrentRunCompanionColumn failed: {e.Message}");
+        }
     }
 
     /// <summary>
@@ -343,10 +367,30 @@ public sealed class DatabaseManager
         conn.Table<MapNodeState>().Delete(x => x.RunId == runId);
         conn.Table<RngState>().Delete(x => x.RunId == runId);
         conn.Table<RunPerkSnapshot>().Delete(x => x.RunId == runId);
+        conn.Table<MapLayoutStorage>().Delete(x => x.RunId == runId);
         conn.Table<ActiveBattleState>().Delete(x => x.RunId == runId);
         conn.Table<RunStageState>().Delete(x => x.RunId == runId);
-        conn.Table<MapLayoutStorage>().Delete(x => x.RunId == runId);
+        conn.Delete<ActiveEventSession>(runId);
+        conn.Delete<ActiveShopSession>(runId);
         conn.Table<CurrentRun>().Delete(x => x.RunId == runId);
+    }
+
+    private static void ReplaceCardsInDeck_NoTx(SQLiteConnection conn, string runId, System.Collections.Generic.List<CardInDeck> cards)
+    {
+        conn.Table<CardInDeck>().Delete(x => x.RunId == runId);
+        if (cards.Count > 0) conn.InsertAll(cards);
+    }
+
+    private static void ReplaceRelics_NoTx(SQLiteConnection conn, string runId, System.Collections.Generic.List<RelicInPossession> relics)
+    {
+        conn.Table<RelicInPossession>().Delete(x => x.RunId == runId);
+        if (relics.Count > 0) conn.InsertAll(relics);
+    }
+
+    private static void ReplacePotions_NoTx(SQLiteConnection conn, string runId, System.Collections.Generic.List<PotionInPossession> potions)
+    {
+        conn.Table<PotionInPossession>().Delete(x => x.RunId == runId);
+        if (potions.Count > 0) conn.InsertAll(potions);
     }
 
     /// <summary>
@@ -456,6 +500,30 @@ public sealed class DatabaseManager
         _conn.Update(run);
     }
 
+    // 1.5. 최대 체력/현재 체력 동시 업데이트 함수
+    public void UpdateRunMaxHp(string runId, int newMaxHpBase, int newCurrentHp)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+
+        var run = _conn.Find<CurrentRun>(runId);
+        if (run == null) return;
+
+        run.MaxHpBase = Mathf.Max(1, newMaxHpBase);
+        int maxHp = run.MaxHpBase + run.MaxHpFromPerks + run.MaxHpFromRelics;
+
+        if (newCurrentHp >= 0)
+        {
+            run.CurrentHp = Mathf.Clamp(newCurrentHp, 0, Mathf.Max(1, maxHp));
+        }
+        else
+        {
+            run.CurrentHp = Mathf.Clamp(run.CurrentHp, 0, Mathf.Max(1, maxHp));
+        }
+
+        run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
+        _conn.Update(run);
+    }
+
     // 2. 이벤트 세션 JSON 로드 함수 (신규 추가)
     public string LoadActiveEventSessionJson(string runId)
     {
@@ -522,32 +590,44 @@ public sealed class DatabaseManager
     {
         if (string.IsNullOrEmpty(runId)) return;
         var list = cards?.ToList() ?? new System.Collections.Generic.List<CardInDeck>();
-        InTx(conn =>
-        {
-            conn.Table<CardInDeck>().Delete(x => x.RunId == runId);
-            if (list.Count > 0) conn.InsertAll(list);
-        });
+        InTx(conn => ReplaceCardsInDeck_NoTx(conn, runId, list));
     }
 
     public void ReplaceRelics(string runId, System.Collections.Generic.IEnumerable<RelicInPossession> relics)
     {
         if (string.IsNullOrEmpty(runId)) return;
         var list = relics?.ToList() ?? new System.Collections.Generic.List<RelicInPossession>();
-        InTx(conn =>
-        {
-            conn.Table<RelicInPossession>().Delete(x => x.RunId == runId);
-            if (list.Count > 0) conn.InsertAll(list);
-        });
+        InTx(conn => ReplaceRelics_NoTx(conn, runId, list));
     }
 
     public void ReplacePotions(string runId, System.Collections.Generic.IEnumerable<PotionInPossession> potions)
     {
         if (string.IsNullOrEmpty(runId)) return;
         var list = potions?.ToList() ?? new System.Collections.Generic.List<PotionInPossession>();
+        InTx(conn => ReplacePotions_NoTx(conn, runId, list));
+    }
+
+    public void CreateNewRunSnapshot(CurrentRun run, System.Collections.Generic.IEnumerable<CardInDeck> cards, System.Collections.Generic.IEnumerable<RelicInPossession> relics, System.Collections.Generic.IEnumerable<PotionInPossession> potions)
+    {
+        if (run == null || string.IsNullOrEmpty(run.RunId))
+            throw new ArgumentException("CreateNewRunSnapshot: invalid run");
+
+        var cardList = cards?.ToList() ?? new System.Collections.Generic.List<CardInDeck>();
+        var relicList = relics?.ToList() ?? new System.Collections.Generic.List<RelicInPossession>();
+        var potionList = potions?.ToList() ?? new System.Collections.Generic.List<PotionInPossession>();
+
         InTx(conn =>
         {
-            conn.Table<PotionInPossession>().Delete(x => x.RunId == runId);
-            if (list.Count > 0) conn.InsertAll(list);
+            if (string.IsNullOrEmpty(run.CreatedAtUtc))
+            {
+                run.CreatedAtUtc = DateTime.UtcNow.ToString("o");
+            }
+            run.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
+            conn.InsertOrReplace(run);
+
+            ReplaceCardsInDeck_NoTx(conn, run.RunId, cardList);
+            ReplaceRelics_NoTx(conn, run.RunId, relicList);
+            ReplacePotions_NoTx(conn, run.RunId, potionList);
         });
     }
 

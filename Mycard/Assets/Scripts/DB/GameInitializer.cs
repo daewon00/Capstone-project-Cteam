@@ -58,17 +58,19 @@ public class GameInitializer : MonoBehaviour
         // 3. 러닝 컨텍스트(runId) 확보
         // 런 ID가 DB에 실제로 존재하는지 sanity 체크까지 수행합니다.
         var runId = PlayerPrefs.GetString("lastRunId", "");
+        RunLoadResult runData = null;
         if (!string.IsNullOrEmpty(runId))
         {
             try
             {
-                var sanity = DatabaseManager.Instance.LoadCurrentRun(runId);
-                if (sanity == null || sanity.Run == null)
+                runData = DatabaseManager.Instance.LoadCurrentRun(runId);
+                if (runData == null || runData.Run == null)
                 {
                     Debug.LogWarning($"[GameInitializer] lastRunId에 해당하는 CurrentRun이 없어 초기화합니다: {runId}");
                     PlayerPrefs.DeleteKey("lastRunId");
                     PlayerPrefs.Save();
                     runId = string.Empty;
+                    runData = null;
                 }
             }
             catch (System.Exception e)
@@ -84,7 +86,11 @@ public class GameInitializer : MonoBehaviour
 #endif
         if (!string.IsNullOrEmpty(runId))
         {
-            var companionId = PlayerPrefs.GetString("selectedCompanionId", string.Empty);
+            var companionId = runData?.Run?.CompanionId;
+            if (string.IsNullOrEmpty(companionId))
+            {
+                companionId = PlayerPrefs.GetString("selectedCompanionId", string.Empty);
+            }
             lifecycleService.RegisterNewRun(runId, companionId);
         }
         else
