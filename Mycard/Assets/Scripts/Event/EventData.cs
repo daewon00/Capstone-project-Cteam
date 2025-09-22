@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Game.Save; // NodeType을 사용하기 위함
+using UnityEngine.Serialization;
 
 /// <summary>
 /// 이벤트의 원본 데이터를 정의하는 설계도로, 선택지와 설명을 포함합니다.
@@ -31,7 +32,8 @@ public class EventChoice
 [System.Serializable]
 public class EventEffect
 {
-    public string type; // 예: "HpDelta", "GoldDelta", "AddCard"
+    [FormerlySerializedAs("type")]
+    public EventEffectType type; // 예: HpDelta, GoldDelta, AddCard
     public int amount;
     public string refId; // 카드를 추가할 경우 CardId 등
 }
@@ -66,7 +68,23 @@ public class EventChoiceDTO
 [System.Serializable]
 public class EventEffectDTO
 {
-    public string type;
+    [FormerlySerializedAs("type")]
+    public EventEffectType type;
     public int amount;
     public string refId;
+}
+
+/// <summary>
+/// 이벤트에서 지원하는 효과 타입입니다.
+/// </summary>
+public enum EventEffectType
+{
+    [InspectorName("체력 변경 (HpDelta)")]
+    HpDelta,
+    [InspectorName("골드 변경 (GoldDelta)")]
+    GoldDelta,
+    [InspectorName("카드 추가 (AddCard)")]
+    AddCard,
+    [InspectorName("최대 체력 변경 (MaxHpDelta)")]
+    MaxHpDelta
 }

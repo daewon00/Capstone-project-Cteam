@@ -105,23 +105,36 @@ public sealed class EventManager : IEventManager
         // --- 1. 효과 적용 ---
         foreach (var effect in choice.effects)
         {
-            if (effect.type == "HpDelta")
+            bool handled = false;
+
+            if (effect.type == EventEffectType.HpDelta)
             {
-                _db.UpdateRunHp(_run.RunId, _run.CurrentHp + effect.amount);
+                var targetHp = _run.CurrentHp + effect.amount;
+                _db.UpdateRunHp(_run.RunId, targetHp);
+                Debug.Log($"[EventManager] Applied HpDelta {effect.amount} → targetHp={targetHp}");
+                handled = true;
             }
-            else if (effect.type == "GoldDelta")
+            else if (effect.type == EventEffectType.GoldDelta)
             {
                 // 지갑 서비스가 있으면 그것을 통해 처리(브로드캐스트 + DB-우선)
                 var wallet = ServiceRegistry.Get<IWalletService>();
                 if (wallet != null)
                 {
                     wallet.Add(effect.amount);
+                    Debug.Log($"[EventManager] Applied GoldDelta {effect.amount} via WalletService");
                 }
                 else
                 {
                     // 폴백: 기존 DB 직접 업데이트
                     _db.UpdateRunGold(_run.RunId, _run.Gold + effect.amount);
+                    Debug.Log($"[EventManager] Applied GoldDelta {effect.amount} directly to DB");
                 }
+                handled = true;
+            }
+
+            if (!handled)
+            {
+                Debug.LogError($"[EventManager] Unknown event effect type '{effect.type}' (eventId={session.eventId}, choiceId={choice.id})");
             }
         }
 
