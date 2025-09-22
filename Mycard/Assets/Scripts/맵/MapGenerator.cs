@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -50,6 +51,18 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private Transform nodesRoot;
     [SerializeField] private Transform pathsRoot;
 
+    [Header("스크롤 연동")]
+    [SerializeField] private ScrollRect mapScrollRect;
+    [SerializeField] private RectTransform contentRect;
+    [SerializeField] private RectTransform viewportRect;
+    [SerializeField] private float contentPadding = 120f;
+
+#if UNITY_EDITOR
+    [Header("테스트 도우미")]
+    [SerializeField] private bool forceTestLayerCount = false;
+    [SerializeField] [Range(8, 30)] private int testLayerCount = 12;
+#endif
+
     [Header("배치 정책")]
     [SerializeField] private int minEliteLayerPolicy = 1; // 엘리트 최소 레이어 정책(기본 1층)
 
@@ -90,6 +103,21 @@ public class MapGenerator : MonoBehaviour
         }
         if (barycenterLerpAlpha < 0f) barycenterLerpAlpha = 0f;
         if (barycenterLerpAlpha > 1f) barycenterLerpAlpha = 1f;
+        if (contentPadding < 0f) contentPadding = 0f;
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+        {
+            if (forceTestLayerCount)
+            {
+                numberOfLayers = Mathf.Clamp(testLayerCount, 8, 30);
+            }
+            else if (numberOfLayers < 8)
+            {
+                numberOfLayers = 8;
+            }
+        }
+#endif
     }
 
     // 부모-자식 링크를 중복 없이 추가하는 헬퍼
@@ -392,42 +420,68 @@ public class MapGenerator : MonoBehaviour
 
         mapData.Clear(); // 맵 다시 생성시 초기화
 
+        bool hasLayerWithThreeNodes = false;
+        List<int> adjustableLayers = new List<int>();
+
         // 0층(시작 지점)부터 마지막 층까지 반복합니다.
         for (int i = 0; i < numberOfLayers; i++)
         {
-            // 현재 층에 해당하는 노드 리스트를 새로 만듭니다.
-            List<MapDataNode> currentLayerNodes = new List<MapDataNode>();
+            bool isPinnedLayer = i == 0 || i == FinalRestLayerIndex || i == BossLayerIndex;
+            int nodesInThisLayer;
 
-            // 이 층에 몇 개의 노드를 만들지 무작위로 결정합니다.
-            int nodesInThisLayer = random.Next(minNodesPerLayer, maxNodesPerLayer + 1);
-
-            // 6층과 7층은 규칙에 따라 노드가 1개만 있도록 강제합니다.
-            if (i == 0 || i == FinalRestLayerIndex || i == BossLayerIndex)
+            if (isPinnedLayer)
             {
                 nodesInThisLayer = 1;
             }
-
-            // 결정된 개수만큼 노드를 생성합니다.
-            for (int j = 0; j < nodesInThisLayer; j++)
+            else
             {
-                // 노드의 x, y 좌표를 계산합니다.
-                float yPos = i * layerSpacing;
-                float xPos = (j - (nodesInThisLayer - 1) / 2f) * nodeSpacing;
-
-                // 약간의 무작위성을 더해 맵이 너무 반듯하지 않게 만듭니다.
-                xPos += random.Next((int)-positionRandomness, (int)positionRandomness + 1);
-                yPos += random.Next((int)-positionRandomness, (int)positionRandomness + 1);
-
-                // 계산된 위치에 '빈 노드' 데이터를 생성합니다. (아직 타입은 미정)
-                MapDataNode newNode = new MapDataNode(NodeType.Battle, new Vector2(xPos, yPos), i); // 타입은 일단 기본값으로
-                currentLayerNodes.Add(newNode);
+                nodesInThisLayer = random.Next(2, 4); // 2~3개 노드 생성
+                if (nodesInThisLayer >= 3)
+                {
+                    hasLayerWithThreeNodes = true;
+                }
+                adjustableLayers.Add(i);
             }
 
-            // 완성된 층을 전체 맵 데이터에 추가합니다.
-            mapData.Add(currentLayerNodes);
+            mapData.Add(GenerateLayerNodes(i, nodesInThisLayer));
+        }
+
+        if (!hasLayerWithThreeNodes && adjustableLayers.Count > 0)
+        {
+            int targetLayer = adjustableLayers[random.Next(0, adjustableLayers.Count)];
+            mapData[targetLayer] = GenerateLayerNodes(targetLayer, 3);
+            hasLayerWithThreeNodes = true;
+            Debug.Log($"[MapGen] 모든 조정 가능 층이 2개 노드여서 {targetLayer}층을 3개 노드로 재생성했습니다.");
         }
 
         Debug.Log("맵 뼈대 생성 완료! 총 " + mapData.Count + "개의 층이 생성되었습니다.");
+    }
+
+    private List<MapDataNode> GenerateLayerNodes(int layerIndex, int nodeCount)
+    {
+        var nodes = new List<MapDataNode>(nodeCount);
+        float yBase = layerIndex * layerSpacing;
+        float centerOffset = (nodeCount - 1) / 2f;
+
+        for (int j = 0; j < nodeCount; j++)
+        {
+            float yPos = yBase;
+            float xPos = (j - centerOffset) * nodeSpacing;
+
+            if (positionRandomness > 0f)
+            {
+                int randomness = Mathf.RoundToInt(positionRandomness);
+                if (randomness > 0)
+                {
+                    xPos += random.Next(-randomness, randomness + 1);
+                    yPos += random.Next(-randomness, randomness + 1);
+                }
+            }
+
+            nodes.Add(new MapDataNode(NodeType.Battle, new Vector2(xPos, yPos), layerIndex));
+        }
+
+        return nodes;
     }
     #endregion
 
@@ -570,15 +624,47 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        float MedianOfParents(MapDataNode node)
+        float WeightedParentX(MapDataNode node)
         {
-            if (node.parents != null && node.parents.Count > 0)
+            if (node.parents == null || node.parents.Count == 0)
             {
-                var xs = new List<float>(node.parents.Count);
-                for (int i = 0; i < node.parents.Count; i++) xs.Add(node.parents[i].position.x);
-                return Median(xs);
+                return node.position.x;
             }
-            return node.position.x;
+
+            if (node.parents.Count == 1)
+            {
+                return node.parents[0].position.x;
+            }
+
+            const float primaryWeight = 0.8f;
+            const float secondaryWeight = 1f - primaryWeight;
+
+            MapDataNode primary = node.parents[0];
+            float bestDistance = Mathf.Abs(primary.position.x - node.position.x);
+
+            for (int i = 1; i < node.parents.Count; i++)
+            {
+                var candidate = node.parents[i];
+                float distance = Mathf.Abs(candidate.position.x - node.position.x);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    primary = candidate;
+                }
+            }
+
+            float secondarySum = 0f;
+            int secondaryCount = 0;
+            for (int i = 0; i < node.parents.Count; i++)
+            {
+                var candidate = node.parents[i];
+                if (candidate == primary) continue;
+                secondarySum += candidate.position.x;
+                secondaryCount++;
+            }
+
+            float secondaryAverage = secondaryCount > 0 ? secondarySum / secondaryCount : primary.position.x;
+            return primary.position.x * primaryWeight + secondaryAverage * secondaryWeight;
         }
 
         float MedianOfChildren(MapDataNode node)
@@ -605,7 +691,7 @@ public class MapGenerator : MonoBehaviour
                 var bary = new Dictionary<MapDataNode, float>(layer.Count);
                 foreach (var node in layer)
                 {
-                    bary[node] = MedianOfParents(node);
+                    bary[node] = WeightedParentX(node);
                 }
 
                 layer.Sort((a, b) =>
@@ -653,6 +739,9 @@ public class MapGenerator : MonoBehaviour
                     layer[i].position = new Vector2(smoothedX, pos.y);
                 }
             }
+
+            EnforceMinimumLayerSpacing();
+
         }
     }
 
@@ -1030,6 +1119,8 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
+        ApplyVerticalOffsetToRoots();
+
         // === 2패스: 런타임 children 링크 연결 ===
         foreach (var layer in mapData)
         {
@@ -1051,6 +1142,14 @@ public class MapGenerator : MonoBehaviour
 
         // 모든 노드 생성 후 경로(선) 그리기
         DrawPaths();
+
+        UpdateScrollContentBounds();
+
+        if (mapScrollRect != null)
+        {
+            mapScrollRect.StopMovement();
+            mapScrollRect.normalizedPosition = new Vector2(mapScrollRect.horizontalNormalizedPosition, 0f);
+        }
     }
 
     private GameObject GetPrefabFor(NodeType type)
@@ -1105,12 +1204,12 @@ public class MapGenerator : MonoBehaviour
                         continue;
                     }
 
-                    // 라인 생성 및 설정 (월드 좌표 사용)
+                    // 라인 생성 및 설정 (로컬 좌표 사용)
                     var lr = Instantiate(pathLinePrefab, lineParent);
-                    lr.useWorldSpace = true;
+                    lr.useWorldSpace = false;
                     lr.positionCount = 2;
-                    Vector3 a = parentTf.position;
-                    Vector3 b = childTf.position;
+                    Vector3 a = parentTf.localPosition;
+                    Vector3 b = childTf.localPosition;
                     a.z = b.z = 0f;
                     lr.SetPosition(0, a);
                     lr.SetPosition(1, b);
@@ -1120,6 +1219,123 @@ public class MapGenerator : MonoBehaviour
         }
     }
     #endregion
+
+
+    private void UpdateScrollContentBounds()
+    {
+        if (contentRect == null || viewportRect == null)
+        {
+            return;
+        }
+
+        float minX = float.MaxValue;
+        float maxX = float.MinValue;
+        float minY = float.MaxValue;
+        float maxY = float.MinValue;
+        bool hasNode = false;
+
+        foreach (var tf in nodeToTransform.Values)
+        {
+            var rect = tf as RectTransform;
+            if (rect == null)
+            {
+                continue;
+            }
+
+            Vector2 pos = rect.anchoredPosition;
+            minX = Mathf.Min(minX, pos.x);
+            maxX = Mathf.Max(maxX, pos.x);
+            minY = Mathf.Min(minY, pos.y);
+            maxY = Mathf.Max(maxY, pos.y);
+            hasNode = true;
+        }
+
+        if (!hasNode)
+        {
+            float baseHeight = viewportRect.rect.height;
+            contentRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, baseHeight);
+            contentRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, viewportRect.rect.width);
+            return;
+        }
+
+        float width = Mathf.Max(viewportRect.rect.width, (maxX - minX) + contentPadding * 2f);
+        float height = Mathf.Max(viewportRect.rect.height, (maxY - minY) + contentPadding * 2f);
+
+        contentRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+        contentRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+
+        if (mapScrollRect != null)
+        {
+            bool enableVertical = height > viewportRect.rect.height + 0.5f;
+            mapScrollRect.vertical = enableVertical;
+        }
+    }
+
+    private float CalculateVerticalOffset()
+    {
+        if (contentRect == null)
+        {
+            return 0f;
+        }
+
+        float minY = float.MaxValue;
+        float maxY = float.MinValue;
+
+        foreach (var layer in mapData)
+        {
+            foreach (var node in layer)
+            {
+                if (node == null) continue;
+                minY = Mathf.Min(minY, node.position.y);
+                maxY = Mathf.Max(maxY, node.position.y);
+            }
+        }
+
+        if (minY == float.MaxValue)
+        {
+            return 0f;
+        }
+
+        float yOffset = -minY + contentPadding;
+
+        float requiredHeight = (maxY - minY) + contentPadding * 2f;
+        if (contentRect != null)
+        {
+            float height = Mathf.Max(contentRect.rect.height, requiredHeight);
+            contentRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+        }
+
+        return yOffset;
+    }
+
+    private void ApplyVerticalOffsetToRoots()
+    {
+        float yOffset = CalculateVerticalOffset();
+
+        ApplyYOffset(nodesRoot, yOffset);
+        ApplyYOffset(pathsRoot, yOffset);
+    }
+
+    private void ApplyYOffset(Transform target, float yOffset)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (target is RectTransform rect)
+        {
+            var anchored = rect.anchoredPosition;
+            anchored.y = yOffset;
+            rect.anchoredPosition = anchored;
+        }
+        else
+        {
+            var local = target.localPosition;
+            local.y = yOffset;
+            target.localPosition = local;
+        }
+    }
 
 
     #region Gizmos를 이용한 맵 시각화
@@ -1132,13 +1348,17 @@ public class MapGenerator : MonoBehaviour
             return;
         }
 
+        float gizmoYOffset = nodesRoot != null ? 0f : CalculateVerticalOffset();
+        Transform gizmoBaseTransform = nodesRoot != null ? nodesRoot : transform;
+
         // 모든 노드를 순회하며 Gizmos를 그립니다.
         foreach (var layer in mapData)
         {
             foreach (var node in layer)
             {
                 // Gizmos가 캔버스 좌표계에 맞게 그려지도록 월드 좌표로 변환합니다.
-                Vector3 worldPos = transform.TransformPoint(node.position);
+                Vector3 localPos = new Vector3(node.position.x, node.position.y + gizmoYOffset, 0f);
+                Vector3 worldPos = gizmoBaseTransform.TransformPoint(localPos);
 
                 // 노드의 종류에 따라 다른 색상으로 원을 그립니다.
                 switch (node.nodeType)
@@ -1165,7 +1385,8 @@ public class MapGenerator : MonoBehaviour
                 foreach (var child in node.children)
                 {
                     // 자식 노드 위치도 월드 좌표로 변환하여 선을 정확하게 긋습니다.
-                    Vector3 childWorldPos = transform.TransformPoint(child.position);
+                    Vector3 childLocal = new Vector3(child.position.x, child.position.y + gizmoYOffset, 0f);
+                    Vector3 childWorldPos = gizmoBaseTransform.TransformPoint(childLocal);
                     Gizmos.DrawLine(worldPos, childWorldPos);
                 }
             }
@@ -1173,4 +1394,36 @@ public class MapGenerator : MonoBehaviour
         #endif
     }
     #endregion
+
+    private void EnforceMinimumLayerSpacing()
+    {
+        float minGap = Mathf.Max(4f, nodeSpacing * 0.45f);
+        float targetGap = Mathf.Max(nodeSpacing * 0.75f, minGap + 10f);
+        float maxAdjust = nodeSpacing * 0.45f;
+
+        for (int layerIndex = 0; layerIndex < mapData.Count; layerIndex++)
+        {
+            var layer = mapData[layerIndex];
+            if (layer == null || layer.Count <= 1) continue;
+
+            for (int i = 0; i < layer.Count - 1; i++)
+            {
+                var left = layer[i];
+                var right = layer[i + 1];
+                float delta = right.position.x - left.position.x;
+                if (delta >= targetGap) continue;
+
+                float needed = Mathf.Clamp((targetGap - delta) * 0.5f, 0f, maxAdjust);
+                left.position = new Vector2(left.position.x - needed, left.position.y);
+                right.position = new Vector2(right.position.x + needed, right.position.y);
+
+                if (delta < minGap)
+                {
+                    float penalty = Mathf.Clamp((minGap - delta) * 0.25f, 0f, maxAdjust * 0.5f);
+                    left.position = new Vector2(left.position.x - penalty, left.position.y);
+                    right.position = new Vector2(right.position.x + penalty, right.position.y);
+                }
+            }
+        }
+    }
 }

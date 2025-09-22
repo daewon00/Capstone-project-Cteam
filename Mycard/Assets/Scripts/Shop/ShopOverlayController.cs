@@ -51,6 +51,24 @@ public class ShopOverlayController : MonoBehaviour
     /// </summary>
     public void OpenForNode(int floor, int index)
     {
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        if (shopUI != null)
+        {
+            if (!shopUI.gameObject.activeSelf)
+            {
+                shopUI.gameObject.SetActive(true);
+            }
+
+            if (!shopUI.enabled)
+            {
+                shopUI.enabled = true;
+            }
+        }
+
         _currentKey = (floor, index);
         Debug.Log($"<color=cyan>OPENING shop for ({floor},{index})...</color>", this);
 

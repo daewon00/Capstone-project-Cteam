@@ -1,9 +1,13 @@
+// 전투 장면에서 카드의 런타임 수치를 덱 서비스와 동기화하고 스냅샷 복원 시 역직렬화를 지원합니다.
 using BattleSnapshot;
 using Game.Save;
 using UnityEngine;
 
 public static class BattleDeckRuntimeSync
 {
+    /// <summary>
+    /// 현재 필드/손패의 카드 상태를 캡처하여 덱 서비스에 갱신합니다.
+    /// </summary>
     public static void UpdateCardState(Card card)
     {
         if (card == null) return;
@@ -35,6 +39,9 @@ public static class BattleDeckRuntimeSync
         deckService.UpdateBattleCardState(battleState, location);
     }
 
+    /// <summary>
+    /// 저장된 카드 속성 JSON을 BattleCardState DTO로 변환합니다.
+    /// </summary>
     public static BattleCardState ParseModifiers(string json)
     {
         if (string.IsNullOrEmpty(json)) return null;
@@ -48,6 +55,9 @@ public static class BattleDeckRuntimeSync
         }
     }
 
+    /// <summary>
+    /// 카드의 현재 위치(손패/필드/버려진 더미)를 계산합니다.
+    /// </summary>
     private static CardLocation ResolveLocation(Card card)
     {
         if (card.inHand)
@@ -59,6 +69,9 @@ public static class BattleDeckRuntimeSync
         return CardLocation.DiscardPile;
     }
 
+    /// <summary>
+    /// 카드가 놓인 슬롯 인덱스를 찾습니다. 슬롯이 없으면 -1을 반환합니다.
+    /// </summary>
     private static int ResolveSlotIndex(Card card)
     {
         if (card.assignedPlace == null) return -1;

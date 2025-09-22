@@ -17,17 +17,14 @@ MonoBehaviour:
     \uC5B4\uB5A4 \uC120\uD0DD\uC744 \uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
   choices:
   - id: take_gold
-    label: "\uACE8\uB4DC\uB97C \uC5BB\uB294\uB2E4"
+    label: "\uACE8\uB4DC\uB97C \uC5BB\uC9C0\uB9CC \uCCB4\uB825 5\uB97C \uC783\uB294\uB2E4"
     effects:
     - type: GoldDelta
       amount: 100
       refId: 
-  - id: take_damage
-    label: "\uCD5C\uB300 \uCCB4\uB825\uC744 5 \uC783\uACE0 \uC800\uC8FC\uB97C \uBC1B\uB294\uB2E4"
-    effects:
-    - type: MaxHpDelta
+    - type: HpDelta
       amount: -5
       refId: 
-    - type: AddCard
-      amount: 0
-      refId: CARD_CURSE_REGRET
+  - id: take_damage
+    label: "\uC544\uBB34 \uC77C\uB3C4 \uC77C\uC5B4\uB098\uC9C0 \uC54A\uB294\uB2E4"
+    effects: []
