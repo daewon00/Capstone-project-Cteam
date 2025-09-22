@@ -147,7 +147,6 @@ public sealed class BattlePreloadManager : MonoBehaviour
             yield break;
         }
         _state = State.Activating;
-        DisableCurrentEventSystem();
         _loadOperation.allowSceneActivation = true;
         while (!_loadOperation.isDone)
         {
@@ -196,13 +195,5 @@ public sealed class BattlePreloadManager : MonoBehaviour
         _loadOperation = null;
         _sceneName = null;
         _state = State.None;
-    }
-
-    private static void DisableCurrentEventSystem()
-    {
-        var currentEventSystem = EventSystem.current;
-        if (currentEventSystem == null) return;
-        currentEventSystem.SetSelectedGameObject(null);
-        currentEventSystem.enabled = false;
     }
 }
