@@ -7,6 +7,7 @@ public class RelicsUI : MonoBehaviour
 {
     [SerializeField] private Transform gridParent;     // GridLayoutGroup
     [SerializeField] private GameObject iconPrefab;    // Image 들어있는 프리팹
+    public static RelicsUI Instance;
 
     private readonly Dictionary<string, RelicIconUI> map = new();
 

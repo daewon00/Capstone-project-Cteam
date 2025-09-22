@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,10 +25,10 @@ public class RelicSystem : MonoBehaviour
      
     public static RelicSystem Instance { get; private set; }
 
-    [SerializeField] private RelicsUI relicsUI;   // Relic UIì—°ê²° (ì˜µì…˜)
+    [SerializeField] private RelicsUI relicsUI;   // Relic UI¿¬°á (¿É¼Ç)
 
     [Header("Relic DB (Id -> SO)")]
-    [Tooltip("Soë¥¼ RelicDatabaseì— ì €ì¥.")]
+    [Tooltip("So¸¦ RelicDatabase¿¡ ÀúÀå.")]
     public List<RelicData> relicDatabase = new List<RelicData>();
 
     // id -> SO
@@ -40,6 +40,7 @@ public class RelicSystem : MonoBehaviour
     // 
     public event Action RelicsChanged;
     private void FireRelicsChanged() => RelicsChanged?.Invoke(); 
+    public void NotifyRelicStateChanged() => FireRelicsChanged();
 
     private const string PlayerPrefsKey = "relics_1";
 
@@ -48,26 +49,31 @@ public class RelicSystem : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        BuildIndex(); // DB ï¿½Îµï¿½ï¿½ï¿½
+        BuildIndex(); // DB ?¥å???
         
     }
 
     private void Start()
     {
         var runId = PlayerPrefs.GetString("lastRunId", "");
-        //LoadRelics();//ë¡œì»¬ ì €ì¥ì‹ìœ¼ë¡œ ë¶ˆëŸ¬ì˜¬ë•Œ ì‚¬ìš©
-        LoadRelicsFromDb(runId, clearBeforeLoad: true); //DBì— ì—°ê²°ë¨
+        //LoadRelics();//·ÎÄÃ ÀúÀå½ÄÀ¸·Î ºÒ·¯¿Ã¶§ »ç¿ë
+        LoadRelicsFromDb(runId, clearBeforeLoad: true); //DB¿¡ ¿¬°áµÊ
+        if(RelicsUI.Instance != null)
+        {
+            relicsUI?.Refresh(relics);
+        }
+        
     }
 
     public void AttachUI(RelicsUI ui)
     {
         relicsUI = ui;
-        relicsUI.Refresh(relics); // UI ìˆì„ì‹œ ìë™ìœ¼ë¡œ ë¶€ì°© ìƒˆë¡œê³ ì¹¨
+        relicsUI.Refresh(relics); // UI ÀÖÀ»½Ã ÀÚµ¿À¸·Î ºÎÂø »õ·Î°íÄ§
     }
 
     private void OnEnable()
     {
-        // ì´ë²¤íŠ¸ê°€ ìˆìœ¼ë©´ ë¶ˆëŸ¬ì˜´
+        // ÀÌº¥Æ®°¡ ÀÖÀ¸¸é ºÒ·¯¿È
         GameEvents.OnBattleStart += HandleBattleStart;
         GameEvents.OnBattleEnd += HandleBattleEnd;
         GameEvents.OnTurnStart += HandleTurnStart;
@@ -102,7 +108,7 @@ public class RelicSystem : MonoBehaviour
         foreach (var so in relicDatabase)
         {
             if (so == null || string.IsNullOrEmpty(so.relicId)) continue;
-            dbById[so.relicId] = so; // Idë¡œ so ì¸ì‹
+            dbById[so.relicId] = so; // Id·Î so ÀÎ½Ä
         }
     }
 
@@ -110,10 +116,10 @@ public class RelicSystem : MonoBehaviour
 
     private Relic CreateRelicFromId(string relicId, RelicData data)
     {
-        if (data != null && data.HasEffectDefinitions) // ScriptableObjectì— íš¨ê³¼ ì •ì˜ê°€ ìˆìœ¼ë©´ ë°ì´í„° ê¸°ë°˜ ìœ ë¬¼ì„ ìƒì„±
+        if (data != null && data.HasEffectDefinitions) // ScriptableObject¿¡ È¿°ú Á¤ÀÇ°¡ ÀÖÀ¸¸é µ¥ÀÌÅÍ ±â¹İ À¯¹°À» »ı¼º
             return new EffectDrivenRelic(data);
 
-        // switchë¬¸ìœ¼ë¡œ relic(ì»¤ìŠ¤í…€)ì¶”ê°€ì‹œë§ˆë‹¤ ëŠ˜ë ¤ì¤˜ì•¼í•¨
+        // switch¹®À¸·Î relic(Ä¿½ºÅÒ)Ãß°¡½Ã¸¶´Ù ´Ã·ÁÁà¾ßÇÔ
         switch (relicId)
         {
             case "WarBanner": return new WarBannerRelic(data);//
@@ -125,23 +131,23 @@ public class RelicSystem : MonoBehaviour
             case "EnemyManaLeech": return new EnemyManaLeechRelic(data);//
             case "EnemyFirstCardWeakener": return new EnemyFirstCardWeakenerRelic(data);//
             case "COMP_COMP_Knight": return new COMP_COMP_KnightRelic(data);//
-            // TODO: relicì´ ì¶”ê°€ë ë•Œë§ˆë‹¤ ë„£ì–´ì£¼ê¸°(ì»¤ìŠ¤í…€relicì¼ ê²½ìš°ë§Œ)
+            // TODO: relicÀÌ Ãß°¡µÉ¶§¸¶´Ù ³Ö¾îÁÖ±â(Ä¿½ºÅÒrelicÀÏ °æ¿ì¸¸)
             default:
-                Debug.LogWarning($"[RelicSystem] ì €ì¥ë˜ì§€ ì•ŠëŠ” relicì…ë‹ˆë‹¤ relicId: {relicId}");
+                Debug.LogWarning($"[RelicSystem] ÀúÀåµÇÁö ¾Ê´Â relicÀÔ´Ï´Ù relicId: {relicId}");
                 return null;
         }
     }
 
     #endregion
 
-    #region Public: Relic IDë¡œ ì¶”ê°€
+    #region Public: Relic ID·Î Ãß°¡
 
     public bool AddRelicById(string relicId, int stacks = 1, bool save = true)
     {
         if (string.IsNullOrEmpty(relicId)) return false;
         if (!dbById.TryGetValue(relicId, out var data))
         {
-            Debug.LogWarning($"[RelicSystem] DBì— ì—†ëŠ” relicId: {relicId}");
+            Debug.LogWarning($"[RelicSystem] DB¿¡ ¾ø´Â relicId: {relicId}");
             return false;
         }
 
@@ -164,7 +170,7 @@ public class RelicSystem : MonoBehaviour
 
         relics.Add(relic);
         relic.OnAdd();
-        // stacksì´ ì¦ê°€ë ë•Œë§ˆë‹¤
+        // stacksÀÌ Áõ°¡µÉ¶§¸¶´Ù
         for (int k = 1; k < Mathf.Max(1, stacks); k++)
             relic.AddStack();
 
@@ -221,7 +227,7 @@ public class RelicSystem : MonoBehaviour
 
     public bool LoadRelics(bool clearBeforeLoad = true)
     {
-        // TODO: runIdë¥¼ DBì—ì„œ ë¶ˆëŸ¬ì˜µë‹ˆë‹¤
+        // TODO: runId¸¦ DB¿¡¼­ ºÒ·¯¿É´Ï´Ù
 
         var runId = PlayerPrefs.GetString("lastRunId", "");
 
@@ -292,11 +298,11 @@ public class RelicSystem : MonoBehaviour
     /*
      
 
-    // ì¶”ê°€ì‹œ
-    RelicSystem.Instance.AddRelicById("war_banner", stacks: 1);   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 2,3...
-    // ì‚­ì œì‹œ
+    // Ãß°¡½Ã
+    RelicSystem.Instance.AddRelicById("war_banner", stacks: 1);   // ???? ???? ???? 2,3...
+    // »èÁ¦½Ã
     RelicSystem.Instance.RemoveRelic("war_banner");
-    // ì €ì¥/ë¶ˆëŸ¬ì˜¤ê¸°
+    // ÀúÀå/ºÒ·¯¿À±â
     RelicSystem.Instance.SaveRelics();
     RelicSystem.Instance.LoadRelics();
      
@@ -304,7 +310,7 @@ public class RelicSystem : MonoBehaviour
      */
     private void TryPersistToDbOrPrefs()
     {
-        // GameInitializer/Map ì‹œì‘ì‹œ idìƒì„±í›„ ë¶ˆëŸ¬ì™€ì§
+        // GameInitializer/Map ½ÃÀÛ½Ã id»ı¼ºÈÄ ºÒ·¯¿ÍÁü
         var runId = PlayerPrefs.GetString("lastRunId", "");
         if (string.IsNullOrEmpty(runId))
         {
