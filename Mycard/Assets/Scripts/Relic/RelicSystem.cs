@@ -168,6 +168,7 @@ public class RelicSystem : MonoBehaviour
         for (int k = 1; k < Mathf.Max(1, stacks); k++)
             relic.AddStack();
 
+        relicsUI?.Refresh(relics);
         relicsUI?.AddOrStack(relic);
         FireRelicsChanged();
         if (save) TryPersistToDbOrPrefs();
