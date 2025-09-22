@@ -19,10 +19,10 @@ MonoBehaviour:
   - id: take_gold
     label: "\uACE8\uB4DC\uB97C \uC5BB\uC9C0\uB9CC \uCCB4\uB825 5\uB97C \uC783\uB294\uB2E4"
     effects:
-    - type: GoldDelta
+    - type: 1
       amount: 100
       refId: 
-    - type: HpDelta
+    - type: 0
       amount: -5
       refId: 
   - id: take_damage
