@@ -27,7 +27,7 @@ public class MapTraversalController : MonoBehaviour
     void Awake()
     {
         // 게임 시작 시 상점 오버레이를 한 번만 찾아둡니다.
-        _shopOverlay = FindObjectOfType<ShopOverlayController>();
+        _shopOverlay = FindObjectOfType<ShopOverlayController>(true);
     }
     
 

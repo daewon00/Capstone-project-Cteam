@@ -32,6 +32,16 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
     /// </summary>
     public void Show(RewardContainer rewards, Action onClosed)
     {
+        if (!gameObject.activeSelf)
+        {
+            gameObject.SetActive(true);
+        }
+
+        if (!enabled)
+        {
+            enabled = true;
+        }
+
         _onClosedCallback = onClosed;
 
         if (rewards == null)
