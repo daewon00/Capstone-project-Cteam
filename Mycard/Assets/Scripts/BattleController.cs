@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using Game.Save;
 using BattleSnapshot;
@@ -444,7 +444,7 @@ public class BattleController : MonoBehaviour
         if (playerMana >= _drawCardCost)
         {
             SpendPlayerMana(_drawCardCost);
-            _deckService.DrawCards(1, DrawReason.CardEffect);
+            _deckService.DrawCards(1, DrawReason.ManualButton);
         }
         else
         {

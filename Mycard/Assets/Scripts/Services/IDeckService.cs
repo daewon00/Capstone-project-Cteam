@@ -23,7 +23,7 @@ public sealed class PlayResult
     public PileCounts FinalCounts { get; set; }
 }
 
-public enum DrawReason { Unknown, TurnStart, CardEffect, Mulligan }
+public enum DrawReason { Unknown, TurnStart, CardEffect, Mulligan, ManualButton, Relic }
 
 public sealed class DrawResult
 {

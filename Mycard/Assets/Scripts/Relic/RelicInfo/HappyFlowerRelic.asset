@@ -16,5 +16,6 @@ MonoBehaviour:
   displayName: HappyFlower
   description: 
   icon: {fileID: 21300000, guid: f52a954d39bc03545aadb6b0822f7198, type: 3}
-  stackable: 1
+  stackable: 0
   maxStacks: 10
+  effects: []

@@ -183,6 +183,7 @@ public class RelicSystem : MonoBehaviour
         relics.RemoveAt(idx);
         relicsUI?.Remove(relicId);
         FireRelicsChanged();
+        relicsUI?.Refresh(relics);
         if (save) TryPersistToDbOrPrefs();
     }
 

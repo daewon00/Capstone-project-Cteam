@@ -83,7 +83,7 @@ public class HandServiceBinder : MonoBehaviour
         }
 
         // 초기 드로우는 장당 지연과 스폰 지점을 활용해 연출합니다.
-        if (result.Reason == DrawReason.TurnStart && (_initialDrawStagger > 0f || _drawSpawnPoint != null))
+        if (result.Reason == DrawReason.TurnStart|| result.Reason == DrawReason.ManualButton || result.Reason == DrawReason.Relic && (_initialDrawStagger > 0f || _drawSpawnPoint != null))
         {
             // 디버그: 어떤 스폰 위치를 사용하는지 기록
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

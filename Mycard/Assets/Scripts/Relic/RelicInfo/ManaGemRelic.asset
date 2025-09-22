@@ -16,5 +16,6 @@ MonoBehaviour:
   displayName: ManaGem
   description: ManaBoost + 1
   icon: {fileID: -6179955959189686183, guid: 5244754a1904e9c42b1e1ff3341af408, type: 3}
-  stackable: 1
+  stackable: 0
   maxStacks: 99
+  effects: []

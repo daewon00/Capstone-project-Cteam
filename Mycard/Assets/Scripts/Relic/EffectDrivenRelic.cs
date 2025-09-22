@@ -244,7 +244,7 @@ public sealed class EffectDrivenRelic : Relic
                 }
                 int count = Mathf.Max(0, effect.ResolveValue(Stacks)); // 스택 기반으로 도출된 카드 수
                 if (count > 0)
-                    deck.DrawCards(count, DrawReason.CardEffect);
+                    deck.DrawCards(count, DrawReason.Relic);
                 break;
             case RelicEffectType.GainGold:
                 var wallet = ServiceRegistry.Get<IWalletService>();
