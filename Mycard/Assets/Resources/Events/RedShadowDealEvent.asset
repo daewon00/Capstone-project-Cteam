@@ -1,0 +1,90 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: RedShadowDealEvent
+  m_EditorClassIdentifier: 
+  eventId: RedShadowDealEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: shadow_main
+    description: "\uBD89\uC740 \uADF8\uB9BC\uC790\uAC00 \uC720\uBB3C \uD558\uB098\uB97C
+      \uB0B4\uBBFC\uB2E4."
+    choices:
+    - id: shadow_relic_choice
+      label: "\uC720\uBB3C\uC744 \uBC1B\uB294\uB2E4"
+      effects:
+      - type: 5
+        amount: 0
+        refId: RELIC_BLOOD_PACT
+        quantity: 1
+        upgrade: 0
+      - type: 0
+        amount: -15
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: shadow_relic
+    - id: shadow_purchase_choice
+      label: "\uACE8\uB4DC\uB97C \uC9C0\uBD88\uD558\uACE0 \uC720\uBB3C\uC744 \uAD6C\uB9E4\uD55C\uB2E4."
+      effects:
+      - type: 1
+        amount: -80
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 5
+        amount: 0
+        refId: RELIC_BLOOD_PACT
+        quantity: 1
+        upgrade: 0
+      - type: 6
+        amount: 30
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: shadow_purchase
+    - id: shadow_decline_choice
+      label: "\uAC70\uC808\uD55C\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: shadow_relic
+    description: "\uD53C \uD55C \uC904\uAE30\uC640 \uB9DE\uBC14\uAFBC \uC720\uBB3C\uC744
+      \uC190\uC5D0 \uB123\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: shadow_relic_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: shadow_purchase
+    description: "\uACE8\uB4DC \uB300\uC2E0 \uADF8\uB9BC\uC790\uC5D0\uAC8C \uB3C4\uC6C0\uC774
+      \uB418\uC5B4 \uC720\uBB3C\uACFC \uD68C\uBCF5\uC744 \uC5BB\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: shadow_purchase_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

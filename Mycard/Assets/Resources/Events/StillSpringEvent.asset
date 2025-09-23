@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: StillSpringEvent
+  m_EditorClassIdentifier: 
+  eventId: StillSpringEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: spring_main
+    description: "\uC2DC\uAC04\uC774 \uBA48\uCD98 \uB4EF \uB9D1\uC740 \uC0D8\uBB3C\uC774
+      \uACE0\uC5EC \uC788\uB2E4."
+    choices:
+    - id: spring_drink_choice
+      label: "\uBB3C\uC744 \uB9C8\uC2E0\uB2E4"
+      effects:
+      - type: 6
+        amount: 50
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: spring_drink
+    - id: spring_touch_choice
+      label: "\uC0D8\uC5D0 \uC190\uC744 \uB2F4\uADFC\uB2E4"
+      effects:
+      - type: 3
+        amount: 5
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 0
+        amount: -10
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: spring_touch
+    - id: spring_collect_choice
+      label: "\uC0D8\uBB3C\uC744 \uAC00\uC838\uAC04\uB2E4"
+      effects:
+      - type: 2
+        amount: 0
+        refId: CARD_HEALING_WAVE
+        quantity: 1
+        upgrade: 0
+      nextStageId: spring_collect
+  - stageId: spring_drink
+    description: "\uC0D8\uBB3C\uC774 \uBAB8 \uAD6C\uC11D\uAD6C\uC11D \uC0DD\uAE30\uB97C
+      \uBD88\uC5B4\uB123\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: spring_drink_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: spring_touch
+    description: "\uC0DD\uBA85\uC758 \uAE30\uC6B4\uC774 \uC218\uD608\uB418\uC5C8\uC9C0\uB9CC
+      \uCCB4\uB825\uC774 \uC870\uAE08 \uC904\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: spring_touch_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: spring_collect
+    description: "\uC0D8\uBB3C\uC758 \uD798\uC744 \uB2F4\uC740 \uCE74\uB4DC\uB97C
+      \uC5BB\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: spring_collect_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

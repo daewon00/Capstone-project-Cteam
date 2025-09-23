@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 660a776929b135c41be23bd0526979e6, type: 3}
+  m_Name: DefaultEventPool
+  m_EditorClassIdentifier: 
+  entries:
+  - eventId: GoldenIdolEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: FadedSanctumEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: RustyForgeEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: StillSpringEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: RedShadowDealEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: EyeOfVisionEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: ForgottenRiteEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: TreantGiftEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: PlagueDoctorEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: RadiantTowerEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  - eventId: HourglassMerchantEvent
+    weight: 1
+    minLayer: 0
+    maxLayer: 20
+  fallbackEventId: GoldenIdolEvent

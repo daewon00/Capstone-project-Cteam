@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: RustyForgeEvent
+  m_EditorClassIdentifier: 
+  eventId: RustyForgeEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: forge_main
+    description: "\uC81C\uB828\uB85C\uAC00 \uB2E4\uC2DC \uD0C0\uC624\uB97C \uC900\uBE44\uB97C
+      \uD558\uACE0 \uC788\uB2E4."
+    choices:
+    - id: forge_transform_choice
+      label: "\uCE74\uB4DC\uB97C \uB179\uC5EC \uC0C8\uB85C\uC6B4 \uCE74\uB4DC\uB85C"
+      effects:
+      - type: 7
+        amount: 0
+        refId: CARD_STRIKE_PLUS
+        quantity: 1
+        upgrade: 0
+      nextStageId: forge_transform
+    - id: forge_ignore_choice
+      label: "\uADF8\uB0E5 \uB5A0\uB09C\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: forge_transform
+    description: "\uC81C\uB828\uB85C\uC758 \uD798\uC774 \uCE74\uB4DC\uB97C \uC0C8\uB86D\uAC8C
+      \uBC14\uAFE8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: forge_transform_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

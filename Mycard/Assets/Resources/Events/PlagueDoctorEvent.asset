@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: PlagueDoctorEvent
+  m_EditorClassIdentifier: 
+  eventId: PlagueDoctorEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: plague_main
+    description: "\uC5ED\uBCD1 \uC758\uC0AC\uAC00 \uD638\uAE30\uC2EC \uAC00\uB4DD\uD55C
+      \uB208\uC73C\uB85C \uB2F9\uC2E0\uC744 \uBC14\uB77C\uBCF8\uB2E4."
+    choices:
+    - id: plague_elixir_choice
+      label: "\uD2B9\uD6A8\uC57D\uC744 \uB9DE\uB294\uB2E4"
+      effects:
+      - type: 6
+        amount: 80
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 3
+        amount: -5
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: plague_elixir
+    - id: plague_experiment_choice
+      label: "\uC2E4\uD5D8\uC5D0 \uCC38\uAC00\uD55C\uB2E4."
+      effects:
+      - type: 7
+        amount: 0
+        refId: CARD_PLAGUE_SAMPLE
+        quantity: 2
+        upgrade: 0
+      - type: 6
+        amount: 20
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: plague_experiment
+    - id: plague_refuse_choice
+      label: "\uC81C\uC548\uC744 \uAC70\uC808\uD55C\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: plague_elixir
+    description: "\uCCB4\uB825\uC774 \uD06C\uAC8C \uD68C\uBCF5\uB418\uC5C8\uC9C0\uB9CC
+      \uCD5C\uB300 \uCCB4\uB825\uC774 \uC870\uAE08 \uC904\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: plague_elixir_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: plague_experiment
+    description: "\uC2E4\uD5D8\uC73C\uB85C \uCE74\uB4DC\uAC00 \uBCC0\uD615\uB418\uACE0
+      \uCCB4\uB825\uB3C4 \uC57D\uAC04 \uD68C\uBCF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: plague_experiment_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
