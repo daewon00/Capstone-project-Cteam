@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -65,6 +66,10 @@ public class MapGenerator : MonoBehaviour
 
     [Header("배치 정책")]
     [SerializeField] private int minEliteLayerPolicy = 1; // 엘리트 최소 레이어 정책(기본 1층)
+
+    [Header("이벤트 풀")]
+    [SerializeField] private EventPoolDefinition eventPoolDefinition;
+    [SerializeField] private string defaultEventId = "GoldenIdolEvent";
 
     [Header("레이아웃 정리(교차선 감소)")]
     [SerializeField] private bool enableBarycenterOrdering = true; // 배리센터 정렬 적용 여부
@@ -192,6 +197,9 @@ public class MapGenerator : MonoBehaviour
         // 3단계: 노드 타입 결정 (나중에 추가할 함수)
         SetNodeTypes();
 
+        // 3.5단계: 이벤트 노드에 이벤트 ID 배정
+        AssignEventIds();
+
         // 4단계: 화면에 실제 오브젝트 생성 (중앙 함수로 자동 배치/배선)
         InstantiateMapObjects();
     }
@@ -233,6 +241,7 @@ public class MapGenerator : MonoBehaviour
 
         _isMapBuilt = true;
         RebuildMapDataFromSnapshot(snapshot);
+        AssignEventIds();
         InstantiateMapObjects();
     }
 
@@ -406,6 +415,105 @@ public class MapGenerator : MonoBehaviour
         {
             return System.Environment.TickCount;
         }
+    }
+
+    private void AssignEventIds()
+    {
+        if (mapData == null || mapData.Count == 0) return;
+
+        var usedIds = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var layer in mapData)
+        {
+            foreach (var node in layer)
+            {
+                if (node == null || node.nodeType != NodeType.Event) continue;
+                if (!string.IsNullOrEmpty(node.eventIdOverride))
+                {
+                    usedIds.Add(node.eventIdOverride);
+                }
+            }
+        }
+
+        foreach (var layer in mapData)
+        {
+            foreach (var node in layer)
+            {
+                if (node == null || node.nodeType != NodeType.Event) continue;
+                if (!string.IsNullOrEmpty(node.eventIdOverride)) continue;
+
+                string eventId = SelectEventIdForLayer(node.layerIndex, usedIds);
+                if (string.IsNullOrEmpty(eventId))
+                {
+                    eventId = ResolveFallbackEventId();
+                    Debug.LogWarning($"[MapGen] 이벤트 풀 소진 또는 조건 불일치로 기본 이벤트를 사용합니다. layer={node.layerIndex}, eventId='{eventId}'");
+                }
+
+                node.eventIdOverride = eventId;
+                if (!string.IsNullOrEmpty(eventId))
+                {
+                    usedIds.Add(eventId);
+                }
+            }
+        }
+    }
+
+    private string SelectEventIdForLayer(int layerIndex, HashSet<string> usedIds)
+    {
+        if (eventPoolDefinition == null || eventPoolDefinition.Entries == null || eventPoolDefinition.Entries.Count == 0)
+        {
+            return null;
+        }
+
+        if (random == null)
+        {
+            return null;
+        }
+
+        var candidates = new List<EventPoolDefinition.Entry>();
+        foreach (var entry in eventPoolDefinition.Entries)
+        {
+            if (entry == null) continue;
+            if (string.IsNullOrEmpty(entry.eventId)) continue;
+            if (entry.weight <= 0) continue;
+            if (usedIds.Contains(entry.eventId)) continue;
+            if (layerIndex < entry.minLayer || layerIndex > entry.maxLayer) continue;
+            candidates.Add(entry);
+        }
+
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
+
+        int totalWeight = 0;
+        foreach (var candidate in candidates)
+        {
+            totalWeight += Mathf.Max(1, candidate.weight);
+        }
+
+        int roll = random.Next(totalWeight);
+        int cumulative = 0;
+        foreach (var candidate in candidates)
+        {
+            cumulative += Mathf.Max(1, candidate.weight);
+            if (roll < cumulative)
+            {
+                return candidate.eventId;
+            }
+        }
+
+        return candidates[candidates.Count - 1].eventId;
+    }
+
+    private string ResolveFallbackEventId()
+    {
+        if (eventPoolDefinition != null && !string.IsNullOrEmpty(eventPoolDefinition.FallbackEventId))
+        {
+            return eventPoolDefinition.FallbackEventId;
+        }
+
+        return string.IsNullOrEmpty(defaultEventId) ? "GoldenIdolEvent" : defaultEventId;
     }
 
     public void RegenerateWithSeed(int seed)

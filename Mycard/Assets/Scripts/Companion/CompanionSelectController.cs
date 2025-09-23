@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -112,6 +113,7 @@ public class CompanionSelectController : MonoBehaviour
 
             var run = new CurrentRun {
                 RunId = runId, ProfileId = profileId, // ProfileId는 나중에 로그인 시스템과 연동
+                CompanionId = _selected.CompanionId,
                 Act = startingAct,
                 Floor = startingFloor,
                 NodeIndex = startingNodeIndex,
@@ -140,19 +142,15 @@ public class CompanionSelectController : MonoBehaviour
             var relics = _selected.StartingRelicIds
                 .Select(id => new RelicInPossession { RunId = runId, RelicId = id, Stacks = 1, UsesLeft = -1 })
                 .ToList();
-            // 동료 자체를 '특별 유물'로 저장
-            relics.Add(new RelicInPossession { RunId = runId, RelicId = "COMP_" + _selected.CompanionId, Stacks = 1, UsesLeft = -1 });
 
             var potions = _selected.StartingPotionIds
                 .Select(id => new PotionInPossession { RunId = runId, PotionId = id, Charges = 1 })
                 .ToList();
 
-            // 3. 완성된 '첫 번째 세이브 파일'을 DB에 저장합니다. (세분화된 API 사용)
+            // 3. 완성된 '첫 번째 세이브 파일'을 단일 트랜잭션으로 저장합니다.
             var db = ServiceRegistry.GetRequired<IDatabase>();
-            db.UpsertCurrentRun(run);
-            db.ReplaceCardsInDeck(runId, cards);
-            db.ReplaceRelics(runId, relics);
-            db.ReplacePotions(runId, potions);
+            db.CreateNewRunSnapshot(run, cards, relics, potions);
+            EnsureRunRngSeeds(runId, db);
 
             // 3.5. 월렛을 새로운 런에 재바인딩하여 UI와 동기화합니다.
             ServiceRegistry.Get<IWalletService>()?.RebindRun(runId);
@@ -213,6 +211,7 @@ public class CompanionSelectController : MonoBehaviour
         var run = new CurrentRun {
             RunId = runId,
             ProfileId = GameContext.I.ProfileId,
+            CompanionId = comp.CompanionId,
             Act = startingAct,
             Floor = startingFloor,
             NodeIndex = startingNodeIndex,
@@ -242,12 +241,10 @@ public class CompanionSelectController : MonoBehaviour
         foreach (var cardId in comp.StartingCardIds)
             deck.CreateNewCardInstance(cardId, false);
 
-        // 동료를 '특수 유물'로 저장해 런 전체에 남도록 (스키마 변경 불필요)
+        // 동료가 제공하는 유물을 런 시작 시 보관
         var relicRows = comp.StartingRelicIds
             .Select(id => new RelicInPossession { RunId = runId, RelicId = id, Stacks = 1, UsesLeft = -1 })
             .ToList();
-
-        relicRows.Add(new RelicInPossession { RunId = runId, RelicId = "COMP_" + comp.CompanionId, Stacks = 1, UsesLeft = -1 });
 
         // 포션
         var potRows = comp.StartingPotionIds
@@ -257,14 +254,84 @@ public class CompanionSelectController : MonoBehaviour
 
         // 맵/이벤트/RNG 초기값은 빈 리스트로 시작 (세분화된 API 사용)
         var db = ServiceRegistry.GetRequired<IDatabase>();
-        db.UpsertCurrentRun(run);
-        db.ReplaceCardsInDeck(runId, deck.ToCardRowsForSave());
-        db.ReplaceRelics(runId, relicRows);
-        db.ReplacePotions(runId, potRows);
+        db.CreateNewRunSnapshot(run, deck.ToCardRowsForSave(), relicRows, potRows);
+        EnsureRunRngSeeds(runId, db);
 
         // 월렛 재바인딩 + 덱 서비스 로드 (안전)
         ServiceRegistry.Get<IWalletService>()?.RebindRun(runId);
         ServiceRegistry.Get<IDeckService>()?.LoadAndPrepareDeck(runId);
         ServiceRegistry.Get<IRunService>()?.RebindRun(runId);
+    }
+
+    private void EnsureRunRngSeeds(string runId, IDatabase db)
+    {
+        if (string.IsNullOrEmpty(runId)) return;
+
+        var rngService = ServiceRegistry.Get<IRngService>();
+        if (rngService == null) return;
+
+        var domains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "deck-shuffle",
+            "reward-generation",
+            "deck-init"
+        };
+
+        var existing = rngService.GetStatesForSave();
+        if (existing != null)
+        {
+            foreach (var state in existing)
+            {
+                if (!string.IsNullOrEmpty(state?.Domain))
+                {
+                    domains.Add(state.Domain);
+                }
+            }
+        }
+
+        foreach (var domain in domains)
+        {
+            try
+            {
+                rngService.Seed(domain, HashRunIdToSeed(runId, domain));
+            }
+            catch (Exception e)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[CompanionSelect] Failed to seed RNG domain '{domain}': {e.Message}");
+#endif
+            }
+        }
+
+        var statesForSave = rngService.GetStatesForSave();
+        if (statesForSave != null)
+        {
+            db?.UpsertRngStates(runId, statesForSave);
+        }
+    }
+
+    private static uint HashRunIdToSeed(string runId, string domain)
+    {
+        unchecked
+        {
+            uint h = 2166136261u;
+            if (!string.IsNullOrEmpty(runId))
+            {
+                foreach (char c in runId)
+                {
+                    h ^= c;
+                    h *= 16777619u;
+                }
+            }
+            if (!string.IsNullOrEmpty(domain))
+            {
+                foreach (char c in domain)
+                {
+                    h ^= c;
+                    h *= 16777619u;
+                }
+            }
+            return h == 0u ? 1u : h;
+        }
     }
 }

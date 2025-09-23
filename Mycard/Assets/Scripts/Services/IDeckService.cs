@@ -79,4 +79,10 @@ public interface IDeckService
     IReadOnlyList<CardRuntimeState> GetCardsInLocation(CardLocation location);
     CardRuntimeState GetCardByInstanceId(string instanceId);
     void UpdateBattleCardState(BattleSnapshot.BattleCardState state, CardLocation location);
+
+    /// <summary>
+    /// 지정된 수만큼 덱의 카드를 새 카드 ID로 변환합니다.
+    /// </summary>
+    /// <returns>변환에 성공한 카드 수</returns>
+    int TransformCards(string targetCardId, int count = 1, bool upgrade = false);
 }

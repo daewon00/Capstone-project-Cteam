@@ -166,6 +166,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
             var run = new CurrentRun
             {
                 RunId = runId, ProfileId = _profileId,
+                CompanionId = string.Empty,
                 Act = 1, Floor = 0, NodeIndex = 0,
                 Gold = Mathf.RoundToInt(preview),
                 CurrentHp = 80, MaxHpBase = 80, EnergyMax = 3,

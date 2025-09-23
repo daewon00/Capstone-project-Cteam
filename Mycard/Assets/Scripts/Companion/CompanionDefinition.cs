@@ -31,9 +31,9 @@ public class CompanionDefinition : ScriptableObject
     /// </summary>
     public List<string> StartingCardIds = new();     // 예: "CARD_STRIKE", "CARD_DEFEND"
     /// <summary>
-    /// 런 시작 시 부여할 일반 유물 ID 목록입니다.
+    /// 런 시작 시 부여할 유물 ID 목록입니다.
     /// </summary>
-    public List<string> StartingRelicIds = new();    // 일반 유물 (동료 표식 유물은 자동 추가됨)
+    public List<string> StartingRelicIds = new();    // 일반 유물 (필요 시 수동 추가)
     /// <summary>
     /// 런 시작 시 지급할 포션 ID 목록입니다.
     /// </summary>

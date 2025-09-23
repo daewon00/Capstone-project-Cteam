@@ -13,22 +13,57 @@ MonoBehaviour:
   m_Name: GoldenIdolEvent
   m_EditorClassIdentifier: 
   eventId: GoldenIdolEvent
-  description: "\uBC18\uC9DD\uC774\uB294 \uD669\uAE08 \uC6B0\uC0C1\uC744 \uBC1C\uACAC\uD588\uC2B5\uB2C8\uB2E4.
+  legacyDescription: "\uBC18\uC9DD\uC774\uB294 \uD669\uAE08 \uC6B0\uC0C1\uC744 \uBC1C\uACAC\uD588\uC2B5\uB2C8\uB2E4.
     \uC5B4\uB5A4 \uC120\uD0DD\uC744 \uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
-  choices:
-  - id: take_gold
-    label: "\uACE8\uB4DC\uB97C \uC5BB\uC9C0\uB9CC \uCCB4\uB825 5\uB97C \uC783\uB294\uB2E4"
-    effects:
-    - type: 1
-      amount: 100
-      refId: 
-      quantity: 1
-      upgrade: 0
-    - type: 0
-      amount: -5
-      refId: 
-      quantity: 1
-      upgrade: 0
-  - id: take_damage
-    label: "\uC544\uBB34 \uC77C\uB3C4 \uC77C\uC5B4\uB098\uC9C0 \uC54A\uB294\uB2E4"
-    effects: []
+  legacyChoices: []
+  stages:
+  - stageId: stage_1
+    description: "\uBC18\uC9DD\uC774\uB294 \uD669\uAE08 \uC6B0\uC0C1\uC744 \uBC1C\uACAC\uD588\uC2B5\uB2C8\uB2E4.
+      \uC5B4\uB5A4 \uC120\uD0DD\uC744 \uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+    choices:
+    - id: take_gold
+      label: "\uD669\uAE08 \uC6B0\uC0C1\uC744 \uD6D4\uCE5C\uB2E4."
+      effects:
+      - type: 1
+        amount: 100
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 0
+        amount: -5
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: stage_2
+    - id: take_damage
+      label: "\uC544\uBB34 \uC77C\uB3C4 \uC77C\uC5B4\uB098\uC9C0 \uC54A\uB294\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+    - id: take_No
+      label: "\uC544\uBB34 \uC77C\uB3C4 \uC77C\uC5B4\uB098\uC9C0 \uC54A\uB294\uB2E42"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: stage_2
+    description: "\uD669\uAE08 \uC6B0\uC0C1\uC740 \uC5BB\uC5C8\uC9C0\uB9CC \uD568\uC815\uC744
+      \uD53C\uD558\uB2E4 \uBD80\uC0C1\uC744 \uC785\uC5C8\uC2B5\uB2C8\uB2E4. (\uACE8\uB4DC
+      +100, \uCCB4\uB825 -5)"
+    choices:
+    - id: take_Map
+      label: "\uC7A5\uC18C\uB97C \uB5A0\uB09C\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

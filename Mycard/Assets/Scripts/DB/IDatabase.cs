@@ -16,7 +16,9 @@ public interface IDatabase
     RunLoadResult LoadCurrentRun(string runId);
     void UpdateRunGold(string runId, int newGold);
     void UpdateRunHp(string runId, int newHp);
+    void UpdateRunMaxHp(string runId, int newMaxHpBase, int newCurrentHp);
     void UpsertCurrentRun(CurrentRun run);
+    void CreateNewRunSnapshot(CurrentRun run, IEnumerable<CardInDeck> cards, IEnumerable<RelicInPossession> relics, IEnumerable<PotionInPossession> potions);
     void UpdateRunPosition(string runId, int act, int floor, int nodeIndex);
     void DeleteCurrentRun(string runId);
     

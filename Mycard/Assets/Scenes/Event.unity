@@ -152,10 +152,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   descriptionText: {fileID: 855543174}
-  choiceButton1: {fileID: 1306656403}
-  choice1Label: {fileID: 789927777}
-  choiceButton2: {fileID: 1790768781}
-  choice2Label: {fileID: 1400210101}
+  choicesParent: {fileID: 0}
+  choiceButtonTemplate: {fileID: 1306656403}
+  buttonSpacing: 16
   mapSceneName: Map Scene
   fallbackEventId: GoldenIdolEvent
 --- !u!4 &469293042
@@ -698,7 +697,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1306656402
 RectTransform:
   m_ObjectHideFlags: 0
@@ -953,7 +952,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1790768780
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1284,7 +1283,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1992465031
 RectTransform:
   m_ObjectHideFlags: 0

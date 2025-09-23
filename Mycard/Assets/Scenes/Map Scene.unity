@@ -977,6 +977,8 @@ MonoBehaviour:
   forceTestLayerCount: 0
   testLayerCount: 12
   minEliteLayerPolicy: 1
+  eventPoolDefinition: {fileID: 11400000, guid: 0086ed58b379bba428305db5a232d44d, type: 2}
+  defaultEventId: GoldenIdolEvent
   enableBarycenterOrdering: 1
   barycenterPasses: 2
   barycenterLerpAlpha: 0.5

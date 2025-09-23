@@ -163,6 +163,7 @@ namespace Game.Save
     {
         [PrimaryKey] public string RunId { get; set; } // 현재 판의 고유 식별자.
         [Indexed] public string ProfileId { get; set; }
+        [Indexed] public string CompanionId { get; set; }               // 선택된 동료 ID.
         public int Act { get; set; }                            // 현재 챕터.
         public int Floor { get; set; }                          // 현재 층.
         public int NodeIndex { get; set; }                      // 현재 몇 번째 노드에 있는지 (예: 0, 1, 2).

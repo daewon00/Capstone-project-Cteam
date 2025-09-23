@@ -409,6 +409,56 @@ public class DeckService : IDeckService
         PersistAndBroadcast();
     }
 
+    public int TransformCards(string targetCardId, int count = 1, bool upgrade = false)
+    {
+        EnsureInitialized();
+        if (string.IsNullOrEmpty(targetCardId))
+        {
+            Debug.LogWarning("[DeckService] TransformCards 호출 시 targetCardId가 비어 있습니다.");
+            return 0;
+        }
+        if (count <= 0) return 0;
+
+        var candidateIds = new List<string>();
+        candidateIds.AddRange(_drawPileIds);
+        candidateIds.AddRange(_handIds);
+        candidateIds.AddRange(_discardPileIds);
+        candidateIds.AddRange(_exhaustPileIds);
+
+        if (candidateIds.Count == 0)
+        {
+            Debug.Log("[DeckService] TransformCards 후보 카드가 없습니다.");
+            return 0;
+        }
+
+        TryEnsureSeeded("event-transform");
+        _rng.Shuffle("event-transform", candidateIds);
+
+        int transformed = 0;
+        foreach (var id in candidateIds)
+        {
+            if (transformed >= count) break;
+            if (!_cardsById.TryGetValue(id, out var cardState) || cardState == null) continue;
+
+            cardState.CardId = targetCardId;
+            cardState.ModifiersJson = string.Empty;
+            transformed++;
+        }
+
+        if (transformed > 0)
+        {
+            PersistAndBroadcast();
+            Debug.Log($"[DeckService] TransformCards → {transformed}장 변환 대상 카드ID='{targetCardId}' (upgrade flag={upgrade})");
+        }
+
+        if (upgrade)
+        {
+            Debug.LogWarning("[DeckService] TransformCards upgrade 플래그는 아직 별도 처리를 하지 않습니다. 카드 ID로 업그레이드 버전을 직접 지정해야 합니다.");
+        }
+
+        return transformed;
+    }
+
     private void TryEnsureSeeded(string domain)
     {
         try { _rng.NextUInt(domain); }

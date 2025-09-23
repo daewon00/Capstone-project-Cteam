@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,10 +12,9 @@ public class EventSceneBootstrap : MonoBehaviour
 {
     [Header("UI 연결")]
     [SerializeField] private TMP_Text descriptionText; // 1. 이벤트 설명 텍스트
-    [SerializeField] private Button choiceButton1;     // 2. 선택지 버튼 1
-    [SerializeField] private TMP_Text choice1Label;   // 버튼 안의 텍스트를 직접 연결
-    [SerializeField] private Button choiceButton2;     // 3. 선택지 버튼 2
-    [SerializeField] private TMP_Text choice2Label;   // 버튼 안의 텍스트를 직접 연결 2
+    [SerializeField] private RectTransform choicesParent; // 선택지 버튼이 배치될 부모
+    [SerializeField] private Button choiceButtonTemplate;  // 동적 선택지 생성에 사용할 버튼 템플릿
+    [SerializeField, Min(0f)] private float buttonSpacing = 16f;
 
     [Header("씬 이름/기본값")]
     [SerializeField] private string mapSceneName = "Map Scene"; // 하드코딩 제거
@@ -27,10 +25,27 @@ public class EventSceneBootstrap : MonoBehaviour
     private EventSessionDTO _currentSession;
     private bool _isResolving; // 중복 입력을 막기 위한 '잠금 장치'
     private RunStagePayloads.Event _eventStageCache;
+    private readonly List<Button> _spawnedButtons = new();
 
     /// <summary>
     /// 이벤트 매니저를 확보하고 세션을 불러와 UI를 채웁니다.
     /// </summary>
+    void Awake()
+    {
+        if (choiceButtonTemplate == null)
+        {
+            Debug.LogError("[EventScene] choiceButtonTemplate이 설정되지 않았습니다.");
+            return;
+        }
+
+        if (choicesParent == null)
+        {
+            choicesParent = choiceButtonTemplate.transform.parent as RectTransform;
+        }
+
+        choiceButtonTemplate.gameObject.SetActive(false);
+    }
+
     void Start()
     {
         // EventManager가 없으면 안전하게 맵으로 돌아갑니다.
@@ -73,36 +88,25 @@ public class EventSceneBootstrap : MonoBehaviour
 
         // 1. 설명 텍스트를 채웁니다.
         descriptionText.text = _currentSession.description ?? "";
+        Debug.Log($"[EventScene] Stage '{_currentSession.stageId}' 로딩 (choices={_currentSession.choices?.Length ?? 0})");
+        ClearChoiceButtons();
 
-        // 버튼에 리스너를 추가하기 전, 기존에 등록된 리스너를 모두 제거합니다.
-        choiceButton1.onClick.RemoveAllListeners();
-        choiceButton2.onClick.RemoveAllListeners();
-
-        // 2. 각 버튼에 맞는 선택지 내용과 클릭 이벤트를 연결합니다.
-        // 첫 번째 선택지 버튼을 설정합니다.
-        if (_currentSession.choices != null && _currentSession.choices.Length > 0)
+        var choices = _currentSession.choices;
+        if (choices == null || choices.Length == 0)
         {
-            var c0 = _currentSession.choices[0];
-            choice1Label.text = c0.label ?? ""; // 직접 연결된 텍스트 사용
-            choiceButton1.onClick.AddListener(() => OnChoicePicked(c0));
-            choiceButton1.gameObject.SetActive(true);
-        }
-        else
-        {
-            choiceButton1.gameObject.SetActive(false);
+            Debug.LogWarning("[EventScene] 선택지가 없는 이벤트 세션입니다. 맵으로 복귀합니다.");
+            SafeGoMap();
+            return;
         }
 
-        // 두 번째 선택지 버튼을 설정합니다.
-        if (_currentSession.choices != null && _currentSession.choices.Length > 1)
+        for (int i = 0; i < choices.Length; i++)
         {
-            var c1 = _currentSession.choices[1];
-            choice2Label.text = c1.label ?? ""; // 직접 연결된 텍스트 사용
-            choiceButton2.onClick.AddListener(() => OnChoicePicked(c1));
-            choiceButton2.gameObject.SetActive(true);
-        }
-        else
-        {
-            choiceButton2.gameObject.SetActive(false);
+            var choice = choices[i];
+            var button = CreateChoiceButton(choice, i);
+            if (button != null)
+            {
+                _spawnedButtons.Add(button);
+            }
         }
     }
 
@@ -114,14 +118,38 @@ public class EventSceneBootstrap : MonoBehaviour
         if (_isResolving) return; // 중복 클릭 방지
         _isResolving = true;
 
-        choiceButton1.interactable = false;
-        choiceButton2.interactable = false;
+        foreach (var button in _spawnedButtons)
+        {
+            if (button != null)
+            {
+                button.interactable = false;
+            }
+        }
 
-        // 플레이어가 내린 선택을 EventManager에게 알려 결과를 적용시킵니다.
-        _eventManager.ApplyChoice(_currentSession, choice);
+        var shouldReturn = _eventManager.ApplyChoice(_currentSession, choice);
 
-        // 결과 적용 후, 맵 씬으로 돌아갑니다.
-        SafeGoMap();
+        if (shouldReturn)
+        {
+            SafeGoMap();
+            return;
+        }
+
+        // ReturnToMap 효과가 없으면 이벤트 씬을 유지합니다.
+        var activeSession = _eventManager.TryLoadActive();
+        if (activeSession != null)
+        {
+            _currentSession = activeSession;
+            Debug.Log("[EventScene] ReturnToMap 효과가 없어 이벤트 씬을 유지합니다. 선택지를 갱신합니다.");
+            BindUI();
+            _isResolving = false;
+            return;
+        }
+        else
+        {
+            Debug.LogWarning("[EventScene] 활성 이벤트 세션이 없어 맵으로 복귀합니다.");
+            SafeGoMap();
+            return;
+        }
     }
     
     // 씬 전환을 위한 안전한 함수
@@ -195,6 +223,66 @@ public class EventSceneBootstrap : MonoBehaviour
         }
 
         stageService.SetStage(RunStageType.Event, SceneManager.GetActiveScene().name, RunStageService.ToJson(_eventStageCache));
+    }
+
+    private void ClearChoiceButtons()
+    {
+        foreach (var button in _spawnedButtons)
+        {
+            if (button == null) continue;
+            button.onClick.RemoveAllListeners();
+            Destroy(button.gameObject);
+        }
+        _spawnedButtons.Clear();
+    }
+
+    private Button CreateChoiceButton(EventChoiceDTO choice, int index)
+    {
+        if (choiceButtonTemplate == null)
+        {
+            Debug.LogError("[EventScene] choiceButtonTemplate이 설정되어 있지 않아 선택지를 생성할 수 없습니다.");
+            return null;
+        }
+
+        var parent = choicesParent != null ? choicesParent : choiceButtonTemplate.transform.parent as RectTransform;
+        if (parent == null)
+        {
+            Debug.LogError("[EventScene] 선택지 부모 RectTransform을 찾을 수 없습니다.");
+            return null;
+        }
+
+        var button = Instantiate(choiceButtonTemplate, parent);
+        button.gameObject.SetActive(true);
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(() => OnChoicePicked(choice));
+
+        var buttonRect = button.transform as RectTransform;
+        var templateRect = choiceButtonTemplate.transform as RectTransform;
+        if (buttonRect != null && templateRect != null)
+        {
+            ApplyButtonTransform(templateRect, buttonRect, index);
+        }
+
+        var label = button.GetComponentInChildren<TMP_Text>();
+        if (label != null)
+        {
+            label.text = choice.label ?? string.Empty;
+        }
+
+        button.gameObject.name = string.IsNullOrEmpty(choice.id) ? "Choice" : $"Choice_{choice.id}";
+        return button;
+    }
+
+    private void ApplyButtonTransform(RectTransform templateRect, RectTransform buttonRect, int index)
+    {
+        buttonRect.anchorMin = templateRect.anchorMin;
+        buttonRect.anchorMax = templateRect.anchorMax;
+        buttonRect.pivot = templateRect.pivot;
+        buttonRect.sizeDelta = templateRect.sizeDelta;
+        buttonRect.localScale = templateRect.localScale;
+
+        var spacing = templateRect.sizeDelta.y + buttonSpacing;
+        buttonRect.anchoredPosition = templateRect.anchoredPosition + new Vector2(0f, -index * spacing);
     }
 
 }
