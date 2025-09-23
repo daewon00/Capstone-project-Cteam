@@ -349,7 +349,8 @@ public class EnemyController : MonoBehaviour
 
         cardsInHand.Remove(cardSO);
 
-        BattleController.instance.SpendEnemyrMana(cardSO.manaCost);
+        int effectiveCost = Mathf.Max(0, newCard.GetEffectiveManaCost());
+        BattleController.instance.SpendEnemyrMana(effectiveCost);
         
         AudioManager.instance.PlaySFX(4);
 

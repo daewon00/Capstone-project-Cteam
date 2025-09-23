@@ -20,7 +20,7 @@ public abstract class Relic
         OnStacksChanged();
     }
 
-    
+
     #region 생명주기(획득/제거)
     public virtual void OnAdd() { }
     public virtual void OnRemove() { }
@@ -39,6 +39,7 @@ public abstract class Relic
     // 필요시 스탯 수정 훅(체인 연결용)
     public virtual int ModifyPlayerAttack(int baseAttack) => baseAttack;
     public virtual int ModifyPlayerMana(int currentMana) => currentMana;
+    public virtual int ModifyCardManaCost(Card card, int currentCost) => currentCost;
     #endregion
-    
+
 }

@@ -372,7 +372,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             healthText.text = currentHealth.ToString();
         //attackText.text = attackPower.ToString(); //기존
         if (costText != null)
-            costText.text = manaCost.ToString();
+            costText.text = GetEffectiveManaCost().ToString();
 
         // (선택) 버프면 초록색 등 시각효과
         //bool buffed = isPlayer && shownAtk > attackPower;
@@ -410,6 +410,17 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         return value;
     }
 
+    public int GetEffectiveManaCost()
+    {
+        int value = manaCost;
+
+        if (BattleController.instance != null)
+        {
+            value = GameEvents.ApplyCardManaCostModifiers(this, value);
+        }
+
+        return Mathf.Max(0, value);
+    }
     private void OnEnable()
     {
         if (RelicSystem.Instance != null)

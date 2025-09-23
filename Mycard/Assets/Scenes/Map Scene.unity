@@ -386,7 +386,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: COMP_COMP_Knight work
+  m_text: COMP_COMP_Knight
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -699,7 +699,7 @@ GameObject:
   - component: {fileID: 93945606}
   - component: {fileID: 93945605}
   m_Layer: 5
-  m_Name: Button2
+  m_Name: Hpup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1033,7 +1033,7 @@ PrefabInstance:
       objectReference: {fileID: 1710801490}
     - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
       propertyPath: relicDatabase.Array.size
-      value: 13
+      value: 14
       objectReference: {fileID: 0}
     - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
       propertyPath: relicDatabase.Array.data[11]
@@ -1046,7 +1046,7 @@ PrefabInstance:
     - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
       propertyPath: relicDatabase.Array.data[13]
       value: 
-      objectReference: {fileID: 11400000, guid: e274e49606427c045be125280db95224, type: 2}
+      objectReference: {fileID: 11400000, guid: 5606709d4a532ed4c942cc033c0820a5, type: 2}
     - target: {fileID: 7327344328049563208, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
       propertyPath: m_LocalPosition.x
       value: 549.9444
@@ -1286,7 +1286,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: EnemyFirstCardWeakener work
+  m_text: 'EnemyFirstCardWeakener
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1535,7 +1537,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: WarBanner work
+  m_text: WarBanner
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1700,12 +1702,12 @@ GameObject:
   - component: {fileID: 479697799}
   - component: {fileID: 479697798}
   m_Layer: 5
-  m_Name: Button9
+  m_Name: Knight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &479697797
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1877,7 +1879,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: new test relic1 work
+  m_text: attackplus+1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2093,7 +2095,7 @@ GameObject:
   - component: {fileID: 806854315}
   - component: {fileID: 806854314}
   m_Layer: 5
-  m_Name: Button10
+  m_Name: extradraw
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2586,7 +2588,7 @@ GameObject:
   - component: {fileID: 966462392}
   - component: {fileID: 966462391}
   m_Layer: 5
-  m_Name: Button11
+  m_Name: attackplus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2763,7 +2765,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: new test relic work
+  m_text: extraDraw
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2897,7 +2899,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'hp
+  m_text: 'hp UP
 
 '
   m_isRightToLeft: 0
@@ -3258,12 +3260,12 @@ GameObject:
   - component: {fileID: 1184957957}
   - component: {fileID: 1184957956}
   m_Layer: 5
-  m_Name: Button6
+  m_Name: Manadiscount
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1184957955
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3653,7 +3655,7 @@ GameObject:
   - component: {fileID: 1220652598}
   - component: {fileID: 1220652597}
   m_Layer: 5
-  m_Name: Button8
+  m_Name: EnemyFirstCardWeakener
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5621,7 +5623,7 @@ GameObject:
   - component: {fileID: 1781975851}
   - component: {fileID: 1781975850}
   m_Layer: 5
-  m_Name: Button1
+  m_Name: warbanner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5932,7 +5934,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: mana
+  m_text: mana up
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6219,7 +6221,7 @@ GameObject:
   - component: {fileID: 1971572284}
   - component: {fileID: 1971572283}
   m_Layer: 5
-  m_Name: Button3
+  m_Name: Manaup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

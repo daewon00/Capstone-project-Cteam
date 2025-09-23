@@ -99,6 +99,10 @@ public sealed class EffectDrivenRelic : Relic
     {
         return ExecuteModifier(currentMana, RelicEffectTrigger.ModifyPlayerMana);
     }
+     public override int ModifyCardManaCost(Card card, int currentCost)
+    {
+        return ExecuteCardModifier(card, currentCost, RelicEffectTrigger.ModifyCardManaCost);
+    }
 
     private static bool IsPersistent(RelicEffectType type)
     {
@@ -202,6 +206,25 @@ public sealed class EffectDrivenRelic : Relic
         return value;
     }
 
+    private int ExecuteCardModifier(Card card, int seed, RelicEffectTrigger trigger)
+    {
+        if (card == null)
+            return seed;
+
+        int value = seed;
+        bool isPlayerCard = card.isPlayer;
+        foreach (var effect in _triggeredEffects)
+        {
+            if (effect == null || effect.Trigger != trigger)
+                continue;
+
+            if (!MatchesOwnershipFilter(effect, isPlayerCard))
+                continue;
+
+            value = ApplyCardModifierEffect(effect, card, value);
+        }
+        return Mathf.Max(0, value);
+    }
     private int ApplyModifierEffect(RelicEffectDefinition effect, int current)
     {
         int amount = effect.ResolveValue(Stacks);
@@ -217,6 +240,19 @@ public sealed class EffectDrivenRelic : Relic
         }
     }
 
+    private int ApplyCardModifierEffect(RelicEffectDefinition effect, Card card, int current)
+    {
+        int amount = effect.ResolveValue(Stacks);
+        switch (effect.Type)
+        {
+            case RelicEffectType.ModifyCardManaCostFlat:
+                return Mathf.Max(0, current + amount);
+            default:
+                Debug.LogWarning($"[EffectDrivenRelic] Unsupported card modifier type {effect.Type} on trigger {effect.Trigger}.");
+                return current;
+        }
+    }
+    
     private void ApplyTriggeredEffect(RelicEffectDefinition effect, int damage)
     {
         switch (effect.Type)

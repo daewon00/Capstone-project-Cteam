@@ -467,14 +467,17 @@ public class BattleController : MonoBehaviour
             Debug.LogWarning("[BattleController] AttemptPlayCard: card가 null 입니다.");
             return false;
         }
-        if (playerMana < card.manaCost)
+        //if (playerMana < card.manaCost) //기존
+        int effectiveCost = Mathf.Max(0, card.GetEffectiveManaCost());
+        if (playerMana < effectiveCost)
         {
             UIController.instance?.ShowManaWarning();
             return false;
         }
 
         // 규칙 통과: 마나 차감 후 서비스에 사용 통보
-        SpendPlayerMana(card.manaCost);
+        //SpendPlayerMana(card.manaCost);
+        SpendPlayerMana(effectiveCost);
         var result = _deckService.PlayCard(card.InstanceId);
         if (result == null || result.Code != PlayResult.ResultCode.Success)
         {

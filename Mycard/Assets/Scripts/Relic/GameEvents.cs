@@ -17,6 +17,7 @@ public static class GameEvents
     public static event Action<int, bool> OnDamageDealt;
     public static event Action OnPlayerAttackModifiersChanged;
     public static event Action OnEnemyAttackModifiersChanged;
+    public static event Action OnCardManaCostModifiersChanged;
 
     // Raise helpers
     public static void RaiseBattleStart() => OnBattleStart?.Invoke();
@@ -28,11 +29,13 @@ public static class GameEvents
     public static void RaiseDamageDealt(int damage, bool isFromPlayer) => OnDamageDealt?.Invoke(damage, isFromPlayer);
     public static void RaisePlayerAttackModifiersChanged() => OnPlayerAttackModifiersChanged?.Invoke();
     public static void RaiseEnemyAttackModifiersChanged() => OnEnemyAttackModifiersChanged?.Invoke();
+    public static void RaiseCardManaCostModifiersChanged() => OnCardManaCostModifiersChanged?.Invoke();
 
     // Modifiers
     public static event Func<int, int> ModifyPlayerAttack;
     public static event Func<int, int> ModifyEnemyAttack;
     public static event Func<int, int> ModifyPlayerMana;
+    public static event Func<Card, int, int> ModifyCardManaCost;
 
     public static int ApplyPlayerAttackModifiers(int baseValue)
         => ApplyModifierChain(ModifyPlayerAttack, baseValue);
@@ -42,6 +45,10 @@ public static class GameEvents
 
     public static int ApplyPlayerManaModifiers(int baseValue)
         => ApplyModifierChain(ModifyPlayerMana, baseValue);
+
+    public static int ApplyCardManaCostModifiers(Card card, int baseValue)
+        => ApplyModifierChain(ModifyCardManaCost, card, baseValue);
+
 
     private static int ApplyModifierChain(Func<int, int> chain, int baseValue)
     {
@@ -58,6 +65,26 @@ public static class GameEvents
             catch (Exception ex)
             {
                 Debug.LogError($"[GameEvents] Modifier handler threw exception: {ex.Message}");
+            }
+        }
+        return value;
+    }
+
+    private static int ApplyModifierChain(Func<Card, int, int> chain, Card card, int baseValue)
+    {
+        if (chain == null)
+            return baseValue;
+
+        int value = baseValue;
+        foreach (var handler in chain.GetInvocationList())
+        {
+            try
+            {
+                value = ((Func<Card, int, int>)handler)(card, value);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[GameEvents] Card mana modifier handler threw exception: {ex.Message}");
             }
         }
         return value;
