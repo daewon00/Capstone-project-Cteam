@@ -21,4 +21,6 @@ public interface IEventManager
     /// 캐시된 런 상태를 스냅샷 형태로 제공해 UI가 빠르게 사용할 수 있게 합니다.
     /// </summary>
     bool TryGetRunSnapshot(out EventRunSnapshot snapshot);
+
+    void RebindRunCache(CurrentRun freshRun);
 }

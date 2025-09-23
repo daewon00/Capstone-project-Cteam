@@ -165,6 +165,7 @@ public class RunService : IRunService
         catch { }
 
         Debug.Log("[RunService] Node cleared. Rewards saved. Transitioning to Map Scene.");
+        RunCacheSynchronizer.Sync();
         SceneManager.LoadScene("Map Scene");
     }
 

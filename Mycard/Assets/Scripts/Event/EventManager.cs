@@ -260,6 +260,7 @@ public sealed class EventManager : IEventManager
             // --- 5. 활성 이벤트 세션 삭제 ---
             _db.DeleteActiveEventSession(_run.RunId);
 
+            RunCacheSynchronizer.Sync();
             NotifyRunOverlay();
             return true;
         }
@@ -293,6 +294,7 @@ public sealed class EventManager : IEventManager
 
         Debug.LogWarning($"[EventManager] 선택지 '{choice.id}'에 ReturnToMap 효과나 nextStageId가 없어 자동으로 맵으로 복귀합니다.");
         _db.DeleteActiveEventSession(_run.RunId);
+        RunCacheSynchronizer.Sync();
         NotifyRunOverlay();
         return true;
     }
@@ -556,9 +558,30 @@ public sealed class EventManager : IEventManager
         return true;
     }
 
+    public void RebindRunCache(CurrentRun freshRun)
+    {
+        if (freshRun == null)
+        {
+            Debug.LogWarning("[EventManager] RebindRunCache called with null run; ignoring.");
+            return;
+        }
+
+        if (!string.Equals(freshRun.RunId, _runId, StringComparison.Ordinal))
+        {
+            Debug.LogWarning($"[EventManager] RebindRunCache runId mismatch. expected={_runId}, provided={freshRun.RunId}");
+        }
+
+        if (_run != null && string.Equals(_run.UpdatedAtUtc, freshRun.UpdatedAtUtc, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _run = freshRun;
+    }
+
     private void NotifyRunOverlay()
     {
-        var overlay = ServiceRegistry.Get<EventRunStatOverlay>();
+        var overlay = ServiceRegistry.Get<RunStatOverlay>();
         if (overlay == null) return;
 
         if (TryGetRunSnapshot(out var snapshot))

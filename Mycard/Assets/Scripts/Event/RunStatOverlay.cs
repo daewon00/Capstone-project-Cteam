@@ -2,9 +2,9 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// 이벤트 씬에서 런 체력/골드/마나 정보를 표시하는 HUD 오버레이입니다.
+/// 씬에서 런 체력/골드/마나 정보를 표시하는 HUD 오버레이입니다.
 /// </summary>
-public sealed class EventRunStatOverlay : MonoBehaviour
+public sealed class RunStatOverlay : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private TMP_Text hpText;
@@ -12,19 +12,25 @@ public sealed class EventRunStatOverlay : MonoBehaviour
     [SerializeField] private TMP_Text manaText;
     [SerializeField] private TMP_Text goldText;
 
+    [Header("Optional Fill Targets")]
+    [SerializeField] private UnityEngine.UI.Image hpFillImage;
+    [SerializeField] private UnityEngine.UI.Slider hpSlider;
+    [SerializeField] private UnityEngine.UI.Image manaFillImage;
+    [SerializeField] private UnityEngine.UI.Slider manaSlider;
+
     private IEventManager _eventManager;
     private IWalletService _wallet;
 
     private void Awake()
     {
-        ServiceRegistry.Register<EventRunStatOverlay>(this);
+        ServiceRegistry.Register<RunStatOverlay>(this);
     }
 
     private void OnDestroy()
     {
-        if (ServiceRegistry.Get<EventRunStatOverlay>() == this)
+        if (ServiceRegistry.Get<RunStatOverlay>() == this)
         {
-            ServiceRegistry.Register<EventRunStatOverlay>(null);
+            ServiceRegistry.Register<RunStatOverlay>(null);
         }
     }
 
@@ -109,7 +115,7 @@ public sealed class EventRunStatOverlay : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[EventRunStatOverlay] LoadCurrentRun 실패: {e.Message}");
+            Debug.LogWarning($"[RunStatOverlay] LoadCurrentRun 실패: {e.Message}");
             UpdateTexts(default);
         }
     }
@@ -120,7 +126,7 @@ public sealed class EventRunStatOverlay : MonoBehaviour
 
         if (hpText != null)
         {
-            hpText.text = snapshot.CurrentHp > 0 ? snapshot.CurrentHp.ToString() : "0";
+            hpText.text = Mathf.Max(0, snapshot.CurrentHp).ToString();
         }
 
         if (maxHpText != null)
@@ -128,15 +134,37 @@ public sealed class EventRunStatOverlay : MonoBehaviour
             maxHpText.text = maxHp.ToString();
         }
 
+        float hpRatio = maxHp > 0 ? Mathf.Clamp01((float)Mathf.Max(0, snapshot.CurrentHp) / maxHp) : 0f;
+        if (hpFillImage != null)
+        {
+            hpFillImage.fillAmount = hpRatio;
+        }
+        if (hpSlider != null)
+        {
+            hpSlider.minValue = 0f;
+            hpSlider.maxValue = maxHp;
+            hpSlider.value = Mathf.Clamp(Mathf.Max(0, snapshot.CurrentHp), 0, maxHp);
+        }
+
+        int energyMax = snapshot.EnergyMax > 0 ? snapshot.EnergyMax : 0;
         if (manaText != null)
         {
-            int energy = snapshot.EnergyMax > 0 ? snapshot.EnergyMax : 0;
-            manaText.text = energy.ToString();
+            manaText.text = energyMax.ToString();
+        }
+        if (manaSlider != null)
+        {
+            manaSlider.minValue = 0;
+            manaSlider.maxValue = energyMax;
+            manaSlider.value = energyMax;
+        }
+        if (manaFillImage != null)
+        {
+            manaFillImage.fillAmount = energyMax > 0 ? 1f : 0f;
         }
 
         if (goldText != null)
         {
-            goldText.text = snapshot.Gold.ToString();
+            goldText.text = Mathf.Max(0, snapshot.Gold).ToString();
         }
     }
 

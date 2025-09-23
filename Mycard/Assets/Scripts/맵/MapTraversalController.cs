@@ -107,6 +107,7 @@ public class MapTraversalController : MonoBehaviour
         }
 
         // 전투 돌입 시 로딩 지연을 줄이기 위해 전투 씬 프리로드를 시작합니다.
+        ServiceRegistry.Get<RunStatOverlay>()?.RefreshFallback();
         StartCoroutine(DeferredBattlePreload());
     }
 
@@ -245,6 +246,7 @@ public class MapTraversalController : MonoBehaviour
                 {
                     // 있다면, 이벤트 씬으로 보냅니다.
                     stageService?.SetStage(RunStageType.Event, eventSceneName, stageService.Current?.PayloadJson);
+                    RunCacheSynchronizer.Sync();
                     SceneManager.LoadScene(eventSceneName);
                 }
                 // 없다면 (이미 해결된 이벤트라면), 아무것도 하지 않습니다.
@@ -270,6 +272,7 @@ public class MapTraversalController : MonoBehaviour
                         eventId = session.eventId
                     };
                     stageService?.SetStage(RunStageType.Event, eventSceneName, RunStageService.ToJson(payload));
+                    RunCacheSynchronizer.Sync();
                     SceneManager.LoadScene(eventSceneName);
                 }
             }
@@ -300,6 +303,7 @@ public class MapTraversalController : MonoBehaviour
             };
             stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
             ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            RunCacheSynchronizer.Sync();
             if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
             SceneManager.LoadScene(battleSceneToLoad);
             return;
@@ -321,6 +325,7 @@ public class MapTraversalController : MonoBehaviour
             };
             stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
             ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            RunCacheSynchronizer.Sync();
             if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
             SceneManager.LoadScene(battleSceneToLoad);
             return;
@@ -342,6 +347,7 @@ public class MapTraversalController : MonoBehaviour
             };
             stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
             ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            RunCacheSynchronizer.Sync();
             if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
             SceneManager.LoadScene(battleSceneToLoad);
             return;
