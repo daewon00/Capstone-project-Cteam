@@ -2880,7 +2880,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Continue
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2907,7 +2907,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 63.75
+  m_fontSize: 24
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -4779,7 +4779,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 14.5, y: -125}
-  m_SizeDelta: {x: 255.9, y: 124.6797}
+  m_SizeDelta: {x: 300, y: 130}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1950082709
 MonoBehaviour:
@@ -4845,8 +4845,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: c76da22e4cdcea34f83b5b982c6fd360, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -4871,6 +4871,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1274686037}
     m_Modifications:
+    - target: {fileID: 1219830200001859827, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
+      propertyPath: m_Type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1219830200001859827, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: a1f7fd0f938ed35488b404e76e76859a, type: 3}
+    - target: {fileID: 1219830200001859827, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
+      propertyPath: m_UseSpriteMesh
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1219830200001859827, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
+      propertyPath: m_PreserveAspect
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3771161169442518613, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
+      propertyPath: m_Colors.m_ColorMultiplier
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3771161169442518613, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 0
@@ -4897,13 +4917,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4317429347296250728, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_text
-      value: 'new start
-
-'
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 4317429347296250728, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_fontSize
-      value: 55.6
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 7746783439663235284, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_Pivot.x
@@ -4931,11 +4949,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7746783439663235284, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 256.8997
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 7746783439663235284, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 111.3957
+      value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 7746783439663235284, guid: 7a8157b04a60c594090f1de013d34594, type: 3}
       propertyPath: m_LocalPosition.x

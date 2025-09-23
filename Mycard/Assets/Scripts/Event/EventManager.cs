@@ -260,6 +260,7 @@ public sealed class EventManager : IEventManager
             // --- 5. 활성 이벤트 세션 삭제 ---
             _db.DeleteActiveEventSession(_run.RunId);
 
+            NotifyRunOverlay();
             return true;
         }
 
@@ -286,11 +287,13 @@ public sealed class EventManager : IEventManager
             nextSession.pickedChoiceId = choice.id;
             nextSession.stageId = nextStage.stageId;
             _db.UpsertActiveEventSession(_run.RunId, JsonUtility.ToJson(nextSession));
+            NotifyRunOverlay();
             return false;
         }
 
         Debug.LogWarning($"[EventManager] 선택지 '{choice.id}'에 ReturnToMap 효과나 nextStageId가 없어 자동으로 맵으로 복귀합니다.");
         _db.DeleteActiveEventSession(_run.RunId);
+        NotifyRunOverlay();
         return true;
     }
 
@@ -530,5 +533,41 @@ public sealed class EventManager : IEventManager
 
         Debug.Log($"[EventManager] TransformCard 적용: target={effect.refId}, requested={count}, applied={transformed}, upgrade={effect.upgrade}");
         return true;
+    }
+
+    public bool TryGetRunSnapshot(out EventRunSnapshot snapshot)
+    {
+        if (_run == null)
+        {
+            snapshot = default;
+            return false;
+        }
+
+        snapshot = new EventRunSnapshot
+        {
+            RunId = _run.RunId,
+            CurrentHp = _run.CurrentHp,
+            MaxHpBase = _run.MaxHpBase,
+            MaxHpFromPerks = _run.MaxHpFromPerks,
+            MaxHpFromRelics = _run.MaxHpFromRelics,
+            EnergyMax = _run.EnergyMax,
+            Gold = _run.Gold
+        };
+        return true;
+    }
+
+    private void NotifyRunOverlay()
+    {
+        var overlay = ServiceRegistry.Get<EventRunStatOverlay>();
+        if (overlay == null) return;
+
+        if (TryGetRunSnapshot(out var snapshot))
+        {
+            overlay.Refresh(snapshot);
+        }
+        else
+        {
+            overlay.RefreshFallback();
+        }
     }
 }

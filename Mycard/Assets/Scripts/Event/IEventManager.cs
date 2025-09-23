@@ -16,4 +16,9 @@ public interface IEventManager
 
     // DB에서 활성 세션을 '생성하지 않고' 불러오기만 시도하는 기능
     EventSessionDTO TryLoadActive();
+
+    /// <summary>
+    /// 캐시된 런 상태를 스냅샷 형태로 제공해 UI가 빠르게 사용할 수 있게 합니다.
+    /// </summary>
+    bool TryGetRunSnapshot(out EventRunSnapshot snapshot);
 }

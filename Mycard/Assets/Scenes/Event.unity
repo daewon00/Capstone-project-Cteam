@@ -384,7 +384,6 @@ RectTransform:
   - {fileID: 1306656402}
   - {fileID: 1790768780}
   - {fileID: 1992465031}
-  - {fileID: 1402501054}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -498,6 +497,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7200871943014649865, guid: 81171b61a204a8d4ba2827d4b123eedc, type: 3}
   m_PrefabInstance: {fileID: 770628658}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &770628660 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7595409295357502207, guid: 81171b61a204a8d4ba2827d4b123eedc, type: 3}
+  m_PrefabInstance: {fileID: 770628658}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &789927775
 GameObject:
   m_ObjectHideFlags: 0
@@ -912,6 +922,7 @@ GameObject:
   - component: {fileID: 910570549}
   - component: {fileID: 910570548}
   - component: {fileID: 910570547}
+  - component: {fileID: 910570550}
   m_Layer: 5
   m_Name: Deck Canvas
   m_TagString: Untagged
@@ -935,6 +946,7 @@ RectTransform:
   - {fileID: 714158627}
   - {fileID: 770628659}
   - {fileID: 1546305228}
+  - {fileID: 1402501054}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1005,6 +1017,22 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 10
   m_TargetDisplay: 0
+--- !u!114 &910570550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910570545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 064c0c2de77d1a540a123d47f75c3d58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hpText: {fileID: 1402501055}
+  maxHpText: {fileID: 0}
+  manaText: {fileID: 0}
+  goldText: {fileID: 770628660}
 --- !u!1 &1306656401
 GameObject:
   m_ObjectHideFlags: 0
@@ -1341,7 +1369,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 729964108}
+    m_TransformParent: {fileID: 910570546}
     m_Modifications:
     - target: {fileID: 6629217894921705242, guid: 066cc4f09e22cbf44b79f79b15613311, type: 3}
       propertyPath: m_Pivot.x
@@ -1437,6 +1465,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 6629217894921705242, guid: 066cc4f09e22cbf44b79f79b15613311, type: 3}
   m_PrefabInstance: {fileID: 1402501053}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1402501055 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 78643059445337661, guid: 066cc4f09e22cbf44b79f79b15613311, type: 3}
+  m_PrefabInstance: {fileID: 1402501053}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1457991692
 PrefabInstance:
   m_ObjectHideFlags: 0
