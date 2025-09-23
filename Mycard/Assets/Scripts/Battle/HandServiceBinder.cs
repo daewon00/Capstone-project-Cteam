@@ -70,8 +70,14 @@ public class HandServiceBinder : MonoBehaviour
     /// </summary>
     private void HandleCardsDrawn(DrawResult result)
     {
-        if (result == null || result.DrawnCards == null || _hand == null || _cardPrefab == null || _cardCatalog == null) return;
-
+        if (result == null || result.DrawnCards == null || _hand == null || _cardPrefab == null || _cardCatalog == null)
+        {
+            if (result != null && result.Reason == DrawReason.TurnStart)
+            {
+                BattleController.instance?.NotifyPlayerTurnStartReady();
+            }
+            return;
+        }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[HandServiceBinder] Draw event: count={result.DrawnCards.Count}, reason={result.Reason}, reshuffle={result.DidReshuffle}");
 #endif
@@ -83,7 +89,7 @@ public class HandServiceBinder : MonoBehaviour
         }
 
         // 초기 드로우는 장당 지연과 스폰 지점을 활용해 연출합니다.
-        if (result.Reason == DrawReason.TurnStart|| result.Reason == DrawReason.ManualButton || result.Reason == DrawReason.Relic && (_initialDrawStagger > 0f || _drawSpawnPoint != null))
+        if (result.Reason == DrawReason.TurnStart || result.Reason == DrawReason.ManualButton || result.Reason == DrawReason.Relic && (_initialDrawStagger > 0f || _drawSpawnPoint != null))
         {
             // 디버그: 어떤 스폰 위치를 사용하는지 기록
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -102,6 +108,11 @@ public class HandServiceBinder : MonoBehaviour
         }
         _hand.SetCardPositionsInHand();
         BattleSnapshotScheduler.Instance?.RequestSnapshot("AfterInitialDraw");
+
+        if (result.Reason == DrawReason.TurnStart)
+        {
+            BattleController.instance?.NotifyPlayerTurnStartReady();
+        }
     }
 
     /// <summary>
@@ -119,6 +130,10 @@ public class HandServiceBinder : MonoBehaviour
         }
         _hand.SetCardPositionsInHand();
         BattleSnapshotScheduler.Instance?.RequestSnapshot("AfterInitialDraw");
+        if (result.Reason == DrawReason.TurnStart)
+        {
+            BattleController.instance?.NotifyPlayerTurnStartReady();
+        }
     }
 
     /// <summary>
@@ -163,6 +178,7 @@ public class HandServiceBinder : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[HandServiceBinder] View registered: go={newCard.name}, parent={(newCard.transform.parent!=null?newCard.transform.parent.name:"<none>")}, active={newCard.gameObject.activeSelf}, layer={newCard.gameObject.layer}, handCount={_hand.heldCards?.Count}");
 #endif
+        GameEvents.RaiseCardDrawn(newCard);
     }
 
     /// <summary>

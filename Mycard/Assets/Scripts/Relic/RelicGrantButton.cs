@@ -41,8 +41,8 @@ public class RelicGrantButton : MonoBehaviour
     public void AddRelicTest6()
     {
 
-        RelicSystem.Instance.AddRelicById("ManaDiscount", stacks: 1);
-
+        //RelicSystem.Instance.AddRelicById("ManaDiscount", stacks: 1);
+        RelicSystem.Instance.AddRelicById("mana");
 
     }
     public void AddRelicTest7()

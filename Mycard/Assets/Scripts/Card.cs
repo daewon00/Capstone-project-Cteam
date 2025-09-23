@@ -383,23 +383,28 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     // 플레이어 카드면 유물 체인을 통과한 "표시용 공격력"을 돌려줌
     public int GetEffectiveAttack()
     {
-        if (assignedPlace == null)
+        int value = attackPower;
+         if (BattleController.instance != null)
         {
-            return attackPower;
+            if (isPlayer)
+            {
+                value = GameEvents.ApplyPlayerAttackModifiers(value);
+            }
+            else
+            {
+                value = GameEvents.ApplyEnemyAttackModifiers(value);
+            }
         }
 
-        int value = attackPower;
-        if (isPlayer)
-            value = GameEvents.ApplyPlayerAttackModifiers(value);
-        else
-            value = GameEvents.ApplyEnemyAttackModifiers(value);
-
-        var effectService = ServiceRegistry.Get<ICardEffectService>();
-        if (effectService != null)
+        if (assignedPlace != null)
         {
-            var snapshot = effectService.CaptureCardState(this);
-            if (snapshot != null && snapshot.auraBonus > 0)
-                value = Mathf.Max(0, value - snapshot.auraBonus);
+            var effectService = ServiceRegistry.Get<ICardEffectService>();
+            if (effectService != null)
+            {
+                var snapshot = effectService.CaptureCardState(this);
+                if (snapshot != null && snapshot.auraBonus > 0)
+                    value = Mathf.Max(0, value - snapshot.auraBonus);
+            }
         }
 
         return value;
@@ -426,7 +431,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     private void HandleAttackModifiersChanged()
     {
-        if (assignedPlace != null)
+        if (assignedPlace != null || inHand)
             UpdateCardDisplay();
     }
 

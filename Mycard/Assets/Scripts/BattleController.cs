@@ -26,6 +26,7 @@ public class BattleController : MonoBehaviour
     private bool _battleStarted;
     private bool _isAdvancingTurn = false; // 중복 턴 진행 방지
     private int _turnCounter = 1;
+    private bool _waitingForPlayerTurnStartEffects;
 
     // 이 스크립트가 생성될 때 instance에 자기 자신 할당
     private void Awake()
@@ -69,6 +70,46 @@ public class BattleController : MonoBehaviour
             _isInitialized = true;
         }
     }
+    /// <summary>
+    /// 플레이어 턴 시작 시 드로우를 요청하고, 드로우 완료 후 유물 효과를 발동할 수 있도록 대기 상태로 표시합니다.
+    /// </summary>
+    private void RequestPlayerTurnStartDraw(int drawCount)
+    {
+        if (!_isInitialized || _deckService == null)
+        {
+            Debug.LogWarning("[BattleController] IDeckService가 초기화되지 않아 드로우를 건너뛰고 턴 시작 효과를 즉시 발동합니다.");
+            GameEvents.RaiseTurnStart(true);
+            return;
+        }
+
+        _waitingForPlayerTurnStartEffects = true;
+        try
+        {
+            _deckService.DrawCards(drawCount, DrawReason.TurnStart);
+        }
+        catch
+        {
+            _waitingForPlayerTurnStartEffects = false;
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 핸드 생성이 완료된 뒤(HandServiceBinder 경유) 호출되어 플레이어 턴 시작 효과를 발동합니다.
+    /// </summary>
+    internal void NotifyPlayerTurnStartReady()
+    {
+        if (!_waitingForPlayerTurnStartEffects)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[BattleController] NotifyPlayerTurnStartReady가 예기치 않게 호출되었습니다. 이미 효과가 발동되었을 수 있습니다.");
+#endif
+        }
+
+        _waitingForPlayerTurnStartEffects = false;
+        GameEvents.RaiseTurnStart(true);
+    }
+
 
     [Header("Player Fallback Defaults")]
     [SerializeField] private int _fallbackPlayerHealth = 30;
@@ -295,7 +336,7 @@ public class BattleController : MonoBehaviour
             switch (currentPhase)   //턴 단계에 따라 실행
             {
                 case TurnOrder.playerActive:
-                    GameEvents.RaiseTurnStart(true); // 추가  +++ 플레이어 턴 시작
+                    
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
@@ -307,12 +348,9 @@ public class BattleController : MonoBehaviour
 
                     FillPlayerMana();   //마나를 가득 채움
 
-                    if (_isInitialized && _deckService != null)
-                        _deckService.DrawCards(cardToDrawPerTurn, DrawReason.TurnStart);
-                    else
-                        Debug.LogWarning("[BattleController] IDeckService 미초기화 상태로 드로우를 건너뜁니다.");
-            
-            break;
+                    RequestPlayerTurnStartDraw(cardToDrawPerTurn);
+
+                    break;
 
                 case TurnOrder.playerCardAttacks:   //플레이어 공격
 
@@ -474,7 +512,8 @@ public class BattleController : MonoBehaviour
             _deckService.SetHandLimit(_handLimit);
             // 새 전투 시작 전, 더미 초기화/셔플을 보장
             _deckService.PrepareNewCombat();
-            _deckService.DrawCards(_initialHandCount, DrawReason.TurnStart);
+            //_deckService.DrawCards(_initialHandCount, DrawReason.TurnStart);
+            RequestPlayerTurnStartDraw(_initialHandCount);
         }
         catch (System.Exception e)
         {

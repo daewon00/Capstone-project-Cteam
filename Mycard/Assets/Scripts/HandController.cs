@@ -37,12 +37,12 @@ public class HandController : MonoBehaviour
         cardPositions.Clear();
 
         Vector3 distanceBetweenPoints = Vector3.zero;
-        if(heldCards.Count > 1)
+        if (heldCards.Count > 1)
         {
             distanceBetweenPoints = (maxpos.position - minpos.position) / (heldCards.Count - 1);
         }
 
-        for(int i = 0; i < heldCards.Count; i++)
+        for (int i = 0; i < heldCards.Count; i++)
         {
             cardPositions.Add(minpos.position + (distanceBetweenPoints * i));
 
@@ -65,7 +65,15 @@ public class HandController : MonoBehaviour
             card.inHand = true;
             card.handPosition = i;
 
+            card.UpdateCardDisplay();
         }
+        foreach (var card in heldCards)
+        {
+            if (card == null) continue;
+            if (_layoutLocked.Contains(card))
+                card.UpdateCardDisplay();
+        }
+        
     }
 
     // 드래그 시작 시 해당 카드를 레이아웃에서 제외
