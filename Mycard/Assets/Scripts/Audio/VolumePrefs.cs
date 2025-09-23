@@ -8,7 +8,7 @@ public static class VolumePrefs
     public const string KeyBgm = "BGM_VOLUME";
     public const string KeySfx = "SFX_VOLUME";
     public const string KeyMaster = "MASTER_VOLUME";
-
+    public const string KeyMute = "GLOBAL_MUTE";
     public static float SliderToDb(float slider) => (slider <= -40f) ? -80f : slider;
 
     public static void Save(string key, float db)
@@ -19,6 +19,17 @@ public static class VolumePrefs
 
     public static float Load(string key, float fallbackDb = 0f)
         => PlayerPrefs.GetFloat(key, fallbackDb);
+
+    public static void SaveMute(bool isMuted)
+    {
+        PlayerPrefs.SetInt(KeyMute, isMuted ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    public static bool LoadMute()
+    {
+        return PlayerPrefs.GetInt(KeyMute, 0) == 1; // 기본: 음소거 아님
+    }
 
     static bool SetParam(AudioMixer m, string name, float v)
     {

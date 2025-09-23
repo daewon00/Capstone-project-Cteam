@@ -15,13 +15,13 @@ public class RelicGrantButton : MonoBehaviour
     public void AddRelicTest2()
     {
 
-        RelicSystem.Instance.AddRelicById("ManaGem", stacks: 1);
-
+        //RelicSystem.Instance.AddRelicById("ManaGem", stacks: 1);
+        RelicSystem.Instance.AddRelicById("HPup");
     }
     public void AddRelicTest3()
     {
 
-        RelicSystem.Instance.AddRelicById("HappyFlower", stacks: 1);
+        RelicSystem.Instance.AddRelicById("MANAup", stacks: 1);
 
 
     }
@@ -41,8 +41,8 @@ public class RelicGrantButton : MonoBehaviour
     public void AddRelicTest6()
     {
 
-        //RelicSystem.Instance.AddRelicById("ManaDiscount", stacks: 1);
-        RelicSystem.Instance.AddRelicById("mana");
+        RelicSystem.Instance.AddRelicById("ManaDiscount", stacks: 1);
+        
 
     }
     public void AddRelicTest7()

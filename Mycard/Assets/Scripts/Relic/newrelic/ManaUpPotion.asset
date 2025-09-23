@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 13ed9abd2356d8e45bddbc7f53ec79ab, type: 3}
-  m_Name: testRelicManadiscount
+  m_Name: ManaUpPotion
   m_EditorClassIdentifier: 
-  relicId: mana
-  displayName: mana
-  description: 
-  icon: {fileID: 21300000, guid: 545e156a5c3252b46bd96cf47ab8a02c, type: 3}
+  relicId: MANAup
+  displayName: MANAup
+  description: Only Max Mana up
+  icon: {fileID: 21300000, guid: 86ad81468b9f5c74389f9006c44701e4, type: 3}
   stackable: 0
   maxStacks: 1
   effects:
-  - trigger: 7
-    type: 4
-    value: 1
+  - trigger: 0
+    type: 1
+    value: 15
     scaleByStacks: 0
     payloadId: 

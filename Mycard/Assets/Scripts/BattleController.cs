@@ -54,7 +54,8 @@ public class BattleController : MonoBehaviour
         {
             Debug.LogWarning("[BattleController] ICardEffectService를 찾지 못했습니다. 카드 효과가 적용되지 않습니다.");
         }
-
+        AudioManager.instance.StopMusic();
+        AudioManager.instance.PlayBGM();
     }
 
 
@@ -133,6 +134,7 @@ public class BattleController : MonoBehaviour
     public int currentEnemyMaxMana { get; set; }   // 현재 턴 적 최대 마나
 
     public int playerHealth { get; set; }   //플레이어 체력
+    public int playerMaxHealth { get; private set; }
     public int enemyHealth { get; set; }    //적 체력
 
     private bool _playerStatsInitialized;
@@ -154,6 +156,7 @@ public class BattleController : MonoBehaviour
     public void ApplyRunStats(int currentHp, int maxHp, int energyMax)
     {
         int resolvedMaxHp = Mathf.Max(1, maxHp);
+        playerMaxHealth = resolvedMaxHp;    
         playerHealth = Mathf.Clamp(currentHp, 0, resolvedMaxHp);
 
         int resolvedEnergy = Mathf.Max(1, energyMax);
@@ -179,6 +182,15 @@ public class BattleController : MonoBehaviour
         enemyMana = enemyManaValue;
         currentEnemyMaxMana = enemyMaxManaValue;
         battleEnded = ended;
+
+        if (playerMaxHealth <= 0)
+        {
+            playerMaxHealth = Mathf.Max(playerHealth, 1);
+        }
+        else
+        {
+            playerHealth = Mathf.Clamp(playerHealth, 0, playerMaxHealth);
+        }
 
         UIController.instance?.SetPlayerManaText(playerMana);
         UIController.instance?.SetEnemyManaText(enemyMana);
@@ -247,8 +259,7 @@ public class BattleController : MonoBehaviour
             currentPhase = TurnOrder.playerCardAttacks;
             AdvanceTurn();
         }
-        AudioManager.instance.StopMusic();
-        AudioManager.instance.PlayBGM();
+        
 
     }
 
@@ -258,7 +269,8 @@ public class BattleController : MonoBehaviour
         playermaxMana = maxManaCap;
         currentPlayerMaxMana = Mathf.Clamp(_fallbackPlayerStartingMana, 1, maxManaCap);
         playerMana = currentPlayerMaxMana;
-        playerHealth = Mathf.Max(0, _fallbackPlayerHealth);
+        playerMaxHealth = Mathf.Max(1, _fallbackPlayerHealth);
+        playerHealth = Mathf.Clamp(_fallbackPlayerHealth, 0, playerMaxHealth);
         _playerStatsInitialized = true;
     }
 
@@ -316,7 +328,35 @@ public class BattleController : MonoBehaviour
         enemyMana = currentEnemyMaxMana;
         UIController.instance.SetEnemyManaText(enemyMana);
     }
+        public void ApplyPersistentPlayerManaCapacityDelta(int delta)
+    {
+        playermaxMana = Mathf.Max(0, playermaxMana + delta);
 
+        int clampedTurnMax = Mathf.Clamp(currentPlayerMaxMana, 0, playermaxMana);
+        if (clampedTurnMax != currentPlayerMaxMana)
+        {
+            currentPlayerMaxMana = clampedTurnMax;
+        }
+
+        playerMana = Mathf.Clamp(playerMana, 0, currentPlayerMaxMana);
+        UIController.instance?.SetPlayerManaText(playerMana);
+    }
+
+    public void ApplyPersistentPlayerHealthDelta(int delta)
+    {
+        int baselineMax = playerMaxHealth;
+        if (baselineMax <= 0)
+        {
+            baselineMax = Mathf.Max(playerHealth, 1);
+        }
+
+        int newMax = Mathf.Max(1, baselineMax + delta);
+        playerMaxHealth = newMax;
+
+        int newCurrent = playerHealth + delta;
+        playerHealth = Mathf.Clamp(newCurrent, 0, newMax);
+        UIController.instance?.setPlayerHealthText(playerHealth);
+    }
 
     //턴 진행
     public void AdvanceTurn()
@@ -609,7 +649,8 @@ public class BattleController : MonoBehaviour
 
         if (isPlayerLeader)
         {
-            playerHealth += amount;
+            int targetMax = playerMaxHealth > 0 ? playerMaxHealth : playerHealth + amount;
+            playerHealth = Mathf.Clamp(playerHealth + amount, 0, targetMax);
             UIController.instance.setPlayerHealthText(playerHealth);
         }
         else

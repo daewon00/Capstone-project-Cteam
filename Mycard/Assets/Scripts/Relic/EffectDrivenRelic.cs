@@ -151,13 +151,10 @@ public sealed class EffectDrivenRelic : Relic
         switch (effect.Type)
         {
             case RelicEffectType.AdjustPlayerManaCapacity:
-                controller.playermaxMana = Mathf.Max(0, controller.playermaxMana + delta);
-                controller.playerMana = Mathf.Clamp(controller.playerMana + delta, 0, controller.playermaxMana);
-                UIController.instance?.SetPlayerManaText(controller.playerMana);
+                controller.ApplyPersistentPlayerManaCapacityDelta(delta);
                 break;
             case RelicEffectType.AdjustPlayerHealth:
-                controller.playerHealth = Mathf.Max(0, controller.playerHealth + delta);
-                UIController.instance?.setPlayerHealthText(controller.playerHealth);
+                controller.ApplyPersistentPlayerHealthDelta(delta);
                 break;
             default:
                 Debug.LogWarning($"[EffectDrivenRelic] Persistent effect type {effect.Type} is not supported.");

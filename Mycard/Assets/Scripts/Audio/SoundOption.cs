@@ -97,7 +97,10 @@ public class SoundOption : MonoBehaviour
     }
     public void ToggleAudioVolume()
     {
-        AudioListener.volume = AudioListener.volume == 0 ? 1 : 0;
+        //AudioListener.volume = AudioListener.volume == 0 ? 1 : 0;
+        bool willMute = AudioListener.volume > 0.0001f; // 현재 소리가 있으면 → 음소거로
+        AudioListener.volume = willMute ? 0f : 1f;
+        VolumePrefs.SaveMute(willMute);
     }
 
     public void MasterMixerExit()
