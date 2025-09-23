@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: ForgottenRiteEvent
+  m_EditorClassIdentifier: 
+  eventId: ForgottenRiteEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: rite_main
+    description: "\uC758\uC2DD\uC744 \uCE58\uB974\uB824\uBA74 \uBB34\uC5C7\uC778\uAC00\uB97C
+      \uBC14\uCCD0\uC57C \uD55C\uB2E4."
+    choices:
+    - id: rite_blood_choice
+      label: "\uD53C\uB97C \uBC14\uCE5C\uB2E4"
+      effects:
+      - type: 0
+        amount: -20
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 3
+        amount: 10
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: rite_blood
+    - id: rite_gold_choice
+      label: "\uACE8\uB4DC\uB97C \uBC14\uCE5C\uB2E4"
+      effects:
+      - type: 1
+        amount: -100
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 5
+        amount: 0
+        refId: RELIC_RITUAL_MASK
+        quantity: 1
+        upgrade: 0
+      nextStageId: rite_gold
+    - id: rite_stop_choice
+      label: "\uADF8\uB0E5 \uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: rite_blood
+    description: "\uD53C\uC758 \uB300\uAC00\uB85C \uCD5C\uB300 \uCCB4\uB825\uC774
+      \uD06C\uAC8C \uB298\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: rite_blood_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: rite_gold
+    description: "\uACE8\uB4DC\uC640 \uB9DE\uBC14\uAFBC \uC758\uC2DD \uB3C4\uAD6C\uB97C
+      \uC190\uC5D0 \uB123\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: rite_gold_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

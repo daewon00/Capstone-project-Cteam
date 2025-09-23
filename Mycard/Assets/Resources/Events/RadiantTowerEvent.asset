@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: RadiantTowerEvent
+  m_EditorClassIdentifier: 
+  eventId: RadiantTowerEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: tower_main
+    description: "\uD0D1 \uAF2D\uB300\uAE30\uC5D0 \uBE5B\uB098\uB294 \uC720\uBB3C\uC774
+      \uC788\uB2E4."
+    choices:
+    - id: tower_peak_choice
+      label: "\uC815\uC0C1\uC744 \uC624\uB978\uB2E4"
+      effects:
+      - type: 0
+        amount: -20
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 5
+        amount: 0
+        refId: RELIC_RADIANT_HEART
+        quantity: 1
+        upgrade: 0
+      nextStageId: tower_peak
+    - id: tower_pray_choice
+      label: "\uD0D1 \uC544\uB798\uC5D0\uC11C \uAE30\uB3C4\uD55C\uB2E4"
+      effects:
+      - type: 6
+        amount: 40
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 1
+        amount: -40
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: tower_pray
+    - id: tower_leave_choice
+      label: "\uD0D1\uC744 \uB5A0\uB09C\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: tower_peak
+    description: "\uACE0\uB41C \uC5EC\uC815 \uB05D\uC5D0 \uAD11\uD718\uC758 \uC720\uBB3C\uC744
+      \uC5BB\uAC8C \uB410\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: tower_peak_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: tower_pray
+    description: "\uAE30\uB3C4\uB85C \uCCB4\uB825\uC744 \uD68C\uBCF5\uD588\uC9C0\uB9CC
+      \uD5CC\uAE08\uC774 \uD544\uC694\uD588\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: tower_pray_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

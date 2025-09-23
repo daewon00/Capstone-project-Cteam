@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: TreantGiftEvent
+  m_EditorClassIdentifier: 
+  eventId: TreantGiftEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: treant_main
+    description: "\uB098\uBB34 \uC815\uB839\uC774 \uC791\uC740 \uC528\uC557\uC744
+      \uB0B4\uBBFC\uB2E4."
+    choices:
+    - id: treant_seed_choice
+      label: "\uC528\uC557\uC744 \uC2EC\uB294\uB2E4"
+      effects:
+      - type: 2
+        amount: 0
+        refId: CARD_GROWTH
+        quantity: 1
+        upgrade: 1
+      - type: 6
+        amount: 20
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: treant_seed
+    - id: treant_refuse_choice
+      label: "\uC528\uC557\uC744 \uAC70\uC808\uD55C\uB2E4"
+      effects:
+      - type: 0
+        amount: 5
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: treant_refuse
+    - id: treant_burn_choice
+      label: "\uC528\uC557\uC744 \uBD88\uD0DC\uC6B4\uB2E4"
+      effects:
+      - type: 1
+        amount: 70
+        refId: 
+        quantity: 1
+        upgrade: 0
+      - type: 0
+        amount: -10
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: treant_burn
+  - stageId: treant_seed
+    description: "\uC815\uB839\uC758 \uCD95\uBCF5\uC73C\uB85C \uC131\uC7A5 \uCE74\uB4DC\uAC00
+      \uB371\uC5D0 \uCD94\uAC00\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: treant_seed_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: treant_refuse
+    description: "\uC815\uB839\uC758 \uC2E4\uB9DD\uC5D0\uB3C4 \uBD88\uAD6C\uD558\uACE0
+      \uCCB4\uB825\uC774 \uC57D\uAC04 \uD68C\uBCF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: treant_refuse_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: treant_burn
+    description: "\uC528\uC557\uC744 \uD0DC\uC6CC \uAE08\uC744 \uC5BB\uC5C8\uC9C0\uB9CC
+      \uCCB4\uB825\uC744 \uC870\uAE08 \uC783\uC5C8\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: treant_burn_continue
+      label: "\uB5A0\uB09C\uB2E4."
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

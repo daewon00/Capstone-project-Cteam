@@ -320,6 +320,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: RelicSystem
       objectReference: {fileID: 0}
+    - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
+      propertyPath: relicsUI
+      value: 
+      objectReference: {fileID: 1465026022295914123}
     - target: {fileID: 7327344328049563208, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
       propertyPath: m_LocalPosition.x
       value: 549.9444
@@ -3572,6 +3576,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 35f45198b2f1d8243822b929206ec871, type: 3}
+--- !u!114 &1465026022295914123 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4352469265504193420, guid: 35f45198b2f1d8243822b929206ec871, type: 3}
+  m_PrefabInstance: {fileID: 1465026022295914122}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d90c54a15f0d8bc43b812ae929ac0cf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1475440915794599193
 MonoBehaviour:
   m_ObjectHideFlags: 0
