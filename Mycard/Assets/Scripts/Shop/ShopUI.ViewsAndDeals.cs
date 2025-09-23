@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public partial class ShopUI : MonoBehaviour
 {
@@ -133,12 +135,44 @@ public partial class ShopUI : MonoBehaviour
         int cost = FinalPrice(vm);
         if (Gold < cost) return;
 
-        SpendGold?.Invoke(cost);
+        bool isCardSlot = vm.cardData != null || string.Equals(vm.detail, "Card", StringComparison.OrdinalIgnoreCase);
+        string cardId = null;
+        if (isCardSlot && !TryResolveCardId(in vm, out cardId))
+        {
+            Debug.LogWarning($"[ShopUI] 카드 ID 확인 실패: slot={index}, title={vm.title}", this);
+            return;
+        }
+
+        if (!TrySpendGold(cost))
+        {
+            Debug.LogWarning($"[ShopUI] 골드 차감 실패: cost={cost}", this);
+            RefreshTopbar();
+            return;
+        }
+
+        if (isCardSlot)
+        {
+            if (TryAddCardToDeck == null)
+            {
+                Debug.LogError($"[ShopUI] 덱 서비스가 연결되지 않아 카드 구매를 취소합니다. cardId={cardId ?? "<null>"}", this);
+                RefundGold(cost);
+                RefreshTopbar();
+                return;
+            }
+
+            if (string.IsNullOrEmpty(cardId) || !TryAddCardToDeck(cardId))
+            {
+                Debug.LogError($"[ShopUI] 카드 추가 실패: cardId={cardId ?? "<null>"}, slot={index}", this);
+                RefundGold(cost);
+                RefreshTopbar();
+                return;
+            }
+        }
 
         vm.soldOut = true;
         _dummy[index] = vm;
 
-        OnSessionChanged?.Invoke();// 변화 감지해서 db저장용
+        OnSessionChanged?.Invoke();
         RefreshViews();
         RefreshTopbar();
         

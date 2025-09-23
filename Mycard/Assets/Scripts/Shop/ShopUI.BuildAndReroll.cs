@@ -194,7 +194,13 @@ public partial class ShopUI : MonoBehaviour
         _isRerollCooling = true;
         if (rerollButton) rerollButton.interactable = false;
 
-        SpendGold?.Invoke(cost);
+        if (!TrySpendGold(cost))
+        {
+            _isRerollCooling = false;
+            if (rerollButton) rerollButton.interactable = true;
+            RefreshTopbar();
+            return;
+        }
         _rerollCount++;
 
         RerollCardSlots(); // 카드 3칸 교체

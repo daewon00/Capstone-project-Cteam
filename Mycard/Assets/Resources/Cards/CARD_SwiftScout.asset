@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_SwiftScout
   m_EditorClassIdentifier: 
-  cardName: "날쌘 정찰병"
+  cardName: "\uB0A0\uC318 \uC815\uCC30\uBCD1"
   CardId: CARD_SWIFT_SCOUT
-  actionDescription: "턴 종료 시 오른쪽 칸으로 이동"
+  actionDescription: "\uD134 \uC885\uB8CC \uC2DC \uC624\uB978\uCABD \uCE78\uC73C\uB85C
+    \uC774\uB3D9"
   cardLore: 
   currentHealth: 1
   attackPower: 1
   manaCost: 1
-  characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
+  characterSprite: {fileID: 21300000, guid: 676c030a4bee5194ea2ae557ce40c306, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   effects:
   - type: 8
@@ -30,3 +31,4 @@ MonoBehaviour:
     payloadId: 
     stackable: 0
     maxStacks: 0
+  removeAfterCombat: 0

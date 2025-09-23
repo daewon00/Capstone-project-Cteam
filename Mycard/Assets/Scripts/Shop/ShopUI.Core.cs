@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -260,7 +261,8 @@ public partial class ShopUI : MonoBehaviour
 
     // 외부에서 진짜 지갑의 기능을 연결해줄 통로 (Delegate)
     public System.Func<int> GetGold;
-    public System.Action<int> SpendGold;
+    public System.Func<int, bool> SpendGold;
+    public System.Func<string, bool> TryAddCardToDeck;
     public System.Action OnSessionChanged; // 구매/리롤 시 "상태 바뀌었음!"이라고 알리는 신호
 
     // 기존 Gold 프로퍼티를 아래와 같이 수정
@@ -270,6 +272,66 @@ public partial class ShopUI : MonoBehaviour
     }
 
     #endregion
+
+    private bool TrySpendGold(int amount)
+    {
+        if (amount <= 0) return true;
+
+        if (SpendGold != null)
+        {
+            return SpendGold(amount);
+        }
+
+        if (testGold < amount)
+        {
+            VLog($"[ShopUI] TrySpendGold 실패: 테스트 골드 부족 (have={testGold}, need={amount})");
+            return false;
+        }
+
+        testGold = Mathf.Max(0, testGold - amount);
+        return true;
+    }
+
+    private void RefundGold(int amount)
+    {
+        if (amount <= 0) return;
+
+        if (SpendGold != null)
+        {
+            SpendGold(-amount);
+            return;
+        }
+
+        testGold += amount;
+    }
+
+    private bool TryResolveCardId(in ShopSlotVM vm, out string cardId)
+    {
+        cardId = null;
+
+        if (vm.cardData != null && !string.IsNullOrEmpty(vm.cardData.CardId))
+        {
+            cardId = vm.cardData.CardId;
+            return true;
+        }
+
+        if (!string.IsNullOrEmpty(vm.title))
+        {
+            if (_cardIdMap.TryGetValue(vm.title, out var byId) && byId != null && !string.IsNullOrEmpty(byId.CardId))
+            {
+                cardId = byId.CardId;
+                return true;
+            }
+
+            if (_cardNameMap.TryGetValue(vm.title, out var byName) && byName != null && !string.IsNullOrEmpty(byName.CardId))
+            {
+                cardId = byName.CardId;
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private void Awake()
     {

@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_Broodmother
   m_EditorClassIdentifier: 
-  cardName: "무리 어미"
+  cardName: "\uBB34\uB9AC \uC5B4\uBBF8"
   CardId: CARD_BROODMOTHER
-  actionDescription: "전장에 나올 때 양옆에 1/1 토큰 소환"
+  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC591\uC606\uC5D0 1/1
+    \uD1A0\uD070 \uC18C\uD658"
   cardLore: 
   currentHealth: 2
   attackPower: 2
   manaCost: 4
-  characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
+  characterSprite: {fileID: 21300000, guid: c25d855d2f6d6a04aa98bf5847ca2f88, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   effects:
   - type: 7
@@ -30,3 +31,4 @@ MonoBehaviour:
     payloadId: TOKEN_SWARMLING
     stackable: 0
     maxStacks: 0
+  removeAfterCombat: 0

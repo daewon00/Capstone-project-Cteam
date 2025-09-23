@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Game.Save;
@@ -14,6 +15,7 @@ public class ShopOverlayController : MonoBehaviour
     private readonly Dictionary<(int floor, int index), ShopSessionDTO> _sessionMemory = new();
     private (int floor, int index) _currentKey;
     private CurrentRun _currentRun; // 현재 플레이어의 런 데이터
+    private IDeckService _deckService;
 
     void Awake()
     {
@@ -30,18 +32,38 @@ public class ShopOverlayController : MonoBehaviour
         if (wallet != null)
         {
             shopUI.GetGold = () => wallet.Gold;
-            shopUI.SpendGold = (amount) => wallet.TrySpend(amount);
+            shopUI.SpendGold = amount =>
+            {
+                if (amount == 0) return true;
+                if (amount > 0) return wallet.TrySpend(amount);
+                wallet.Add(-amount);
+                return true;
+            };
         }
         else if (_currentRun != null)
         {
             // 폴백: 기존 방식 유지
             shopUI.GetGold = () => _currentRun.Gold;
-            shopUI.SpendGold = (amount) => {
-                if (_currentRun == null) return;
+            shopUI.SpendGold = amount =>
+            {
+                if (_currentRun == null) return false;
+                if (amount == 0) return true;
+                if (amount < 0)
+                {
+                    _currentRun.Gold += -amount;
+                    DatabaseManager.Instance.UpdateRunGold(_currentRun.RunId, _currentRun.Gold);
+                    return true;
+                }
+                if (_currentRun.Gold < amount) return false;
                 _currentRun.Gold = Mathf.Max(0, _currentRun.Gold - amount);
                 DatabaseManager.Instance.UpdateRunGold(_currentRun.RunId, _currentRun.Gold);
+                return true;
             };
         }
+        // 지갑/런 정보가 전혀 없는 에디터 테스트 환경에서는 ShopUI가 내부 테스트 골드를 사용하도록 둡니다.
+
+        _deckService = SafeGetDeckService();
+        shopUI.TryAddCardToDeck = TryAddCardToDeckProxy;
         // 3. ShopUI의 상태가 바뀌면(OnSessionChanged) 자동으로 저장하도록 연결합니다.
         shopUI.OnSessionChanged += SaveCurrentShopSession;
     }
@@ -170,6 +192,48 @@ public class ShopOverlayController : MonoBehaviour
 
         // 2) 메모리 캐시도 최신화
         _sessionMemory[_currentKey] = dto;
+    }
+
+    private IDeckService SafeGetDeckService()
+    {
+        try
+        {
+            return ServiceRegistry.Get<IDeckService>();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private bool TryAddCardToDeckProxy(string cardId)
+    {
+        if (string.IsNullOrEmpty(cardId))
+        {
+            Debug.LogError("[Shop] TryAddCardToDeckProxy: cardId가 비어 있습니다.", this);
+            return false;
+        }
+
+        if (_deckService == null)
+        {
+            _deckService = SafeGetDeckService();
+            if (_deckService == null)
+            {
+                Debug.LogError($"[Shop] 덱 서비스가 등록되어 있지 않습니다. cardId={cardId}", this);
+                return false;
+            }
+        }
+
+        try
+        {
+            _deckService.AddCardToDeckById(cardId);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Shop] 덱 추가 실패: cardId={cardId}, error={e.Message}", this);
+            return false;
+        }
     }
 
     /// <summary>
