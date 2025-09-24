@@ -14,7 +14,7 @@ public class SoundOption : MonoBehaviour
     public Slider MasterSlider;
 
     public GameObject MasterMixeroption;
-
+    public GameObject MuteOn, MuteOff;
     // Start is called before the first frame update
     /*
     public void AudioControl()
@@ -84,6 +84,9 @@ public class SoundOption : MonoBehaviour
     }
     private void OnEnable()
     {
+        SyncMuteUIAndAudio(VolumePrefs.LoadMute());
+
+
         float bgm = VolumePrefs.Load(VolumePrefs.KeyBgm, 0f);
         float sfx = VolumePrefs.Load(VolumePrefs.KeySfx, 0f);
         float master = VolumePrefs.Load(VolumePrefs.KeyMaster, 0f);
@@ -95,12 +98,40 @@ public class SoundOption : MonoBehaviour
 
         //LoadVolumeSettings();
     }
+
+    public void OnClickMuteOn()
+    {
+        // 음소거 "켜기"
+        SetMuted(true);
+    }
+
+    public void OnClickMuteOff()
+    {
+        // 음소거 "끄기"
+        SetMuted(false);
+    }
+
+    private void SetMuted(bool muted)
+    {
+        AudioListener.volume = muted ? 0f : 1f;   // 전체 오디오 즉시 반영
+        VolumePrefs.SaveMute(muted);              // 상태 저장
+        SyncMuteUIAndAudio(muted);                // 버튼 표시 갱신
+    }
+
+    private void SyncMuteUIAndAudio(bool muted)
+    {
+        if (MuteOn) MuteOn.SetActive(!muted); // 음소거 아니면 MuteOn 보이기
+        if (MuteOff) MuteOff.SetActive(muted); // 음소거이면 MuteOff 보이기
+        AudioListener.volume = muted ? 0f : 1f;            // 안전하게 한 번 더 맞춰줌
+    }
+
     public void ToggleAudioVolume()
     {
         //AudioListener.volume = AudioListener.volume == 0 ? 1 : 0;
         bool willMute = AudioListener.volume > 0.0001f; // 현재 소리가 있으면 → 음소거로
         AudioListener.volume = willMute ? 0f : 1f;
         VolumePrefs.SaveMute(willMute);
+        
     }
 
     public void MasterMixerExit()
