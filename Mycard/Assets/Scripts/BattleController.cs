@@ -156,13 +156,13 @@ public class BattleController : MonoBehaviour
     public void ApplyRunStats(int currentHp, int maxHp, int energyMax)
     {
         int resolvedMaxHp = Mathf.Max(1, maxHp);
-        playerMaxHealth = resolvedMaxHp;    
+        playerMaxHealth = resolvedMaxHp;
         playerHealth = Mathf.Clamp(currentHp, 0, resolvedMaxHp);
 
         int resolvedEnergy = Mathf.Max(1, energyMax);
         playermaxMana = resolvedEnergy;
         currentPlayerMaxMana = resolvedEnergy;
-        
+
         FillPlayerMana();
         UIController.instance?.setPlayerHealthText(playerHealth);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -212,7 +212,7 @@ public class BattleController : MonoBehaviour
 
     public float resultScreenDelayTime = 1f;    // 전투 종료 후 결과창 딜레이 시간
 
-    [Range(0f,1f)]
+    [Range(0f, 1f)]
     public float playerFirstChance = .5f;   // 플레이어가 선공할 확률 (0.5 = 50%)
 
     // 첫 프레임 시작 전에 호출
@@ -244,7 +244,7 @@ public class BattleController : MonoBehaviour
         }
 
         // 초기 드로우는 BattleSceneBootstrap -> StartBattle() 경로에서 처리됩니다.
-        
+
         if (enemyHealth <= 0)
             enemyHealth = Mathf.Max(0, _fallbackEnemyHealth);
 
@@ -254,12 +254,12 @@ public class BattleController : MonoBehaviour
         currentEnemyMaxMana = startingEnemeyMana; //적 마나 시작 마나값으로 초기화
         FillEnemyMana();    //적 마나를 채운다
 
-        if(Random.value > playerFirstChance) //랜덤턴 지우면 플레이어 선공임
+        if (Random.value > playerFirstChance) //랜덤턴 지우면 플레이어 선공임
         {
             currentPhase = TurnOrder.playerCardAttacks;
             AdvanceTurn();
         }
-        
+
 
     }
 
@@ -278,7 +278,7 @@ public class BattleController : MonoBehaviour
     void Update()
     {
         //테스트용 코드 T를 누르면 강제로 턴 진행 *나중에 꼭 삭제*
-        if(Input.GetKeyDown(KeyCode.T))
+        if (Input.GetKeyDown(KeyCode.T))
         {
             AdvanceTurn();
         }
@@ -289,7 +289,7 @@ public class BattleController : MonoBehaviour
         playerMana = playerMana - amountToSpend;
 
         // 음수가 되면 0으로 애초에 음수가 안되야 될텐데 *수정*
-        if(playerMana < 0) 
+        if (playerMana < 0)
         {
             playerMana = 0;
         }
@@ -324,11 +324,11 @@ public class BattleController : MonoBehaviour
     //적의 마나를 최대치까지 채움
     public void FillEnemyMana()
     {
-        
+
         enemyMana = currentEnemyMaxMana;
         UIController.instance.SetEnemyManaText(enemyMana);
     }
-        public void ApplyPersistentPlayerManaCapacityDelta(int delta)
+    public void ApplyPersistentPlayerManaCapacityDelta(int delta)
     {
         playermaxMana = Mathf.Max(0, playermaxMana + delta);
 
@@ -344,6 +344,9 @@ public class BattleController : MonoBehaviour
 
     public void ApplyPersistentPlayerHealthDelta(int delta)
     {
+        if (delta == 0)
+            return;
+
         int baselineMax = playerMaxHealth;
         if (baselineMax <= 0)
         {
@@ -356,6 +359,8 @@ public class BattleController : MonoBehaviour
         int newCurrent = playerHealth + delta;
         playerHealth = Mathf.Clamp(newCurrent, 0, newMax);
         UIController.instance?.setPlayerHealthText(playerHealth);
+
+        PersistRelicHealthDelta(delta);
     }
 
     //턴 진행
@@ -372,11 +377,11 @@ public class BattleController : MonoBehaviour
                 currentPhase = 0;   // 턴 단계 다 끝나면 턴 단계 초기화
             }
 
-            
+
             switch (currentPhase)   //턴 단계에 따라 실행
             {
                 case TurnOrder.playerActive:
-                    
+
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
@@ -455,7 +460,7 @@ public class BattleController : MonoBehaviour
             return false;
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleController] AttemptPlayCard: instance={(card!=null?card.InstanceId:"<null>")}, mana={playerMana}/{playermaxMana}, phase={currentPhase}");
+        Debug.Log($"[BattleController] AttemptPlayCard: instance={(card != null ? card.InstanceId : "<null>")}, mana={playerMana}/{playermaxMana}, phase={currentPhase}");
 #endif
         if (currentPhase != TurnOrder.playerActive)
         {
@@ -481,7 +486,7 @@ public class BattleController : MonoBehaviour
         var result = _deckService.PlayCard(card.InstanceId);
         if (result == null || result.Code != PlayResult.ResultCode.Success)
         {
-            Debug.LogWarning($"[BattleController] PlayCard 실패: {(result==null?"null":result.Code.ToString())}");
+            Debug.LogWarning($"[BattleController] PlayCard 실패: {(result == null ? "null" : result.Code.ToString())}");
             return false;
         }
         _effectService?.RegisterBoardCard(card, true);
@@ -672,14 +677,14 @@ public class BattleController : MonoBehaviour
         try { _deckService?.CleanupAfterCombat(); } catch { }
         HandController.instance.EmptyHand();    //핸드 제거
 
-        if(enemyHealth <= 0)    // 적 체력 0 이하 승리시
+        if (enemyHealth <= 0)    // 적 체력 0 이하 승리시
         {
-            
+
             UIController.instance.battleResultText1.text = "You Won!";
 
-            foreach(CardPlacePoint point in CardPointsController.instance.enemyCardPoints)
+            foreach (CardPlacePoint point in CardPointsController.instance.enemyCardPoints)
             {
-                if(point.activeCard != null)
+                if (point.activeCard != null)
                 {
                     point.activeCard.MoveToPoint(discardPoint.position, point.activeCard.transform.rotation);
                 }
@@ -694,7 +699,7 @@ public class BattleController : MonoBehaviour
         }
         else // 패배시 *필드에 남아있는 카드 제거 하는거 꼭 해야되는거면 패배 승리 상관 없이 전부 해야되는거 아닌가?*
         {
-            
+
             UIController.instance.battleResultText2.text = "You Lose!";
 
             foreach (CardPlacePoint point in CardPointsController.instance.playerCardPoints)
@@ -706,7 +711,7 @@ public class BattleController : MonoBehaviour
             }
 
         }
-        
+
         UIController.instance.EnemyUI.SetActive(false);
 
         PersistPlayerHealth();
@@ -787,6 +792,29 @@ public class BattleController : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.LogWarning($"[BattleController] PersistPlayerHealth failed: {e.Message}");
+        }
+    }
+    
+    private void PersistRelicHealthDelta(int delta)
+    {
+        string runId = (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
+            ? GameContext.I.RunId
+            : PlayerPrefs.GetString("lastRunId", string.Empty);
+
+        if (string.IsNullOrEmpty(runId))
+            return;
+
+        var db = ServiceRegistry.Get<IDatabase>();
+        if (db == null)
+            return;
+
+        try
+        {
+            db.ApplyRunRelicHpDelta(runId, delta, adjustCurrentHp: true);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[BattleController] PersistRelicHealthDelta failed: {e.Message}");
         }
     }
 }

@@ -36,7 +36,8 @@ public class RelicSystem : MonoBehaviour
 
     // 
     private readonly List<Relic> relics = new();
-
+    private bool _isHydrating;
+    internal bool IsHydrating => _isHydrating;
     // 
     public event Action RelicsChanged;
     private void FireRelicsChanged()
@@ -356,12 +357,22 @@ public class RelicSystem : MonoBehaviour
         var rows = loaded?.Relics;
         if (rows == null) return false;
 
-        if (clearBeforeLoad) ClearRelics(save: false);
+        bool previousHydrating = _isHydrating;
+        _isHydrating = true;
+        try
+        {
+            if (clearBeforeLoad)
+                ClearRelics(save: false);
 
-        foreach (var row in rows)
+            foreach (var row in rows)
+            {
+                AddRelicById(row.RelicId, Mathf.Max(1, row.Stacks), save: false);
+            }
+        }
+        finally
         {
             
-            AddRelicById(row.RelicId, Mathf.Max(1, row.Stacks), save: false);
+            _isHydrating = previousHydrating;
         }
 
         relicsUI?.Refresh(relics);

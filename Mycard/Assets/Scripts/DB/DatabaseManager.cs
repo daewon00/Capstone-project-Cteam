@@ -524,6 +524,32 @@ public sealed class DatabaseManager
         _conn.Update(run);
     }
 
+    public void ApplyRunRelicHpDelta(string runId, int delta, bool adjustCurrentHp)
+    {
+        if (string.IsNullOrEmpty(runId) || delta == 0)
+            return;
+
+        var run = _conn.Find<CurrentRun>(runId);
+        if (run == null)
+            return;
+
+        int newRelicMax = Mathf.Max(0, run.MaxHpFromRelics + delta);
+        run.MaxHpFromRelics = newRelicMax;
+
+        int maxHp = Mathf.Max(1, run.MaxHpBase + run.MaxHpFromPerks + newRelicMax);
+        if (adjustCurrentHp)
+        {
+            run.CurrentHp = Mathf.Clamp(run.CurrentHp + delta, 0, maxHp);
+        }
+        else
+        {
+            run.CurrentHp = Mathf.Clamp(run.CurrentHp, 0, maxHp);
+        }
+
+        run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
+        _conn.Update(run);
+    }
+    
     // 2. 이벤트 세션 JSON 로드 함수 (신규 추가)
     public string LoadActiveEventSessionJson(string runId)
     {

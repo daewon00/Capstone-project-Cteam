@@ -17,6 +17,7 @@ public interface IDatabase
     void UpdateRunGold(string runId, int newGold);
     void UpdateRunHp(string runId, int newHp);
     void UpdateRunMaxHp(string runId, int newMaxHpBase, int newCurrentHp);
+    void ApplyRunRelicHpDelta(string runId, int delta, bool adjustCurrentHp);
     void UpsertCurrentRun(CurrentRun run);
     void CreateNewRunSnapshot(CurrentRun run, IEnumerable<CardInDeck> cards, IEnumerable<RelicInPossession> relics, IEnumerable<PotionInPossession> potions);
     void UpdateRunPosition(string runId, int act, int floor, int nodeIndex);

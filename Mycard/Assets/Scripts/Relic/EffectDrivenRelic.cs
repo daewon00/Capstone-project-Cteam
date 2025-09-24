@@ -99,7 +99,7 @@ public sealed class EffectDrivenRelic : Relic
     {
         return ExecuteModifier(currentMana, RelicEffectTrigger.ModifyPlayerMana);
     }
-     public override int ModifyCardManaCost(Card card, int currentCost)
+    public override int ModifyCardManaCost(Card card, int currentCost)
     {
         return ExecuteCardModifier(card, currentCost, RelicEffectTrigger.ModifyCardManaCost);
     }
@@ -143,27 +143,56 @@ public sealed class EffectDrivenRelic : Relic
         if (effect == null)
             return;
 
-        // 전투 컨트롤러가 없으면 능력치 조정을 건너뜁니다.
-        if (!TryGetBattleController(out var controller))
-            return;
+        bool isHydrating = RelicSystem.Instance != null && RelicSystem.Instance.IsHydrating;
 
         _appliedTotals.TryGetValue(effect, out var applied);
+
+        if (isHydrating)
+        {
+            if (desiredTotal == 0)
+                _appliedTotals.Remove(effect);
+            else
+                _appliedTotals[effect] = desiredTotal;
+            return;
+        }
+
         int delta = desiredTotal - applied;
         if (delta == 0)
+        {
+            if (desiredTotal == 0)
+                _appliedTotals.Remove(effect);
             return;
+        }
+
+        bool success = false;
 
         switch (effect.Type)
         {
             case RelicEffectType.AdjustPlayerManaCapacity:
-                controller.ApplyPersistentPlayerManaCapacityDelta(delta);
+                if (TryGetBattleController(out var manaController))
+                {
+                    manaController.ApplyPersistentPlayerManaCapacityDelta(delta);
+                    success = true;
+                }
                 break;
             case RelicEffectType.AdjustPlayerHealth:
-                controller.ApplyPersistentPlayerHealthDelta(delta);
+                if (TryGetBattleController(out var healthController))
+                {
+                    healthController.ApplyPersistentPlayerHealthDelta(delta);
+                    success = true;
+                }
+                else
+                {
+                    success = ApplyPersistentPlayerHealthToRun(delta);
+                }
                 break;
             default:
                 Debug.LogWarning($"[EffectDrivenRelic] Persistent effect type {effect.Type} is not supported.");
                 break;
         }
+
+        if (!success)
+            return;
 
         if (desiredTotal == 0)
             _appliedTotals.Remove(effect);
@@ -252,7 +281,7 @@ public sealed class EffectDrivenRelic : Relic
                 return current;
         }
     }
-    
+
     private void ApplyTriggeredEffect(RelicEffectDefinition effect, int damage)
     {
         switch (effect.Type)
@@ -319,6 +348,40 @@ public sealed class EffectDrivenRelic : Relic
     {
         controller = BattleController.instance;
         return controller != null;
+    }
+    
+    private bool ApplyPersistentPlayerHealthToRun(int delta)
+    {
+        if (delta == 0)
+            return true;
+
+        var db = ServiceRegistry.Get<IDatabase>();
+        if (db == null)
+            return false;
+
+        string runId = ResolveActiveRunId();
+        if (string.IsNullOrEmpty(runId))
+            return false;
+
+        try
+        {
+            db.ApplyRunRelicHpDelta(runId, delta, adjustCurrentHp: true);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[EffectDrivenRelic] ApplyRunRelicHpDelta failed: {e.Message}");
+            return false;
+        }
+
+        RunCacheSynchronizer.Sync();
+        return true;
+    }
+
+    private static string ResolveActiveRunId()
+    {
+        if (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
+            return GameContext.I.RunId;
+        return PlayerPrefs.GetString("lastRunId", string.Empty);
     }
 }
 
