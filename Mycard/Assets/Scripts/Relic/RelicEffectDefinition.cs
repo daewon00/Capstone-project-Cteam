@@ -56,7 +56,8 @@ public enum RelicEffectTrigger
     OnDamageDealt, //플레이어데미지를 받을때
     ModifyPlayerAttack, //카드의 공격력을 높일때 사용 ModifyPlayerAttackFlat과 같이 사용
     ModifyPlayerMana, //플레이어 마나가 채워질때 발동
-    ModifyCardManaCost //카드의 마나를 줄일때 사용 -10으로 사용해주세요 +10하면 마나 값이 더해진다
+    ModifyCardManaCost, //카드의 마나를 줄일때 사용 -10으로 사용해주세요 +10하면 마나 값이 더해진다
+    ModifyCardHealth //카드 체력을 수정할 때 사용. ModifyCardHealthFlat과 함께 사용
 }
 
 /// <summary>데이터 기반 유물 효과가 지원하는 동작.</summary>
@@ -69,6 +70,7 @@ public enum RelicEffectType
     ModifyPlayerAttackFlat, //트리거될 때마다 계산된 공격력 수치를 누적하여 적용합니다. ModifyPlayerAttack과 함께 사용합니다
     ModifyPlayerManaFlat, // FillPlayerMana에서 사용하는 마나 값에 지정된 수치만큼 더해집니다.
     ModifyCardManaCostFlat,//카드 코스트 줄이기 ModifyCardManaCost과 함께 사용
+    ModifyCardHealthFlat,//카드 체력을 평평하게 더하거나 뺍니다. ModifyCardHealth와 함께 사용
     GainPlayerMana, // 즉시 마나를 회복시키는 트리거
     DrawCards, // 지정된 수의 카드를 플레이어에게 드로우하도록 요청하는 트리거 효과
     GainGold // 골드를 획득하는 트리거 효과

@@ -103,7 +103,10 @@ public sealed class EffectDrivenRelic : Relic
     {
         return ExecuteCardModifier(card, currentCost, RelicEffectTrigger.ModifyCardManaCost);
     }
-
+    public override int ModifyCardHealth(Card card, int currentHealth)
+    {
+        return ExecuteCardModifier(card, currentHealth, RelicEffectTrigger.ModifyCardHealth);
+    }
     private static bool IsPersistent(RelicEffectType type)
     {
         return type == RelicEffectType.AdjustPlayerManaCapacity || type == RelicEffectType.AdjustPlayerHealth;
@@ -275,6 +278,8 @@ public sealed class EffectDrivenRelic : Relic
         switch (effect.Type)
         {
             case RelicEffectType.ModifyCardManaCostFlat:
+                return Mathf.Max(0, current + amount);
+            case RelicEffectType.ModifyCardHealthFlat:
                 return Mathf.Max(0, current + amount);
             default:
                 Debug.LogWarning($"[EffectDrivenRelic] Unsupported card modifier type {effect.Type} on trigger {effect.Trigger}.");

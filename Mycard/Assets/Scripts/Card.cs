@@ -16,6 +16,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public bool isPlayer;   //플레이어 카드인지 참 거짓
 
     public int currentHealth;   //카드 체력
+    private int _baseHealth; //체력유물 적용효과들
+    private int _lastModifierMaxHealth;
+    private bool _healthInitialized;
+    public int BaseHealth => _baseHealth;
+    public int MaxHealth => _lastModifierMaxHealth;
     public int attackPower, manaCost;   //카드 공격력, 마나 코스트
 
     //카드 UI 연결
@@ -100,13 +105,20 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     public void SetupCard() //카드 설계도 값을 불러와 변수와 UI 적용
     {
-        currentHealth = cardSO.currentHealth;
+        if (cardSO == null)
+        {
+            Debug.LogWarning("[Card] SetupCard called without cardSO", this);
+            return;
+        }
+
         attackPower = cardSO.attackPower;
         /*if (isPlayer && PlayerBuffs.instance != null)
         {
             attackPower += PlayerBuffs.instance.attackBonus;
         }*/
         manaCost = cardSO.manaCost;
+
+        InitializeHealthFromDefinition();
 
         UpdateCardDisplay();
 
@@ -124,6 +136,38 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         UpdateSkillIcon();
         //ApplyAttackBuffOutline(isPlayer && PlayerBuffs.instance != null && PlayerBuffs.instance.attackBonus > 0);
+    }
+    private void InitializeHealthFromDefinition()
+    {
+        _baseHealth = Mathf.Max(0, cardSO != null ? cardSO.currentHealth : currentHealth);
+        _lastModifierMaxHealth = _baseHealth;
+        currentHealth = _baseHealth;
+        _healthInitialized = true;
+        RecalculateHealthFromModifiers(resetCurrent: true, updateDisplay: false);
+    }
+
+    private void RecalculateHealthFromModifiers(bool resetCurrent, bool updateDisplay = true)
+    {
+        if (!_healthInitialized)
+            return;
+
+        int baseValue = Mathf.Max(0, _baseHealth);
+        int newMax = Mathf.Max(0, GameEvents.ApplyCardHealthModifiers(this, baseValue));
+
+        if (resetCurrent)
+        {
+            currentHealth = newMax;
+        }
+        else
+        {
+            int diff = newMax - _lastModifierMaxHealth;
+            currentHealth = Mathf.Clamp(currentHealth + diff, 0, newMax);
+        }
+
+        _lastModifierMaxHealth = newMax;
+
+        if (updateDisplay)
+            UpdateCardDisplay();
     }
 
     void Update()
@@ -427,6 +471,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             RelicSystem.Instance.RelicsChanged += UpdateCardDisplay;
         GameEvents.OnPlayerAttackModifiersChanged += HandleAttackModifiersChanged;
         GameEvents.OnEnemyAttackModifiersChanged += HandleAttackModifiersChanged;
+        GameEvents.OnCardHealthModifiersChanged += HandleHealthModifiersChanged;
     }
 
     private void OnDisable()
@@ -435,6 +480,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             RelicSystem.Instance.RelicsChanged -= UpdateCardDisplay;
         GameEvents.OnPlayerAttackModifiersChanged -= HandleAttackModifiersChanged;
         GameEvents.OnEnemyAttackModifiersChanged -= HandleAttackModifiersChanged;
+        GameEvents.OnCardHealthModifiersChanged -= HandleHealthModifiersChanged;
 
         // 비활성화 시 하이라이트 잔상 제거
         ClearHoverHighlight();
@@ -445,7 +491,14 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (assignedPlace != null || inHand)
             UpdateCardDisplay();
     }
+    private void HandleHealthModifiersChanged()
+    {
+        if (!_healthInitialized)
+            return;
 
+        bool shouldUpdateDisplay = assignedPlace != null || inHand;
+        RecalculateHealthFromModifiers(resetCurrent: false, updateDisplay: shouldUpdateDisplay);
+    }
     // =============================
     // 이벤트 기반 입력 핸들러 구현
     // =============================

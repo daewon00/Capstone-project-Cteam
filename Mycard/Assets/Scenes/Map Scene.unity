@@ -386,7 +386,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: COMP_COMP_Knight
+  m_text: cardhpup
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1031,22 +1031,6 @@ PrefabInstance:
       propertyPath: relicsUI
       value: 
       objectReference: {fileID: 1710801490}
-    - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
-      propertyPath: relicDatabase.Array.size
-      value: 14
-      objectReference: {fileID: 0}
-    - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
-      propertyPath: relicDatabase.Array.data[11]
-      value: 
-      objectReference: {fileID: 11400000, guid: cb3b6e54c400ef04ebff7faa23c2c55f, type: 2}
-    - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
-      propertyPath: relicDatabase.Array.data[12]
-      value: 
-      objectReference: {fileID: 11400000, guid: c5f421a13d2b9924281ee52bcf428f1e, type: 2}
-    - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
-      propertyPath: relicDatabase.Array.data[13]
-      value: 
-      objectReference: {fileID: 11400000, guid: 5606709d4a532ed4c942cc033c0820a5, type: 2}
     - target: {fileID: 7327344328049563208, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
       propertyPath: m_LocalPosition.x
       value: 549.9444
@@ -1726,12 +1710,12 @@ GameObject:
   - component: {fileID: 479697799}
   - component: {fileID: 479697798}
   m_Layer: 5
-  m_Name: Knight
+  m_Name: cardhpup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &479697797
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1798,7 +1782,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2018149663}
         m_TargetAssemblyTypeName: RelicGrantButton, Game.Runtime
-        m_MethodName: AddRelicTest9
+        m_MethodName: AddRelicTest5
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

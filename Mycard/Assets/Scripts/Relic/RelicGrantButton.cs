@@ -21,7 +21,7 @@ public class RelicGrantButton : MonoBehaviour
     public void AddRelicTest3()
     {
 
-        RelicSystem.Instance.AddRelicById("MANAup", stacks: 1);
+        RelicSystem.Instance.AddRelicById("MANAup");
 
 
     }
@@ -35,7 +35,7 @@ public class RelicGrantButton : MonoBehaviour
     public void AddRelicTest5()
     {
 
-        RelicSystem.Instance.AddRelicById("SheildBanner", stacks: 1);
+        RelicSystem.Instance.AddRelicById("cardhp");
 
     }
     public void AddRelicTest6()

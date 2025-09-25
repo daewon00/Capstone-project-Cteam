@@ -18,6 +18,7 @@ public static class GameEvents
     public static event Action OnPlayerAttackModifiersChanged;
     public static event Action OnEnemyAttackModifiersChanged;
     public static event Action OnCardManaCostModifiersChanged;
+    public static event Action OnCardHealthModifiersChanged;
 
     // Raise helpers
     public static void RaiseBattleStart() => OnBattleStart?.Invoke();
@@ -30,12 +31,13 @@ public static class GameEvents
     public static void RaisePlayerAttackModifiersChanged() => OnPlayerAttackModifiersChanged?.Invoke();
     public static void RaiseEnemyAttackModifiersChanged() => OnEnemyAttackModifiersChanged?.Invoke();
     public static void RaiseCardManaCostModifiersChanged() => OnCardManaCostModifiersChanged?.Invoke();
-
+    public static void RaiseCardHealthModifiersChanged() => OnCardHealthModifiersChanged?.Invoke();
     // Modifiers
     public static event Func<int, int> ModifyPlayerAttack;
     public static event Func<int, int> ModifyEnemyAttack;
     public static event Func<int, int> ModifyPlayerMana;
     public static event Func<Card, int, int> ModifyCardManaCost;
+    public static event Func<Card, int, int> ModifyCardHealth;
 
     public static int ApplyPlayerAttackModifiers(int baseValue)
         => ApplyModifierChain(ModifyPlayerAttack, baseValue);
@@ -48,6 +50,9 @@ public static class GameEvents
 
     public static int ApplyCardManaCostModifiers(Card card, int baseValue)
         => ApplyModifierChain(ModifyCardManaCost, card, baseValue);
+        
+    public static int ApplyCardHealthModifiers(Card card, int baseValue)
+        => ApplyModifierChain(ModifyCardHealth, card, baseValue);    
 
 
     private static int ApplyModifierChain(Func<int, int> chain, int baseValue)
