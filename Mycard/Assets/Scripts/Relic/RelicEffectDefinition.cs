@@ -15,6 +15,10 @@ public sealed class RelicEffectDefinition
     [SerializeField] private int value = 0;
     [SerializeField] private bool scaleByStacks = true;
     [SerializeField] private string payloadId = string.Empty;
+    [SerializeField] private RelicTriggerCondition triggerCondition = new RelicTriggerCondition();
+    [SerializeField] private RelicDurationSettings duration = new RelicDurationSettings();
+    [SerializeField] private RelicCooldownSettings cooldown = new RelicCooldownSettings();
+    [SerializeField] private RelicTargetingSettings targeting = new RelicTargetingSettings();
 
     /// <summary>언제 효과가 실행되어야 하는지.</summary>
     public RelicEffectTrigger Trigger => trigger;
@@ -30,6 +34,17 @@ public sealed class RelicEffectDefinition
 
     /// <summary>선택적 보조 식별자 (card id, payload key, etc).</summary>
     public string PayloadId => payloadId;
+    /// <summary>추가 발동 조건(쿨다운, HP 조건 등)을 담습니다.</summary>
+    public RelicTriggerCondition TriggerCondition => triggerCondition;
+
+    /// <summary>효과 유지 시간(턴 수) 설정입니다.</summary>
+    public RelicDurationSettings Duration => duration;
+
+    /// <summary>효과 재사용 대기시간 설정입니다.</summary>
+    public RelicCooldownSettings Cooldown => cooldown;
+
+    /// <summary>카드 대상 선택 규칙입니다.</summary>
+    public RelicTargetingSettings Targeting => targeting;
 
     /// <summary>지정된 스택 수에 대한 실효 값을 가져옵니다.</summary>
     public int ResolveValue(int stacks)
@@ -73,6 +88,112 @@ public enum RelicEffectType
     ModifyCardHealthFlat,//카드 체력을 평평하게 더하거나 뺍니다. ModifyCardHealth와 함께 사용
     GainPlayerMana, // 즉시 마나를 회복시키는 트리거
     DrawCards, // 지정된 수의 카드를 플레이어에게 드로우하도록 요청하는 트리거 효과
-    GainGold // 골드를 획득하는 트리거 효과
+    GainGold, // 골드를 획득하는 트리거 효과
+    AdjustTargetCardManaCostFlat, // Targeting 설정으로 선택된 카드의 코스트를 직접 증감합니다.
+    AdjustTargetCardHealthFlat // Targeting 설정으로 선택된 카드의 체력을 직접 증감합니다.
 }
 
+/// <summary>
+/// 발동 조건을 데이터로 지정하는 구조체입니다.
+/// conditionType을 통해 발동 타이밍을 제어하고, 필요한 경우 hpThreshold/turnInterval/startTurnOffset 값을 입력합니다.
+/// countEnemyTurns가 true이면 적 턴까지 포함해 턴 간격을 계산합니다.
+/// </summary>
+[Serializable]
+public sealed class RelicTriggerCondition
+{
+    [SerializeField] private RelicTriggerConditionType conditionType = RelicTriggerConditionType.Always;
+    [SerializeField] private int hpThreshold = 0;
+    [SerializeField] private int turnInterval = 1;
+    [SerializeField] private int startTurnOffset = 0;
+    [SerializeField] private bool countEnemyTurns = false;
+
+    public RelicTriggerConditionType ConditionType => conditionType;
+    public int HpThreshold => hpThreshold;
+    public int TurnInterval => turnInterval;
+    public int StartTurnOffset => startTurnOffset;
+    public bool CountEnemyTurns => countEnemyTurns;
+}
+
+/// <summary>
+/// 유물 발동 조건 종류입니다.
+/// - Always: 언제나 발동.
+/// - PlayerTurnOnly / EnemyTurnOnly: 해당 진영의 턴에서만 발동.
+/// - PlayerHpBelowOrEqual: 플레이어 HP가 특정 값 이하일 때만 발동.
+/// - EveryNthTurn: 매 N번째 턴마다 발동(Interval/Offset 조정 가능).
+/// </summary>
+public enum RelicTriggerConditionType
+{
+    Always = 0,
+    PlayerTurnOnly,
+    EnemyTurnOnly,
+    PlayerHpBelowOrEqual,
+    EveryNthTurn
+}
+
+/// <summary>
+/// 지속 시간(턴 단위)을 정의하는 설정입니다.
+/// useDuration이 true이면 turnCount 동안 효과를 유지하며, countEnemyTurns로 감소 기준을 결정합니다.
+/// </summary>
+[Serializable]
+public sealed class RelicDurationSettings
+{
+    [SerializeField] private bool useDuration = false;
+    [SerializeField] private int turnCount = 1;
+    [SerializeField] private bool countEnemyTurns = false;
+
+    public bool UseDuration => useDuration;
+    public int TurnCount => Mathf.Max(1, turnCount);
+    public bool CountEnemyTurns => countEnemyTurns;
+}
+
+/// <summary>
+/// 쿨다운(턴 단위)을 정의하는 설정입니다.
+/// useCooldown이 true이면 turnCount 만큼 대기 후 다시 발동할 수 있습니다.
+/// countEnemyTurns가 true이면 적 턴도 쿨다운 감소에 포함됩니다.
+/// </summary>
+[Serializable]
+public sealed class RelicCooldownSettings
+{
+    [SerializeField] private bool useCooldown = false;
+    [SerializeField] private int turnCount = 1;
+    [SerializeField] private bool countEnemyTurns = false;
+
+    public bool UseCooldown => useCooldown;
+    public int TurnCount => Mathf.Max(1, turnCount);
+    public bool CountEnemyTurns => countEnemyTurns;
+}
+
+/// <summary>
+/// 카드 타겟팅 규칙입니다.
+/// mode로 무작위/전체 등을 고르고, ownerFilter로 플레이어/적 핸드를 지정할 수 있습니다.
+/// randomCount는 무작위 선택 시 뽑을 카드 수를 의미합니다.
+/// </summary>
+[Serializable]
+public sealed class RelicTargetingSettings
+{
+    [SerializeField] private RelicTargetingMode mode = RelicTargetingMode.None;
+    [SerializeField] private RelicTargetingOwner ownerFilter = RelicTargetingOwner.PlayerHand;
+    [SerializeField] private int randomCount = 1;
+    [SerializeField] private bool allowDuplicates = false;
+
+    public RelicTargetingMode Mode => mode;
+    public RelicTargetingOwner OwnerFilter => ownerFilter;
+    public int RandomCount => Mathf.Max(1, randomCount);
+    public bool AllowDuplicates => allowDuplicates;
+}
+
+/// <summary>타겟팅 모드.</summary>
+public enum RelicTargetingMode
+{
+    None = 0,
+    RandomHandCard,
+    AllHandCards
+}
+
+/// <summary>타겟팅 시 어떤 진영의 카드를 대상으로 할지 정의합니다.</summary>
+public enum RelicTargetingOwner
+{
+    PlayerHand = 0,
+    EnemyHand,
+    AnyHand
+}

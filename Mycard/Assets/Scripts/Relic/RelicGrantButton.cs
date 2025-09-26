@@ -63,7 +63,7 @@ public class RelicGrantButton : MonoBehaviour
     public void AddRelicTest9()
     {
 
-        RelicSystem.Instance.AddRelicById("COMP_COMP_Knight", stacks: 1);
+        RelicSystem.Instance.AddRelicById("cheatrelic");
 
     }
     public void AddRelicTest10()
