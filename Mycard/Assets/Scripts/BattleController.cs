@@ -330,16 +330,24 @@ public class BattleController : MonoBehaviour
     }
     public void ApplyPersistentPlayerManaCapacityDelta(int delta)
     {
-        playermaxMana = Mathf.Max(0, playermaxMana + delta);
-
-        int clampedTurnMax = Mathf.Clamp(currentPlayerMaxMana, 0, playermaxMana);
-        if (clampedTurnMax != currentPlayerMaxMana)
+        if (delta == 0)
         {
-            currentPlayerMaxMana = clampedTurnMax;
+            UIController.instance?.SetPlayerManaText(playerMana);
+            return;
         }
 
-        playerMana = Mathf.Clamp(playerMana, 0, currentPlayerMaxMana);
+        playermaxMana = Mathf.Max(0, playermaxMana + delta);
+
+        int desiredTurnMax = currentPlayerMaxMana + delta;
+        currentPlayerMaxMana = Mathf.Clamp(desiredTurnMax, 0, playermaxMana);
+
+        int baseMana = Mathf.Clamp(playerMana + delta, 0, currentPlayerMaxMana);
+        playerMana = GameEvents.ApplyPlayerManaModifiers(baseMana);
+
         UIController.instance?.SetPlayerManaText(playerMana);
+
+        PersistRelicManaDelta(delta);
+
     }
 
     public void ApplyPersistentPlayerHealthDelta(int delta)
@@ -794,7 +802,7 @@ public class BattleController : MonoBehaviour
             Debug.LogWarning($"[BattleController] PersistPlayerHealth failed: {e.Message}");
         }
     }
-    
+
     private void PersistRelicHealthDelta(int delta)
     {
         string runId = (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
@@ -815,6 +823,31 @@ public class BattleController : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.LogWarning($"[BattleController] PersistRelicHealthDelta failed: {e.Message}");
+        }
+    }
+    private void PersistRelicManaDelta(int delta)
+    {
+        if (delta == 0)
+            return;
+
+        string runId = (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.RunId))
+            ? GameContext.I.RunId
+            : PlayerPrefs.GetString("lastRunId", string.Empty);
+
+        if (string.IsNullOrEmpty(runId))
+            return;
+
+        var db = ServiceRegistry.Get<IDatabase>();
+        if (db == null)
+            return;
+
+        try
+        {
+            db.ApplyRunRelicEnergyDelta(runId, delta);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[BattleController] PersistRelicManaDelta failed: {e.Message}");
         }
     }
 }

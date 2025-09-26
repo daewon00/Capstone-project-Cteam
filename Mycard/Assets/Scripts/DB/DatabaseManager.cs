@@ -549,7 +549,20 @@ public sealed class DatabaseManager
         run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
         _conn.Update(run);
     }
-    
+    public void ApplyRunRelicEnergyDelta(string runId, int delta)
+    {
+        if (string.IsNullOrEmpty(runId) || delta == 0)
+            return;
+
+        var run = _conn.Find<CurrentRun>(runId);
+        if (run == null)
+            return;
+
+        int newEnergy = Mathf.Max(0, run.EnergyMax + delta);
+        run.EnergyMax = newEnergy;
+        run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
+        _conn.Update(run);
+    }
     // 2. 이벤트 세션 JSON 로드 함수 (신규 추가)
     public string LoadActiveEventSessionJson(string runId)
     {

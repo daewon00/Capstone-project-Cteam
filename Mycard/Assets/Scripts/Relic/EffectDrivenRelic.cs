@@ -177,6 +177,10 @@ public sealed class EffectDrivenRelic : Relic
                     manaController.ApplyPersistentPlayerManaCapacityDelta(delta);
                     success = true;
                 }
+                else
+                {
+                    success = ApplyPersistentPlayerManaCapacityToRun(delta);
+                }
                 break;
             case RelicEffectType.AdjustPlayerHealth:
                 if (TryGetBattleController(out var healthController))
@@ -354,7 +358,33 @@ public sealed class EffectDrivenRelic : Relic
         controller = BattleController.instance;
         return controller != null;
     }
-    
+    private bool ApplyPersistentPlayerManaCapacityToRun(int delta)
+    {
+        if (delta == 0)
+            return true;
+
+        var db = ServiceRegistry.Get<IDatabase>();
+        if (db == null)
+            return false;
+
+        string runId = ResolveActiveRunId();
+        if (string.IsNullOrEmpty(runId))
+            return false;
+
+        try
+        {
+            db.ApplyRunRelicEnergyDelta(runId, delta);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[EffectDrivenRelic] ApplyRunRelicEnergyDelta failed: {e.Message}");
+            return false;
+        }
+
+        RunCacheSynchronizer.Sync();
+        return true;
+    }
+
     private bool ApplyPersistentPlayerHealthToRun(int delta)
     {
         if (delta == 0)

@@ -25,6 +25,8 @@ public sealed class DatabaseFacade : IDatabase
         => DatabaseManager.Instance.UpdateRunMaxHp(runId, newMaxHpBase, newCurrentHp);
     public void ApplyRunRelicHpDelta(string runId, int delta, bool adjustCurrentHp)
         => DatabaseManager.Instance.ApplyRunRelicHpDelta(runId, delta, adjustCurrentHp);
+    public void ApplyRunRelicEnergyDelta(string runId, int delta)
+        => DatabaseManager.Instance.ApplyRunRelicEnergyDelta(runId, delta);    
     public void UpsertCurrentRun(CurrentRun run)
         => DatabaseManager.Instance.UpsertCurrentRun(run);
     public void CreateNewRunSnapshot(CurrentRun run, IEnumerable<CardInDeck> cards, IEnumerable<RelicInPossession> relics, IEnumerable<PotionInPossession> potions)
