@@ -1031,14 +1031,6 @@ PrefabInstance:
       propertyPath: relicsUI
       value: 
       objectReference: {fileID: 1710801490}
-    - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
-      propertyPath: relicDatabase.Array.size
-      value: 16
-      objectReference: {fileID: 0}
-    - target: {fileID: 4981513598304262744, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
-      propertyPath: relicDatabase.Array.data[15]
-      value: 
-      objectReference: {fileID: 11400000, guid: 7b99938e97676ed43a797b9abdccf817, type: 2}
     - target: {fileID: 7327344328049563208, guid: 1a43f6fcf73cad548ba454044e784898, type: 3}
       propertyPath: m_LocalPosition.x
       value: 549.9444

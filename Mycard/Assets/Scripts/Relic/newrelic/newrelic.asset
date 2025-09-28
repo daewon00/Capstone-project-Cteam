@@ -20,16 +20,16 @@ MonoBehaviour:
   maxStacks: 1
   effects:
   - trigger: 5
-    type: 11
-    value: 5
+    type: 13
+    value: 10
     scaleByStacks: 0
     payloadId: 
     triggerCondition:
       conditionType: 4
       hpThreshold: 0
-      turnInterval: 2
+      turnInterval: 3
       startTurnOffset: 0
-      countEnemyTurns: 1
+      countEnemyTurns: 0
     duration:
       useDuration: 0
       turnCount: 0
@@ -39,7 +39,7 @@ MonoBehaviour:
       turnCount: 0
       countEnemyTurns: 0
     targeting:
-      mode: 1
+      mode: 2
       ownerFilter: 0
       randomCount: 1
       allowDuplicates: 0

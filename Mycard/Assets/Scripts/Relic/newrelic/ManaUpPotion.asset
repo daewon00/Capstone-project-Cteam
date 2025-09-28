@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: MANAup
   displayName: MANAup
-  description: Only Max Mana up
+  description: player Mana up
   icon: {fileID: 21300000, guid: 86ad81468b9f5c74389f9006c44701e4, type: 3}
   stackable: 0
   maxStacks: 1
@@ -24,3 +24,22 @@ MonoBehaviour:
     value: 1
     scaleByStacks: 0
     payloadId: 
+    triggerCondition:
+      conditionType: 0
+      hpThreshold: 0
+      turnInterval: 1
+      startTurnOffset: 0
+      countEnemyTurns: 0
+    duration:
+      useDuration: 0
+      turnCount: 1
+      countEnemyTurns: 0
+    cooldown:
+      useCooldown: 0
+      turnCount: 1
+      countEnemyTurns: 0
+    targeting:
+      mode: 0
+      ownerFilter: 0
+      randomCount: 1
+      allowDuplicates: 0

@@ -428,8 +428,10 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public int GetEffectiveAttack()
     {
         int value = attackPower;
-         if (BattleController.instance != null)
+        if (BattleController.instance != null)
         {
+            value = GameEvents.ApplyCardAttackModifiers(this, value);
+ 
             if (isPlayer)
             {
                 value = GameEvents.ApplyPlayerAttackModifiers(value);
@@ -471,6 +473,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             RelicSystem.Instance.RelicsChanged += UpdateCardDisplay;
         GameEvents.OnPlayerAttackModifiersChanged += HandleAttackModifiersChanged;
         GameEvents.OnEnemyAttackModifiersChanged += HandleAttackModifiersChanged;
+        GameEvents.OnCardAttackModifiersChanged += HandleAttackModifiersChanged;
         GameEvents.OnCardHealthModifiersChanged += HandleHealthModifiersChanged;
     }
 
@@ -480,6 +483,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             RelicSystem.Instance.RelicsChanged -= UpdateCardDisplay;
         GameEvents.OnPlayerAttackModifiersChanged -= HandleAttackModifiersChanged;
         GameEvents.OnEnemyAttackModifiersChanged -= HandleAttackModifiersChanged;
+        GameEvents.OnCardAttackModifiersChanged -= HandleAttackModifiersChanged;
         GameEvents.OnCardHealthModifiersChanged -= HandleHealthModifiersChanged;
 
         // 비활성화 시 하이라이트 잔상 제거

@@ -19,6 +19,7 @@ public static class GameEvents
     public static event Action OnEnemyAttackModifiersChanged;
     public static event Action OnCardManaCostModifiersChanged;
     public static event Action OnCardHealthModifiersChanged;
+    public static event Action OnCardAttackModifiersChanged;
 
     // Raise helpers
     public static void RaiseBattleStart() => OnBattleStart?.Invoke();
@@ -32,12 +33,14 @@ public static class GameEvents
     public static void RaiseEnemyAttackModifiersChanged() => OnEnemyAttackModifiersChanged?.Invoke();
     public static void RaiseCardManaCostModifiersChanged() => OnCardManaCostModifiersChanged?.Invoke();
     public static void RaiseCardHealthModifiersChanged() => OnCardHealthModifiersChanged?.Invoke();
+    public static void RaiseCardAttackModifiersChanged() => OnCardAttackModifiersChanged?.Invoke();
     // Modifiers
     public static event Func<int, int> ModifyPlayerAttack;
     public static event Func<int, int> ModifyEnemyAttack;
     public static event Func<int, int> ModifyPlayerMana;
     public static event Func<Card, int, int> ModifyCardManaCost;
     public static event Func<Card, int, int> ModifyCardHealth;
+    public static event Func<Card, int, int> ModifyCardAttack;
 
     public static int ApplyPlayerAttackModifiers(int baseValue)
         => ApplyModifierChain(ModifyPlayerAttack, baseValue);
@@ -52,7 +55,10 @@ public static class GameEvents
         => ApplyModifierChain(ModifyCardManaCost, card, baseValue);
         
     public static int ApplyCardHealthModifiers(Card card, int baseValue)
-        => ApplyModifierChain(ModifyCardHealth, card, baseValue);    
+         => ApplyModifierChain(ModifyCardHealth, card, baseValue);
+
+    public static int ApplyCardAttackModifiers(Card card, int baseValue)
+        => ApplyModifierChain(ModifyCardAttack, card, baseValue);
 
 
     private static int ApplyModifierChain(Func<int, int> chain, int baseValue)
@@ -89,7 +95,7 @@ public static class GameEvents
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[GameEvents] Card mana modifier handler threw exception: {ex.Message}");
+                Debug.LogError($"[GameEvents] Card stat modifier handler threw exception: {ex.Message}");
             }
         }
         return value;

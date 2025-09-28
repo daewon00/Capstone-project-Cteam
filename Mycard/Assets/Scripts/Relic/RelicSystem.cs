@@ -45,6 +45,7 @@ public class RelicSystem : MonoBehaviour
         RelicsChanged?.Invoke();
         GameEvents.RaiseCardManaCostModifiersChanged();
         GameEvents.RaiseCardHealthModifiersChanged();
+        GameEvents.RaiseCardAttackModifiersChanged();
     }
     public void NotifyRelicStateChanged() => FireRelicsChanged();
 
@@ -93,6 +94,7 @@ public class RelicSystem : MonoBehaviour
         GameEvents.ModifyPlayerMana += ChainModifyPlayerMana;
         GameEvents.ModifyCardManaCost += ChainModifyCardManaCost;
         GameEvents.ModifyCardHealth += ChainModifyCardHealth;
+        GameEvents.ModifyCardAttack += ChainModifyCardAttack;
     }
 
     private void OnDisable()
@@ -109,6 +111,7 @@ public class RelicSystem : MonoBehaviour
         GameEvents.ModifyPlayerMana -= ChainModifyPlayerMana;
         GameEvents.ModifyCardManaCost -= ChainModifyCardManaCost;
         GameEvents.ModifyCardHealth -= ChainModifyCardHealth;
+        GameEvents.ModifyCardAttack -= ChainModifyCardAttack;
     }
 
     #region DB & Factory
@@ -313,6 +316,13 @@ public class RelicSystem : MonoBehaviour
     {
         int value = baseHealth;
         foreach (var relic in relics) value = relic.ModifyCardHealth(card, value);
+        return Mathf.Max(0, value);
+    }
+    
+    private int ChainModifyCardAttack(Card card, int baseAttack)
+    {
+        int value = baseAttack;
+        foreach (var relic in relics) value = relic.ModifyCardAttack(card, value);
         return Mathf.Max(0, value);
     }
     

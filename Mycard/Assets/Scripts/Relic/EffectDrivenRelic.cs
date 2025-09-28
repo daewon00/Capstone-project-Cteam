@@ -118,6 +118,10 @@ public sealed class EffectDrivenRelic : Relic
     {
         return ExecuteCardModifier(card, currentHealth, RelicEffectTrigger.ModifyCardHealth);
     }
+    public override int ModifyCardAttack(Card card, int currentAttack)
+    {
+        return ExecuteCardModifier(card, currentAttack, RelicEffectTrigger.ModifyCardAttack);
+    }
     private static bool IsPersistent(RelicEffectType type)
     {
         return type == RelicEffectType.AdjustPlayerManaCapacity || type == RelicEffectType.AdjustPlayerHealth;
@@ -337,6 +341,8 @@ public sealed class EffectDrivenRelic : Relic
                 return Mathf.Max(0, current + amount);
             case RelicEffectType.ModifyCardHealthFlat:
                 return Mathf.Max(0, current + amount);
+            case RelicEffectType.ModifyCardAttackFlat:
+                return Mathf.Max(0, current + amount);
             default:
                 Debug.LogWarning($"[EffectDrivenRelic] Unsupported card modifier type {effect.Type} on trigger {effect.Trigger}.");
                 return current;
@@ -439,6 +445,31 @@ public sealed class EffectDrivenRelic : Relic
                     healthApplied |= ApplyCardHealthDelta(card, healthDelta, effect, state);
                 }
                 return healthApplied;
+            case RelicEffectType.AdjustTargetCardAttackFlat:
+                // Targeting 설정으로 선택된 카드 공격력을 증감시키는 효과입니다. (예: 랜덤 카드 공격력 -2)
+                if (effect.Duration.UseDuration && !activatedNow)
+                    return false; // 지속 시간이 남아있다면 중복 적용 방지
+
+                if (targets == null || targets.Count == 0)
+                    return false;
+
+                if (activatedNow && effect.Duration.UseDuration)
+                {
+                    RevertCardAdjustments(state);
+                    state.ClearAdjustments();
+                }
+
+                int attackDelta = effect.ResolveValue(Stacks);
+                if (attackDelta == 0)
+                    return false;
+
+                bool attackApplied = false;
+                foreach (var target in targets)
+                {
+                    attackApplied |= ApplyCardAttackDelta(target, attackDelta, effect, state);
+                }
+
+                return attackApplied;
             default:
                 Debug.LogWarning($"[EffectDrivenRelic] Unsupported triggered effect type {effect.Type} on trigger {effect.Trigger}.");
                 return false;
@@ -647,6 +678,31 @@ public sealed class EffectDrivenRelic : Relic
         return true;
     }
 
+    private bool ApplyCardAttackDelta(Card card, int delta, RelicEffectDefinition effect, EffectRuntimeState state)
+    {
+        if (card == null || delta == 0)
+            return false;
+
+        int original = card.attackPower;
+        int updated = Mathf.Max(0, original + delta);
+        if (updated == original)
+            return false;
+
+        card.attackPower = updated;
+        card.UpdateCardDisplay();
+
+        if (effect.Duration.UseDuration)
+        {
+            int applied = updated - original;
+            state.RecordAttackAdjustment(card.InstanceId, applied);
+        }
+
+        // 카드 공격력 수치가 변했음을 UI/시스템에 알립니다.
+        GameEvents.RaiseCardAttackModifiersChanged();
+
+        return true;
+    }
+
     // 턴 종료 시 지속시간과 쿨다운을 감소시키고 만료된 카드 버프를 되돌립니다.
     private void AdvanceTurnCounters(bool isPlayerTurn)
     {
@@ -686,6 +742,7 @@ public sealed class EffectDrivenRelic : Relic
         if (state == null)
             return;
 
+        bool attackChanged = false;
         if (state.ManaAdjustments.Count > 0)
         {
             foreach (var kv in state.ManaAdjustments)
@@ -717,6 +774,26 @@ public sealed class EffectDrivenRelic : Relic
                 }
             }
         }
+
+        if (state.AttackAdjustments.Count > 0)
+        {
+            foreach (var kv in state.AttackAdjustments)
+            {
+                if (!TryFindCardInHand(kv.Key, out var card) || card == null)
+                    continue;
+
+                int reverted = Mathf.Max(0, card.attackPower - kv.Value);
+                if (reverted != card.attackPower)
+                {
+                    card.attackPower = reverted;
+                    card.UpdateCardDisplay();
+                    attackChanged = true;
+                }
+            }
+        }
+
+        if (attackChanged)
+            GameEvents.RaiseCardAttackModifiersChanged();
     }
 
     private void CollectCardsFromAdjustments(EffectRuntimeState state, List<Card> buffer)
@@ -738,6 +815,17 @@ public sealed class EffectDrivenRelic : Relic
         if (state.HealthAdjustments.Count > 0)
         {
             foreach (var kv in state.HealthAdjustments)
+            {
+                if (!TryFindCardInHand(kv.Key, out var card) || card == null)
+                    continue;
+                if (!buffer.Contains(card))
+                    buffer.Add(card);
+            }
+        }
+
+        if (state.AttackAdjustments.Count > 0)
+        {
+            foreach (var kv in state.AttackAdjustments)
             {
                 if (!TryFindCardInHand(kv.Key, out var card) || card == null)
                     continue;
@@ -927,6 +1015,7 @@ public sealed class EffectDrivenRelic : Relic
         private readonly RelicEffectDefinition _definition;
         private readonly Dictionary<string, int> _manaAdjustments = new();
         private readonly Dictionary<string, int> _healthAdjustments = new();
+        private readonly Dictionary<string, int> _attackAdjustments = new();
 
         public EffectRuntimeState(RelicEffectDefinition definition)
         {
@@ -943,6 +1032,7 @@ public sealed class EffectDrivenRelic : Relic
 
         public IReadOnlyDictionary<string, int> ManaAdjustments => _manaAdjustments;
         public IReadOnlyDictionary<string, int> HealthAdjustments => _healthAdjustments;
+        public IReadOnlyDictionary<string, int> AttackAdjustments => _attackAdjustments;
 
         public void ResetAll()
         {
@@ -952,12 +1042,14 @@ public sealed class EffectDrivenRelic : Relic
             ObservedTotalTurns = 0;
             _manaAdjustments.Clear();
             _healthAdjustments.Clear();
+            _attackAdjustments.Clear();
         }
 
         public void ClearAdjustments()
         {
             _manaAdjustments.Clear();
             _healthAdjustments.Clear();
+            _attackAdjustments.Clear();
         }
 
         public void BeginDuration(RelicDurationSettings duration)
@@ -1025,6 +1117,17 @@ public sealed class EffectDrivenRelic : Relic
                 _healthAdjustments[cardId] = current + delta;
             else
                 _healthAdjustments.Add(cardId, delta);
+        }
+
+        public void RecordAttackAdjustment(string cardId, int delta)
+        {
+            if (string.IsNullOrEmpty(cardId) || delta == 0)
+                return;
+
+            if (_attackAdjustments.TryGetValue(cardId, out var current))
+                _attackAdjustments[cardId] = current + delta;
+            else
+                _attackAdjustments.Add(cardId, delta);
         }
 
         public int GetUpcomingPlayerTurnCount(bool isPlayerTurn)

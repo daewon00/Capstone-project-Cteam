@@ -19,8 +19,27 @@ MonoBehaviour:
   stackable: 0
   maxStacks: 1
   effects:
-  - trigger: 13
-    type: 6
+  - trigger: 5
+    type: 12
     value: 10
     scaleByStacks: 0
     payloadId: 
+    triggerCondition:
+      conditionType: 4
+      hpThreshold: 0
+      turnInterval: 1
+      startTurnOffset: 0
+      countEnemyTurns: 0
+    duration:
+      useDuration: 0
+      turnCount: 1
+      countEnemyTurns: 0
+    cooldown:
+      useCooldown: 0
+      turnCount: 1
+      countEnemyTurns: 0
+    targeting:
+      mode: 1
+      ownerFilter: 0
+      randomCount: 1
+      allowDuplicates: 0

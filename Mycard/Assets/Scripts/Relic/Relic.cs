@@ -41,6 +41,7 @@ public abstract class Relic
     public virtual int ModifyPlayerMana(int currentMana) => currentMana;
     public virtual int ModifyCardManaCost(Card card, int currentCost) => currentCost;
     public virtual int ModifyCardHealth(Card card, int currentHealth) => currentHealth;
+    public virtual int ModifyCardAttack(Card card, int currentAttack) => currentAttack;
     #endregion
 
 }
