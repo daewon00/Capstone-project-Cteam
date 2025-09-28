@@ -8,14 +8,13 @@ public class RelicGrantButton : MonoBehaviour
 
     public void AddRelicTest1()
     {
-        RelicSystem.Instance.AddRelicById("WarBanner", stacks: 1);
+        RelicSystem.Instance.AddRelicById("extradraw");
 
 
     }
     public void AddRelicTest2()
     {
 
-        //RelicSystem.Instance.AddRelicById("ManaGem", stacks: 1);
         RelicSystem.Instance.AddRelicById("HPup");
     }
     public void AddRelicTest3()
@@ -28,52 +27,42 @@ public class RelicGrantButton : MonoBehaviour
     public void AddRelicTest4()
     {
 
-        RelicSystem.Instance.AddRelicById("ExtraDraw", stacks: 1);
+        RelicSystem.Instance.AddRelicById("cardhp");
 
 
     }
     public void AddRelicTest5()
     {
 
-        RelicSystem.Instance.AddRelicById("cardhp");
+        RelicSystem.Instance.AddRelicById("manadis");
 
     }
+
     public void AddRelicTest6()
     {
 
-        //RelicSystem.Instance.AddRelicById("ManaDiscount", stacks: 1);
-        RelicSystem.Instance.AddRelicById("manadis");
-
+        RelicSystem.Instance.AddRelicById("cardattackup");
 
     }
     public void AddRelicTest7()
     {
 
-        RelicSystem.Instance.AddRelicById("EnemyManaLeech", stacks: 1);
-
+        RelicSystem.Instance.AddRelicById("finalattack");
 
     }
+
     public void AddRelicTest8()
     {
 
-        RelicSystem.Instance.AddRelicById("EnemyFirstCardWeakener", stacks: 1);
-
+        RelicSystem.Instance.AddRelicById("Gold");
 
     }
+
     public void AddRelicTest9()
     {
 
-        RelicSystem.Instance.AddRelicById("cheatrelic");
+        RelicSystem.Instance.AddRelicById("drawManaDiscount");
 
-    }
-    public void AddRelicTest10()
-    {
-        RelicSystem.Instance.AddRelicById("test1");
-    }
-
-    public void AddRelicTest11()
-    {
-        RelicSystem.Instance.AddRelicById("attackplus");
     }
 
     public void RelicButtonOn()

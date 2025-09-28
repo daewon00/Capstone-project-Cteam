@@ -14,14 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   relicId: cardhp
   displayName: "\uCE74\uB4DC\uC758 hp\uC5C5"
-  description: "\uCE74\uB4DC hp\uC5C5"
+  description: "\uCE74\uB4DC hp\uC5C5 \uD50C\uB808\uC774\uC5B4 \uD134\uB9C8\uB2E4
+    \uC801\uC6A9 1\uD134\uC5D0 \uD55C\uBC88 "
   icon: {fileID: 21300000, guid: 8892e787182de9b41bfef4c1d8adf29e, type: 3}
   stackable: 0
   maxStacks: 1
   effects:
   - trigger: 5
     type: 12
-    value: 10
+    value: 2
     scaleByStacks: 0
     payloadId: 
     triggerCondition:

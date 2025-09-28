@@ -10,36 +10,37 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 13ed9abd2356d8e45bddbc7f53ec79ab, type: 3}
-  m_Name: testrelicark
+  m_Name: finalattack
   m_EditorClassIdentifier: 
-  relicId: attackplus
-  displayName: attackplus
-  description: "\uBAA8\uB4E0 \uCE74\uB4DC\uC758 \uACF5\uACA9\uB825 +1\n"
+  relicId: finalattack
+  displayName: finalattack
+  description: "\uCCB4\uB825\uC774 120\uC774\uBA74 \uACF5\uACA9\uB825 5\uC99D\uAC00
+    2\uD134\uAC04 \uC9C0\uC18D"
   icon: {fileID: 21300000, guid: f4d53959aa2836545b21c43cb0bdfe3c, type: 3}
   stackable: 0
   maxStacks: 1
   effects:
-  - trigger: 14
-    type: 7
-    value: 10
+  - trigger: 5
+    type: 13
+    value: 5
     scaleByStacks: 0
     payloadId: 
     triggerCondition:
-      conditionType: 4
-      hpThreshold: 0
-      turnInterval: 2
+      conditionType: 3
+      hpThreshold: 120
+      turnInterval: 0
       startTurnOffset: 0
       countEnemyTurns: 0
     duration:
-      useDuration: 0
-      turnCount: 1
+      useDuration: 1
+      turnCount: 2
       countEnemyTurns: 0
     cooldown:
       useCooldown: 0
       turnCount: 1
       countEnemyTurns: 0
     targeting:
-      mode: 0
+      mode: 1
       ownerFilter: 0
       randomCount: 0
       allowDuplicates: 0

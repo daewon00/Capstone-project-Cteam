@@ -59,15 +59,15 @@ public sealed class RelicEffectDefinition
 public enum RelicEffectTrigger
 {
     // 유물 효과가 발동할 타이밍을 지정합니다.
-    OnAdd,
-    OnRemove,
+    OnAdd, //유물이 추가될때
+    OnRemove, //유물이 삭제될때
     OnStacksChanged, //유물 스택이 바뀔때
     OnBattleStart, //배틀 시작시
     OnBattleEnd, //배틀 종료시
     OnTurnStart, // 턴시작시
     OnTurnEnd, //턴 종료시
-    OnCardDrawn, //카드 드로우됨
-    OnCardPlayed, //card.isplayer일때 발동
+    OnCardDrawn, //카드 드로우했을때
+    OnCardPlayed, //카드가 필드에 놓아졌을때
     OnDamageDealt, //플레이어데미지를 받을때
     ModifyPlayerAttack, //카드의 공격력을 높일때 사용 ModifyPlayerAttackFlat과 같이 사용
     ModifyPlayerMana, //플레이어 마나가 채워질때 발동
@@ -91,7 +91,7 @@ public enum RelicEffectType
     GainPlayerMana, // 즉시 마나를 회복시키는 트리거
     DrawCards, // 지정된 수의 카드를 플레이어에게 드로우하도록 요청하는 트리거 효과
     GainGold, // 골드를 획득하는 트리거 효과
-    AdjustTargetCardManaCostFlat, // Targeting 설정으로 선택된 카드의 코스트를 직접 증감합니다.
+    AdjustTargetCardManaCostFlat, // Targeting 설정으로 선택된 카드의 코스트를 직접 증감합니다. OnTurnStart등과 사용해주세요 modify...와 사용시 즉시 적용될겁니다
     AdjustTargetCardHealthFlat, // Targeting 설정으로 선택된 카드의 체력을 직접 증감합니다.
     AdjustTargetCardAttackFlat // Targeting 설정으로 선택된 카드의 공격력을 직접 증감합니다.
 }
@@ -105,8 +105,11 @@ public enum RelicEffectType
 public sealed class RelicTriggerCondition
 {
     [SerializeField] private RelicTriggerConditionType conditionType = RelicTriggerConditionType.Always;
+    [Tooltip("체력이 어느정도 남았는지 확인 PlayerHpBelowOrEqua과 함께 사용")]
     [SerializeField] private int hpThreshold = 0;
+    [Tooltip("N턴마다 발동 EveryNthTurn함께사용")]
     [SerializeField] private int turnInterval = 1;
+    [Tooltip("N턴마다 발동시 효과 발동을 몇턴뒤로 할지 정합니다")]
     [SerializeField] private int startTurnOffset = 0;
     [SerializeField] private bool countEnemyTurns = false;
 
@@ -141,6 +144,7 @@ public enum RelicTriggerConditionType
 public sealed class RelicDurationSettings
 {
     [SerializeField] private bool useDuration = false;
+    [Tooltip("지속시간을 나타냅니다 countenemyturns체크시 상대턴까지 셉니다")]
     [SerializeField] private int turnCount = 1;
     [SerializeField] private bool countEnemyTurns = false;
 
@@ -158,6 +162,7 @@ public sealed class RelicDurationSettings
 public sealed class RelicCooldownSettings
 {
     [SerializeField] private bool useCooldown = false;
+    [Tooltip("몇턴동안 쿨다운 될지 나타냅니다")]
     [SerializeField] private int turnCount = 1;
     [SerializeField] private bool countEnemyTurns = false;
 
@@ -176,6 +181,7 @@ public sealed class RelicTargetingSettings
 {
     [SerializeField] private RelicTargetingMode mode = RelicTargetingMode.None;
     [SerializeField] private RelicTargetingOwner ownerFilter = RelicTargetingOwner.PlayerHand;
+    [Tooltip("몇개의 카드에 적용시킬지 allowduplication은 중복을 나타냅니다")]
     [SerializeField] private int randomCount = 1;
     [SerializeField] private bool allowDuplicates = false;
 
