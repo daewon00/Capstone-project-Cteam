@@ -493,6 +493,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerMarker: {fileID: 27845220}
+  markerMoveDuration: 0.4
+  markerEase: 4
+  allowMarkerSkip: 1
   _shopOverlay: {fileID: 0}
   eventSceneName: Event
   defaultEventId: GoldenIdolEvent

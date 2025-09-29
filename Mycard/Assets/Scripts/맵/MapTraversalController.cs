@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using Game.Save;
 using UnityEngine.SceneManagement; // SceneManager를 사용하기 위해 추가
 
@@ -12,11 +13,33 @@ public class MapTraversalController : MonoBehaviour
 {
     [Header("Marker")]
     public Transform playerMarker; // 현재 위치 마커(없으면 표시만 생략)
+    [SerializeField] private float markerMoveDuration = 0.6f;
+    [SerializeField] private Ease markerEase = Ease.InOutSine;
+    [SerializeField] private bool allowMarkerSkip = true;
 
     Dictionary<(int floor, int index), NodeGoScene> _nodes;
     string _runId;
     CurrentRun _run;
     private bool _isMoving = false; // 노드 이동 중 재진입 방지
+    private Tween _markerTween;
+    private PendingStageOperation _pendingOperation;
+
+    private sealed class PendingStageOperation
+    {
+        public NodeGoScene Target;
+        public bool IsMoveToChild;
+        public bool IsReclickSameNode;
+        public RunStagePayloads.Location LocationPayload;
+        public MapNodeState PendingVisited;
+        public int PreviousFloor;
+        public RunStagePayloads.Event EventPayload;
+        public EventSessionDTO PreparedEventSession;
+        public RunStagePayloads.Shop ShopPayload;
+        public RunStagePayloads.Battle BattlePayload;
+        public string BattleSceneToLoad;
+        public GameContext.BattleKind? PreparedBattleKind;
+        public bool TriggerAssignedScene;
+    }
 
     [SerializeField] private ShopOverlayController _shopOverlay; //상점 오버레이 저장
     [SerializeField] private string eventSceneName = "Event";            // 공통 이벤트 씬 이름
@@ -111,103 +134,114 @@ public class MapTraversalController : MonoBehaviour
         StartCoroutine(DeferredBattlePreload());
     }
 
-
-
-    /// <summary>
-    /// 노드 클릭 시 유효성을 검사하고 이동 및 씬 전환을 실행합니다.
-    /// </summary>
-    public void OnNodeClicked(NodeGoScene target)
+    private void StartMarkerTween(IRunStageService stageService)
     {
-        if (_isMoving) return;
-        _isMoving = true;
-        var stageService = ServiceRegistry.Get<IRunStageService>();
-
-        try
+        if (_pendingOperation == null)
         {
-        // [디버그 1] 함수 시작: 어떤 노드가 클릭되었는지 기록
-        Debug.Log($"--- OnNodeClicked --- Target: ({target.floor},{target.index}), Type: {target.nodeType}");
-
-        // 1. 현재 노드 정보를 가져옵니다.
-        if (!_nodes.TryGetValue((_run.Floor, _run.NodeIndex), out var curNode)) return;
-
-        // 2. 현재 클릭이 어떤 종류인지 정의합니다.
-        bool isMoveToChild = curNode.children != null && curNode.children.Contains(target);
-        bool isReclickSameNode = (_run.Floor == target.floor && _run.NodeIndex == target.index);
-
-        // [디버그 2] 클릭 종류 판단 결과 출력(이동으로 온건지 다시 누른건지)
-        Debug.Log($"<color=yellow>ANALYSIS >> isMoveToChild: {isMoveToChild}, isReclickSameNode: {isReclickSameNode}</color>", this);
-
-        // 3. 유효하지 않은 클릭은 입구에서 차단합니다
-        if (!isMoveToChild && !isReclickSameNode)
-        {
-            Debug.Log("<color=red>INVALID CLICK: Action ignored.</color>");
+            FinalizePendingOperation(stageService);
             return;
         }
 
-        // --- 여기까지 통과했다면, 클릭은 '유효'한 것으로 확정 ---
+        ClearMarkerTween();
 
-        // 4. 상태 변경: **실제로 '새로운 노드로 이동'이 발생할 때만** 실행됩니다.
-        if (isMoveToChild)
+        var targetNode = _pendingOperation.Target;
+        if (targetNode == null)
         {
-            Debug.Log("<color=cyan>ACTION >> Moving to a new node. Resetting shop session...</color>", this);
-            
-            // 상점 리클릭 아님 상태로 리셋
-            _shopOverlay?.ResetShopSession();
+            FinalizePendingOperation(stageService);
+            return;
+        }
 
-            // 나중에 이벤트 세션도 리셋해야 할 경우를 대비한 주석이 아래에 있습니다.
-            // _eventOverlay?.ResetEventSession(); 
-
-            // db 상점 정보도 리셋합니다.
-            if (!string.IsNullOrEmpty(_run?.RunId))
+        var markerRect = playerMarker as RectTransform;
+        if (markerRect != null)
+        {
+            if (TryComputeAnchoredPosition(targetNode, markerRect, out var anchoredPosition))
             {
-            DatabaseManager.Instance.DeleteActiveShopSession(_run.RunId);
-            DatabaseManager.Instance.DeleteActiveEventSession(_run.RunId);
+                markerRect.SetAsLastSibling();
+                _markerTween = DOTween.To(() => markerRect.anchoredPosition, v => markerRect.anchoredPosition = v, anchoredPosition, markerMoveDuration);
+                _markerTween.SetEase(markerEase);
+                _markerTween.SetUpdate(UpdateType.Normal, false);
+                _markerTween.SetTarget(markerRect);
+                _markerTween.OnComplete(() =>
+                {
+                    _markerTween = null;
+                    FinalizePendingOperation(stageService);
+                });
+                return;
+            }
+        }
+
+        _markerTween = playerMarker.DOMove(targetNode.transform.position, markerMoveDuration);
+        _markerTween.SetEase(markerEase);
+        _markerTween.SetUpdate(UpdateType.Normal, false);
+        _markerTween.OnComplete(() =>
+        {
+            _markerTween = null;
+            FinalizePendingOperation(stageService);
+        });
+    }
+
+    private void FinalizePendingOperation(IRunStageService stageService)
+    {
+        try
+        {
+            if (_pendingOperation == null)
+            {
+                return;
             }
 
-            _shopOverlay?.ClearCachedSession(); //진짜 상점 메모리 데이터 리셋
+            var operation = _pendingOperation;
 
-
-            // 위치 이동에 따른 모든 상태 변경(DB 저장, 마커 이동 등)을 처리합니다.
-            int prevFloor = _run.Floor;
-            _run.Floor = target.floor;
-            _run.NodeIndex = target.index;
-            _run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
-
-            var visited = new MapNodeState {
-                RunId = _run.RunId, Act = _run.Act,
-                Floor = target.floor, NodeIndex = target.index,
-                Type = (Game.Save.NodeType)target.nodeType, Visited = true
-            };
-            
-            var db = ServiceRegistry.GetRequired<IDatabase>();
-            db.UpsertNodeState(visited);
-            db.UpdateRunPosition(_run.RunId, _run.Act, _run.Floor, _run.NodeIndex);
-
-            // Broadcast floor reached when floor changes
-            if (prevFloor != target.floor)
+            if (operation.PendingVisited != null)
             {
                 try
                 {
-                    MetaEvents.RaiseFloorReached(new MetaEvents.FloorReachedPayload
+                    var db = ServiceRegistry.GetRequired<IDatabase>();
+                    db.UpsertNodeState(operation.PendingVisited);
+                    db.UpdateRunPosition(_run.RunId, _run.Act, _run.Floor, _run.NodeIndex);
+
+                    if (operation.PreviousFloor != operation.PendingVisited.Floor)
                     {
-                        RunId = _run.RunId,
-                        Act = _run.Act,
-                        Floor = _run.Floor
-                    });
+                        try
+                        {
+                            MetaEvents.RaiseFloorReached(new MetaEvents.FloorReachedPayload
+                            {
+                                RunId = _run.RunId,
+                                Act = _run.Act,
+                                Floor = _run.Floor
+                            });
+                        }
+                        catch { }
+                    }
                 }
-                catch { }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[MapTraversalController] DB 업데이트 중 오류: {e.Message}");
+                }
             }
 
-            PlaceMarker(target.floor, target.index);
-            UpdateReachable(target.floor, target.index);
+            PlaceMarker(_run.Floor, _run.NodeIndex);
+            UpdateReachable(_run.Floor, _run.NodeIndex);
+            HandleStageOperation(operation, stageService);
+        }
+        finally
+        {
+            ClearMarkerTween();
+            _pendingOperation = null;
+            _isMoving = false;
+        }
+    }
+
+    private void HandleStageOperation(PendingStageOperation operation, IRunStageService stageService)
+    {
+        var target = operation.Target;
+        if (target == null)
+        {
+            return;
         }
 
-        // --- 최종 행동 결정 분기 시작 ---
         Debug.Log($"--- Final Action --- Deciding action for node type: {target.nodeType}");
 
-
-        // 5. 최종 행동 결정: 모든 검사와 상태 변경이 끝난 후, 딱 한 번만 결정합니다.
-        var locationPayload = new RunStagePayloads.Location
+        var locationPayload = operation.LocationPayload ?? new RunStagePayloads.Location
         {
             act = _run.Act,
             floor = _run.Floor,
@@ -216,84 +250,193 @@ public class MapTraversalController : MonoBehaviour
 
         if (target.nodeType == NodeType.Shop)
         {
-            // 목표가 상점이면 (새로 이동했든, 다시 클릭했든) 상점 오버레이를 엽니다.
-            Debug.Log("<color=green>ACTION: Opening Shop Overlay.</color>");
-            stageService?.SetStage(RunStageType.ShopOverlay, SceneManager.GetActiveScene().name, RunStageService.ToJson(new RunStagePayloads.Shop
+            var shopPayload = operation.ShopPayload ?? new RunStagePayloads.Shop
             {
                 act = locationPayload.act,
                 floor = locationPayload.floor,
                 nodeIndex = locationPayload.nodeIndex
-            }));
+            };
+
+            stageService?.SetStage(RunStageType.ShopOverlay, SceneManager.GetActiveScene().name, RunStageService.ToJson(shopPayload));
             _shopOverlay?.OpenForNode(_run.Floor, _run.NodeIndex);
+            return;
         }
-        else if (target.nodeType == NodeType.Event)
+
+        if (target.nodeType == NodeType.Event)
         {
-            Debug.Log("<color=green>ACTION: Processing Event Node.</color>");
-            // '전문가 보관소'에서 EventManager를 꺼내옵니다.
-            var em = ServiceRegistry.GetRequired<IEventManager>();
-            if (em == null)
+            try
             {
-                Debug.LogError("[MapTraversal] EventManager가 등록되지 않았습니다.");
-                return;
-            }
+                var em = ServiceRegistry.GetRequired<IEventManager>();
 
-            // '같은 노드 재클릭'일 경우 (주로 '이어하기' 직후)
-            if (isReclickSameNode && !isMoveToChild)
-            {
-                // DB에 진행 중인 이벤트가 있는지 '확인만' 합니다.
-                var activeSession = em.TryLoadActive();
-                if (activeSession != null)
+                if (operation.IsReclickSameNode && !operation.IsMoveToChild)
                 {
-                    // 있다면, 이벤트 씬으로 보냅니다.
-                    stageService?.SetStage(RunStageType.Event, eventSceneName, stageService.Current?.PayloadJson);
-                    RunCacheSynchronizer.Sync();
-                    SceneManager.LoadScene(eventSceneName);
-                }
-                // 없다면 (이미 해결된 이벤트라면), 아무것도 하지 않습니다.
-            }
-
-            // '새로운 노드로 이동'일 경우
-            else if (isMoveToChild)
-            {
-                // 이 노드에 지정된 특정 이벤트 ID가 있으면 그것을 사용하고, 없으면 기본 ID를 사용합니다.
-                string eventId = !string.IsNullOrEmpty(target.eventIdOverride)
-                                ? target.eventIdOverride
-                                : defaultEventId;
-
-                // DB에 활성 이벤트가 없으면 '새로 만들고', 있다면 불러옵니다.
-                var session = em.LoadActiveOrCreate(eventId);
-                if (session != null)
-                {
-                    var payload = new RunStagePayloads.Event
+                    var activeSession = em.TryLoadActive();
+                    if (activeSession != null)
                     {
-                        act = locationPayload.act,
-                        floor = locationPayload.floor,
-                        nodeIndex = locationPayload.nodeIndex,
-                        eventId = session.eventId
-                    };
-                    stageService?.SetStage(RunStageType.Event, eventSceneName, RunStageService.ToJson(payload));
+                        stageService?.SetStage(RunStageType.Event, eventSceneName, stageService?.Current?.PayloadJson);
+                        RunCacheSynchronizer.Sync();
+                        SceneManager.LoadScene(eventSceneName);
+                    }
+                    return;
+                }
+
+                if (operation.EventPayload != null)
+                {
+                    stageService?.SetStage(RunStageType.Event, eventSceneName, RunStageService.ToJson(operation.EventPayload));
                     RunCacheSynchronizer.Sync();
                     SceneManager.LoadScene(eventSceneName);
                 }
+                else
+                {
+                    Debug.LogWarning("[MapTraversalController] 이벤트 페이로드가 준비되지 않아 이벤트 씬으로 이동하지 않습니다.");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MapTraversalController] EventManager 처리 중 오류: {e.Message}");
+            }
+            return;
+        }
+
+        if (target.nodeType == NodeType.Battle || target.nodeType == NodeType.Elite || target.nodeType == NodeType.Boss)
+        {
+            var battlePayload = operation.BattlePayload;
+            var sceneToLoad = operation.BattleSceneToLoad ?? battleSceneName;
+
+            if (battlePayload == null)
+            {
+                battlePayload = new RunStagePayloads.Battle
+                {
+                    act = locationPayload.act,
+                    floor = locationPayload.floor,
+                    nodeIndex = locationPayload.nodeIndex,
+                    battleKind = (int)(operation.PreparedBattleKind ?? GameContext.BattleKind.Normal),
+                    sceneName = sceneToLoad
+                };
             }
 
+            stageService?.SetStage(RunStageType.Battle, sceneToLoad, RunStageService.ToJson(battlePayload));
+            ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
+            RunCacheSynchronizer.Sync();
+            if (TryEnterBattleViaPreload(sceneToLoad)) return;
+            SceneManager.LoadScene(sceneToLoad);
+            return;
         }
-        else if (target.nodeType == NodeType.Battle)
+
+        if (operation.IsMoveToChild && operation.TriggerAssignedScene)
         {
-            // 기본은 일반 전투로 태깅하되, assignedScene 이름을 힌트로 엘리트/보스를 추론합니다.
-            var kind = GameContext.BattleKind.Normal;
-            var hint = target.assignedScene;
-            if (!string.IsNullOrEmpty(hint))
+            stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
+            target.GoToAssignedScene();
+            return;
+        }
+
+        if (!operation.IsMoveToChild)
+        {
+            Debug.Log("<color=orange>WARNING: No action taken. isMoveToChild was false for a non-shop/event node.</color>");
+        }
+    }
+
+    private PendingStageOperation CreatePendingOperation(NodeGoScene target, bool isMoveToChild, bool isReclickSameNode)
+    {
+        if (_run == null)
+        {
+            Debug.LogError("[MapTraversalController] 런 데이터가 초기화되지 않았습니다.");
+            return null;
+        }
+
+        var operation = new PendingStageOperation
+        {
+            Target = target,
+            IsMoveToChild = isMoveToChild,
+            IsReclickSameNode = isReclickSameNode
+        };
+
+        var locationPayload = new RunStagePayloads.Location
+        {
+            act = _run.Act,
+            floor = _run.Floor,
+            nodeIndex = _run.NodeIndex
+        };
+
+        if (isMoveToChild)
+        {
+            operation.PreviousFloor = _run.Floor;
+            _run.Floor = target.floor;
+            _run.NodeIndex = target.index;
+            _run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
+
+            locationPayload.floor = _run.Floor;
+            locationPayload.nodeIndex = _run.NodeIndex;
+
+            operation.PendingVisited = new MapNodeState
             {
-                var hl = hint.ToLowerInvariant();
-                if (hl.Contains("boss")) kind = GameContext.BattleKind.Boss;
-                else if (hl.Contains("elite")) kind = GameContext.BattleKind.Elite;
+                RunId = _run.RunId,
+                Act = _run.Act,
+                Floor = target.floor,
+                NodeIndex = target.index,
+                Type = (Game.Save.NodeType)target.nodeType,
+                Visited = true
+            };
+
+            PrepareStageData(operation, locationPayload);
+        }
+
+        operation.LocationPayload = locationPayload;
+        return operation;
+    }
+
+    private void PrepareStageData(PendingStageOperation operation, RunStagePayloads.Location locationPayload)
+    {
+        var target = operation.Target;
+        if (target == null) return;
+
+        if (target.nodeType == NodeType.Shop)
+        {
+            operation.ShopPayload = new RunStagePayloads.Shop
+            {
+                act = locationPayload.act,
+                floor = locationPayload.floor,
+                nodeIndex = locationPayload.nodeIndex
+            };
+            return;
+        }
+
+        if (target.nodeType == NodeType.Event)
+        {
+            var session = PrepareEventSession(target);
+            if (session != null)
+            {
+                operation.EventPayload = new RunStagePayloads.Event
+                {
+                    act = locationPayload.act,
+                    floor = locationPayload.floor,
+                    nodeIndex = locationPayload.nodeIndex,
+                    eventId = session.eventId
+                };
+                operation.PreparedEventSession = session;
             }
+            return;
+        }
+
+        if (target.nodeType == NodeType.Battle || target.nodeType == NodeType.Elite || target.nodeType == NodeType.Boss)
+        {
+            var kind = GameContext.BattleKind.Normal;
+            if (target.nodeType == NodeType.Elite) kind = GameContext.BattleKind.Elite;
+            else if (target.nodeType == NodeType.Boss) kind = GameContext.BattleKind.Boss;
+            else if (!string.IsNullOrEmpty(target.assignedScene))
+            {
+                var hint = target.assignedScene.ToLowerInvariant();
+                if (hint.Contains("boss")) kind = GameContext.BattleKind.Boss;
+                else if (hint.Contains("elite")) kind = GameContext.BattleKind.Elite;
+            }
+
             if (GameContext.I != null) GameContext.I.CurrentBattleKind = kind;
             try { PlayerPrefs.SetInt("currentBattleKind", (int)kind); PlayerPrefs.Save(); } catch { }
-            Debug.Log($"[BossFlow][Map] Battle node click → kind={kind}, nodeType={target.nodeType}, assignedScene='{target.assignedScene}'");
+
             var battleSceneToLoad = string.IsNullOrEmpty(target.assignedScene) ? battleSceneName : target.assignedScene;
-            var battlePayload = new RunStagePayloads.Battle
+            operation.PreparedBattleKind = kind;
+            operation.BattleSceneToLoad = battleSceneToLoad;
+            operation.BattlePayload = new RunStagePayloads.Battle
             {
                 act = locationPayload.act,
                 floor = locationPayload.floor,
@@ -301,76 +444,159 @@ public class MapTraversalController : MonoBehaviour
                 battleKind = (int)kind,
                 sceneName = battleSceneToLoad
             };
-            stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
-            ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
-            RunCacheSynchronizer.Sync();
-            if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
-            SceneManager.LoadScene(battleSceneToLoad);
             return;
         }
-        else if (target.nodeType == NodeType.Elite)
+
+        operation.TriggerAssignedScene = !string.IsNullOrEmpty(target.assignedScene);
+    }
+
+    private EventSessionDTO PrepareEventSession(NodeGoScene target)
+    {
+        try
         {
-            // 엘리트 전투도 동일 씬 사용
-            if (GameContext.I != null) GameContext.I.CurrentBattleKind = GameContext.BattleKind.Elite;
-            try { PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Elite); PlayerPrefs.Save(); } catch { }
-            Debug.Log($"[BossFlow][Map] Elite node click → kind=Elite, assignedScene='{target.assignedScene}'");
-            var battleSceneToLoad = string.IsNullOrEmpty(target.assignedScene) ? battleSceneName : target.assignedScene;
-            var battlePayload = new RunStagePayloads.Battle
+            var em = ServiceRegistry.GetRequired<IEventManager>();
+            string eventId = !string.IsNullOrEmpty(target.eventIdOverride) ? target.eventIdOverride : defaultEventId;
+            var session = em.LoadActiveOrCreate(eventId);
+            if (session == null)
             {
-                act = locationPayload.act,
-                floor = locationPayload.floor,
-                nodeIndex = locationPayload.nodeIndex,
-                battleKind = (int)GameContext.BattleKind.Elite,
-                sceneName = battleSceneToLoad
-            };
-            stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
-            ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
-            RunCacheSynchronizer.Sync();
-            if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
-            SceneManager.LoadScene(battleSceneToLoad);
+                Debug.LogWarning($"[MapTraversalController] 이벤트 세션 생성 실패: {eventId}");
+            }
+            return session;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[MapTraversalController] 이벤트 준비 중 오류: {e.Message}");
+            return null;
+        }
+    }
+
+    private void ResetSessionsForMove()
+    {
+        _shopOverlay?.ResetShopSession();
+
+        if (!string.IsNullOrEmpty(_run?.RunId))
+        {
+            DatabaseManager.Instance.DeleteActiveShopSession(_run.RunId);
+            DatabaseManager.Instance.DeleteActiveEventSession(_run.RunId);
+        }
+
+        _shopOverlay?.ClearCachedSession();
+    }
+
+    private void CleanupAfterFailure()
+    {
+        ClearMarkerTween();
+        _pendingOperation = null;
+        _isMoving = false;
+    }
+
+    private void ClearMarkerTween()
+    {
+        if (_markerTween != null)
+        {
+            _markerTween.Kill();
+            _markerTween = null;
+        }
+    }
+
+    private bool ShouldAnimateMarker()
+    {
+        return playerMarker != null && markerMoveDuration > 0f;
+    }
+
+    private bool TryComputeAnchoredPosition(NodeGoScene node, RectTransform markerRect, out Vector2 anchoredPosition)
+    {
+        anchoredPosition = Vector2.zero;
+        if (node == null || markerRect == null) return false;
+
+        var canvas = markerRect.GetComponentInParent<Canvas>();
+        Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay) ? canvas.worldCamera : null;
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, node.transform.position);
+
+        var parentRect = markerRect.parent as RectTransform;
+        if (parentRect != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, cam, out var localPoint))
+        {
+            anchoredPosition = localPoint;
+            return true;
+        }
+
+        return false;
+    }
+
+
+
+    /// <summary>
+    /// 노드 클릭 시 유효성을 검사하고 이동 애니메이션/씬 전환을 관리합니다.
+    /// </summary>
+    public void OnNodeClicked(NodeGoScene target)
+    {
+        if (target == null)
+        {
+            Debug.LogWarning("[MapTraversalController] OnNodeClicked가 null 타겟으로 호출되었습니다.");
             return;
         }
-        else if (target.nodeType == NodeType.Boss)
+
+        if (_isMoving)
         {
-            // 보스 전투도 동일 씬 사용
-            if (GameContext.I != null) GameContext.I.CurrentBattleKind = GameContext.BattleKind.Boss;
-            try { PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Boss); PlayerPrefs.Save(); } catch { }
-            Debug.Log($"[BossFlow][Map] Boss node click → kind=Boss, assignedScene='{target.assignedScene}'");
-            var battleSceneToLoad = string.IsNullOrEmpty(target.assignedScene) ? battleSceneName : target.assignedScene;
-            var battlePayload = new RunStagePayloads.Battle
+            if (allowMarkerSkip && _markerTween != null && _markerTween.IsActive())
             {
-                act = locationPayload.act,
-                floor = locationPayload.floor,
-                nodeIndex = locationPayload.nodeIndex,
-                battleKind = (int)GameContext.BattleKind.Boss,
-                sceneName = battleSceneToLoad
-            };
-            stageService?.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
-            ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
-            RunCacheSynchronizer.Sync();
-            if (TryEnterBattleViaPreload(battleSceneToLoad)) return;
-            SceneManager.LoadScene(battleSceneToLoad);
+                _markerTween.Complete(true);
+            }
             return;
         }
-        else if (isMoveToChild) // 상점이 아닌 다른 노드는, '이동'했을 때만 씬을 전환합니다.
+
+        _isMoving = true;
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+
+        try
         {
-            Debug.Log($"<color=cyan>ACTION: Other node type. Calling GoToAssignedScene for '{target.assignedScene}'</color>");
-            stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
-            target.GoToAssignedScene();
-        }
-        else
-        {
-            // 어떤 조건에도 해당하지 않음
-            Debug.Log("<color=orange>WARNING: No action taken. isMoveToChild was false for a non-shop/event node.</color>");
-        }
+            Debug.Log($"--- OnNodeClicked --- Target: ({target.floor},{target.index}), Type: {target.nodeType}");
+
+            if (!_nodes.TryGetValue((_run.Floor, _run.NodeIndex), out var curNode))
+            {
+                Debug.LogWarning("[MapTraversalController] 현재 노드를 찾지 못했습니다.");
+                CleanupAfterFailure();
+                return;
+            }
+
+            bool isMoveToChild = curNode.children != null && curNode.children.Contains(target);
+            bool isReclickSameNode = (_run.Floor == target.floor && _run.NodeIndex == target.index);
+            Debug.Log($"<color=yellow>ANALYSIS >> isMoveToChild: {isMoveToChild}, isReclickSameNode: {isReclickSameNode}</color>", this);
+
+            if (!isMoveToChild && !isReclickSameNode)
+            {
+                Debug.Log("<color=red>INVALID CLICK: Action ignored.</color>");
+                CleanupAfterFailure();
+                return;
+            }
+
+            if (isMoveToChild)
+            {
+                Debug.Log("<color=cyan>ACTION >> Moving to a new node. Resetting shop/event session caches...</color>", this);
+                ResetSessionsForMove();
+            }
+
+            _pendingOperation = CreatePendingOperation(target, isMoveToChild, isReclickSameNode);
+            if (_pendingOperation == null)
+            {
+                Debug.LogWarning("[MapTraversalController] PendingStageOperation 생성에 실패했습니다.");
+                CleanupAfterFailure();
+                return;
+            }
+
+            if (isMoveToChild && ShouldAnimateMarker())
+            {
+                StartMarkerTween(stageService);
+            }
+            else
+            {
+                FinalizePendingOperation(stageService);
+            }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"[MapTraversalController] 노드 이동 처리 중 오류: {e.Message}");
-        }
-        finally
-        {
-            _isMoving = false;
+            CleanupAfterFailure();
         }
     }
 
@@ -383,36 +609,21 @@ public class MapTraversalController : MonoBehaviour
         var markerRect = playerMarker as RectTransform;
         var nodeTransform = node.transform;
 
-        // 1. 마커가 UI 오브젝트일 경우 (가장 흔한 케이스)
         if (markerRect != null)
         {
-            // 마커가 속한 캔버스와 렌더링용 카메라를 찾습니다.
-            var canvas = markerRect.GetComponentInParent<Canvas>();
-            Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay) ? canvas.worldCamera : null;
-
-            // 노드의 월드 좌표를 화면 좌표로 변환합니다.
-            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, nodeTransform.position);
-
-            // 변환된 화면 좌표를 마커의 부모 UI 기준 로컬 좌표(anchoredPosition)로 다시 변환합니다.
-            var parentRect = markerRect.parent as RectTransform;
-            if (parentRect != null &&
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, cam, out var localPoint))
+            if (TryComputeAnchoredPosition(node, markerRect, out var anchoredPosition))
             {
-                markerRect.anchoredPosition = localPoint;
+                markerRect.anchoredPosition = anchoredPosition;
             }
             else
             {
-                // 변환이 실패하면 최후의 수단으로 월드 좌표라도 맞춰줍니다.
                 markerRect.position = nodeTransform.position;
             }
 
-            // (선택사항) 마커가 다른 UI에 가려지지 않도록 맨 위로 올립니다.
             markerRect.SetAsLastSibling();
         }
-        // 2. 마커가 UI가 아닌 일반 3D/2D 오브젝트일 경우
         else
         {
-            // 간단하게 월드 좌표를 그대로 복사합니다.
             playerMarker.position = nodeTransform.position;
         }
     }
