@@ -39,7 +39,7 @@ public class RelicsUI : MonoBehaviour
         var icon = go.GetComponent<RelicIconUI>();
         if (icon)
         {
-            icon.Setup(relic.Data.icon, relic.Stacks);
+            icon.Setup(relic.Data, relic.Stacks);
             map[id] = icon;
         }
     }
