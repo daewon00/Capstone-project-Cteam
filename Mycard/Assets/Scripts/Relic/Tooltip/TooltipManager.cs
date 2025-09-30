@@ -10,17 +10,19 @@ public class TooltipManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        /*if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
-        }
+        }*/
 
         Instance = this;
+        
         if (!tooltipUI)
         {
             tooltipUI = GetComponentInChildren<TooltipUI>(true);
         }
+        
     }
 
     private void OnDestroy()
@@ -33,13 +35,14 @@ public class TooltipManager : MonoBehaviour
 
     public void ShowTooltip(string title, string description)
     {
-        
+
         if (!tooltipUI)
         {
             return;
         }
 
         tooltipUI.Show(title, description);
+        Debug.LogWarning("tooltipon");
     }
 
     public void ShowRelicTooltip(RelicData data)
