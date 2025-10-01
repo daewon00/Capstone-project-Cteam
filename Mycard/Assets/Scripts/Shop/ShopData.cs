@@ -20,4 +20,5 @@ public class SlotDTO
     public string detail;   // 아이템 타입 ("Card", "Relic" 등)
     public int price;       // 할인이 적용된 최종 가격
     public bool isDeal;     // 특가 상품인지 여부
+    public CardRarity rarity;
 }

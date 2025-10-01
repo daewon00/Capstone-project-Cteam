@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Collections;
+using UnityRandom = UnityEngine.Random;
 
 public partial class ShopUI : MonoBehaviour
 {
@@ -69,19 +71,19 @@ public partial class ShopUI : MonoBehaviour
         // _dummy 리스트를 6칸짜리 새 리스트로 초기화합니다.
         _dummy = new List<ShopSlotVM>(6)
         {
-            new ShopSlotVM{ title="Strike",       detail="Card" },
-            new ShopSlotVM{ title="Defend",       detail="Card" },
-            new ShopSlotVM{ title="Fireball",     detail="Card" },
-            new ShopSlotVM{ title="Happy Flower", detail="Relic" },
-            new ShopSlotVM{ title="Anchor",       detail="Relic" },
-            new ShopSlotVM{ title="Block Potion", detail="Consumable" },
+            new ShopSlotVM{ title="Strike",       detail="Card",       rarity = CardRarity.Common },
+            new ShopSlotVM{ title="Defend",       detail="Card",       rarity = CardRarity.Common },
+            new ShopSlotVM{ title="Fireball",     detail="Card",       rarity = CardRarity.Common },
+            new ShopSlotVM{ title="Happy Flower", detail="Relic",      rarity = CardRarity.Common },
+            new ShopSlotVM{ title="Anchor",       detail="Relic",      rarity = CardRarity.Common },
+            new ShopSlotVM{ title="Block Potion", detail="Consumable", rarity = CardRarity.Common },
         };
 
         // 방금 진열한 모든 아이템('마네킹' 포함)을 하나씩 돌면서 가격을 계산하고 설정합니다.
         for (int i = 0; i < _dummy.Count; i++)
         {
             var vm = _dummy[i];
-            vm.price = BasePriceOf(vm.detail, vm.title);
+            vm.price = BasePriceOf(vm.detail, vm.title, vm.rarity);
             _dummy[i] = vm;
         }
     }
@@ -96,9 +98,10 @@ public partial class ShopUI : MonoBehaviour
             title   = so.cardName,
             detail  = "Card",
             icon    = icon,
-            price   = BasePriceOf("Card", so.cardName),
+            price   = BasePriceOf("Card", so.cardName, so.Rarity),
             soldOut = false,
             isDeal  = false,
+            rarity  = so.Rarity,
         };
     }
 
@@ -108,16 +111,21 @@ public partial class ShopUI : MonoBehaviour
         // (안전장치) 카드 데이터가 담긴 '창고'(cardPool)가 비어있으면, 함수를 즉시 종료합니다.
         if (cardPool == null || cardPool.Count == 0) return;
 
+        var picker = CreateCardPicker();
+        if (picker == null)
+            return;
+
         // 뽑았던 카드를 다시 뽑지 않기 위한 '제외 목록'
-        var exclude = new HashSet<string>();
+        var exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // 상점의 첫 3칸(카드 전용 슬롯)에 대해서만 반복 작업을 합니다.
         for (int i = 0; i < 3; i++)
         {
-            var pick = DrawUniqueCard(exclude);
+            var pick = DrawUniqueCard(picker, exclude);
             if (pick == null) { _cardSources[i] = null; continue; }
 
-            exclude.Add(pick.cardName);     // 이름 기반
+            if (!string.IsNullOrEmpty(pick.CardId))
+                exclude.Add(pick.CardId);
             _cardSources[i] = pick;
             // 진열대(_dummy)의 i번째 칸에 있던 '마네킹'을 방금 뽑은 진짜 카드(pick) 정보로 교체합니다.
             _dummy[i] = ToVM(pick);
@@ -134,38 +142,43 @@ public partial class ShopUI : MonoBehaviour
     // 판매 중인 카드를 제외하고, 새로운 카드 3개를 뽑아 교체합니다.
     private void RerollCardSlots()
     {
-        var exclude = new HashSet<string>();
+        var picker = CreateCardPicker();
+        var exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < 3; i++)
-            if (_cardSources[i] != null)
-                exclude.Add(_cardSources[i].cardName);
+        {
+            if (_cardSources[i] != null && !string.IsNullOrEmpty(_cardSources[i].CardId))
+                exclude.Add(_cardSources[i].CardId);
+        }
 
         for (int slot = 0; slot < 3; slot++)
         {
             if (_dummy[slot].soldOut) continue;
 
-            var pick = DrawUniqueCard(exclude);
+            var pick = DrawUniqueCard(picker, exclude);
             if (pick == null) continue;
 
-            exclude.Add(pick.cardName);
+            if (!string.IsNullOrEmpty(pick.CardId))
+                exclude.Add(pick.CardId);
             _cardSources[slot] = pick;
             _dummy[slot] = ToVM(pick);
         }
     }
 
     // 카드 창고(cardPool)에서 중복되지 않는 카드를 하나 뽑아옵니다.
-    private CardScriptableObject DrawUniqueCard(HashSet<string> exclude)
+    private CardScriptableObject DrawUniqueCard(WeightedCardPicker picker, HashSet<string> exclude)
     {
-        if (cardPool == null || cardPool.Count == 0) return null;
+        if (picker == null)
+            return null;
 
-        var candidates = new List<CardScriptableObject>(cardPool.Count);
-        foreach (var c in cardPool)
-        {
-            if (c == null) continue;
-            if (exclude != null && exclude.Contains(c.cardName)) continue;
-            candidates.Add(c);
-        }
-        if (candidates.Count == 0) return null;
-        return candidates[Random.Range(0, candidates.Count)];
+        return picker.PickOne(CardAcquisitionContext.Shop, () => UnityRandom.value, max => UnityRandom.Range(0, max), exclude);
+    }
+
+    private WeightedCardPicker CreateCardPicker()
+    {
+        if (cardPool == null || cardPool.Count == 0)
+            return null;
+
+        return new WeightedCardPicker(cardPool, card => card != null && !card.removeAfterCombat);
     }
 
     // 유물/소모품 목록에서 중복되지 않는 아이템 이름을 하나 뽑아옵니다.
@@ -179,7 +192,7 @@ public partial class ShopUI : MonoBehaviour
                 candidates.Add(p);
         }
         if (candidates.Count == 0) return null;
-        int idx = Random.Range(0, candidates.Count);
+        int idx = UnityRandom.Range(0, candidates.Count);
         return candidates[idx];
     }
 
@@ -222,7 +235,7 @@ public partial class ShopUI : MonoBehaviour
             var vm = _dummy[i];
             vm.title = newId;
             vm.icon = null;
-            vm.price = BasePriceOf(vm.detail, vm.title);
+            vm.price = BasePriceOf(vm.detail, vm.title, vm.rarity);
             _dummy[i] = vm;
         }
 

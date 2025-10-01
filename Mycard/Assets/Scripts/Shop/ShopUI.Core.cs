@@ -135,7 +135,8 @@ public partial class ShopUI : MonoBehaviour
             {
                 string assumedDetail = string.IsNullOrEmpty(vm.detail) && vm.cardData != null ? "Card" : vm.detail;
                 string nameForPrice  = vm.cardData != null ? vm.cardData.cardName : vm.title;
-                basePrice = BasePriceOf(assumedDetail, nameForPrice);
+                CardRarity rarityForPrice = vm.cardData != null ? vm.cardData.Rarity : vm.rarity;
+                basePrice = BasePriceOf(assumedDetail, nameForPrice, rarityForPrice);
             }
 
             // DTO에 '최종 가격'을 저장합니다.
@@ -148,7 +149,8 @@ public partial class ShopUI : MonoBehaviour
                 soldOut = vm.soldOut,
                 detail = string.IsNullOrEmpty(vm.detail) && vm.cardData != null ? "Card" : vm.detail,
                 price = Mathf.Max(0, finalPrice), // 가격이 음수가 되지 않도록 보정
-                isDeal = vm.isDeal
+                isDeal = vm.isDeal,
+                rarity = vm.cardData != null ? vm.cardData.Rarity : vm.rarity
             };
         }
         return dto;
@@ -212,7 +214,8 @@ public partial class ShopUI : MonoBehaviour
                 string detail = !string.IsNullOrEmpty(slotData.detail) ? slotData.detail 
                             : _consumablesSet.Contains(id) ? "Consumable" 
                             : "Relic";
-                vm = new ShopSlotVM { title = id, detail = detail };
+                var rarity = slotData.rarity;
+                vm = new ShopSlotVM { title = id, detail = detail, rarity = rarity };
             }
 
             // --- 2. 가격/특가 복원 (가장 정교한 부분) ---
@@ -236,7 +239,8 @@ public partial class ShopUI : MonoBehaviour
             {
                 // ★ 안전장치 3: 가격 정보가 없는 과거 데이터를 위한 대비책
                 string nameForPrice = (vm.cardData != null) ? vm.cardData.cardName : vm.title;
-                basePrice = BasePriceOf(vm.detail, nameForPrice);
+                CardRarity rarityForPrice = vm.cardData != null ? vm.cardData.Rarity : vm.rarity;
+                basePrice = BasePriceOf(vm.detail, nameForPrice, rarityForPrice);
             }
             
             vm.price = Mathf.Max(1, basePrice); // 가격이 최소 1 이상이 되도록 보정

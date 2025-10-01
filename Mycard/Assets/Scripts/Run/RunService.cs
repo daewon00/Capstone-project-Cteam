@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -217,14 +218,32 @@ public class RunService : IRunService
             var allIds = _cardCatalog?.GetAllCardIds();
             if (allIds != null && allIds.Count > 0)
             {
-                // 간단한 중복 방지: 목록 사본에서 무작위로 꺼내 제거합니다.
-                var pool = new System.Collections.Generic.List<string>(allIds);
-                for (int i = 0; i < 3 && pool.Count > 0; i++)
+                var cards = new System.Collections.Generic.List<CardScriptableObject>(allIds.Count);
+                foreach (var id in allIds)
                 {
-                    int idx = _rngService.NextInt("reward-generation", 0, pool.Count);
-                    var id = pool[idx];
-                    pool.RemoveAt(idx);
-                    container.SelectableCards.Add(new RewardCardOption { CardId = id, IsUpgraded = false });
+                    var so = _cardCatalog.GetCardData(id);
+                    if (so == null || so.removeAfterCombat)
+                        continue;
+                    cards.Add(so);
+                }
+
+                if (cards.Count > 0)
+                {
+                    var picker = new WeightedCardPicker(cards);
+                    var exclude = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+                    System.Func<float> nextFloat = () => _rngService.NextFloat("reward-generation");
+                    System.Func<int, int> nextInt = max => _rngService.NextInt("reward-generation", 0, max);
+                    var selected = picker.PickMany(CardAcquisitionContext.Reward, 3, nextFloat, nextInt, exclude);
+
+                    foreach (var card in selected)
+                    {
+                        container.SelectableCards.Add(new RewardCardOption
+                        {
+                            CardId = card.CardId,
+                            IsUpgraded = false,
+                            Rarity = card.Rarity
+                        });
+                    }
                 }
             }
         }

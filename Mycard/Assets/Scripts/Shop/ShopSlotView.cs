@@ -108,4 +108,5 @@ public struct ShopSlotVM {
     public bool soldOut;   // 판매 완료 여부
     public int price;      // 가격
     public bool isDeal;     // 특가 여부
+    public CardRarity rarity; // 카드 희귀도 (카드가 아닌 경우 기본값)
 }

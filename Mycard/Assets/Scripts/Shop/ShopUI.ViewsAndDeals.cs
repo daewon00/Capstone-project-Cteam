@@ -12,12 +12,17 @@ public partial class ShopUI : MonoBehaviour
     // ==========================================================
 
     // 아이템 종류와 이름에 따라 기본 가격을 계산합니다.
-    private int BasePriceOf(string detail, string title)
+    private int BasePriceOf(string detail, string title, CardRarity rarity = CardRarity.Common)
     {
         int baseVal = detail == "Card" ? 50 :
                       detail == "Relic" ? 120 :
                       detail == "Consumable" ? 40 : 50;
         baseVal += Mathf.Clamp((title?.Length ?? 0) * 2, 0, 30);
+        if (string.Equals(detail, "Card", StringComparison.OrdinalIgnoreCase))
+        {
+            float multiplier = CardRarityConfig.GetPriceMultiplier(rarity);
+            baseVal = Mathf.CeilToInt(baseVal * Mathf.Max(0.1f, multiplier));
+        }
         return baseVal;
     }
 

@@ -140,6 +140,26 @@ public sealed class AchievementService : IAchievementService
         return map;
     }
 
+    public IReadOnlyDictionary<string, AchievementTierProgressInfo> GetTierInfoSnapshot(string profileId)
+    {
+        var map = new Dictionary<string, AchievementTierProgressInfo>(StringComparer.OrdinalIgnoreCase);
+        var pid = string.IsNullOrEmpty(profileId) ? _profileId : profileId;
+        foreach (var def in _defs.Values)
+        {
+            var row = _db.LoadAchievementProgress(pid, def.Id) ?? new AchievementProgress
+            {
+                ProfileId = pid,
+                AchievementId = def.Id,
+                IsUnlocked = false,
+                Progress = 0,
+                UnlockedAtUtc = null,
+                HighestTierUnlocked = 0
+            };
+            map[def.Id] = BuildTierInfo(def, row);
+        }
+        return map;
+    }
+
     private AchievementProgress GetOrCreateProgress(string achievementId)
     {
         if (_progressCache.TryGetValue(achievementId, out var cached) && cached != null)
@@ -483,6 +503,125 @@ public sealed class AchievementService : IAchievementService
                 _db.UpsertAchievementProgress(row);
             }
         }
+    }
+
+
+    private AchievementTierProgressInfo BuildTierInfo(AchievementDefinition def, AchievementProgress row)
+    {
+        if (row == null)
+        {
+            row = new AchievementProgress
+            {
+                ProfileId = _profileId,
+                AchievementId = def.Id,
+                IsUnlocked = false,
+                Progress = 0,
+                UnlockedAtUtc = null,
+                HighestTierUnlocked = 0
+            };
+        }
+
+        var tiers = NormalizeTiers(def);
+        int totalTiers = tiers.Count > 0 ? tiers.Count : 1;
+        int finalGoal = def.GetFinalGoal();
+        int rawProgress = Mathf.Max(0, row.Progress);
+        int unlockedTiers = Mathf.Clamp(row.HighestTierUnlocked, 0, totalTiers);
+        bool finalCompleted = row.IsUnlocked || unlockedTiers >= totalTiers || rawProgress >= finalGoal;
+        int currentTierIndex = finalCompleted ? Mathf.Max(totalTiers - 1, 0) : Mathf.Clamp(unlockedTiers, 0, totalTiers - 1);
+
+        int previousGoal = GetTierGoal(tiers, currentTierIndex - 1, finalGoal);
+        int currentGoal = GetTierGoal(tiers, currentTierIndex, finalGoal);
+        int currentTarget = Mathf.Max(1, currentGoal - previousGoal);
+
+        bool hasNextTier = !finalCompleted && unlockedTiers < totalTiers;
+        int nextGoal = hasNextTier ? GetTierGoal(tiers, unlockedTiers, finalGoal) : currentGoal;
+        int progressWithin = Mathf.Clamp(rawProgress - previousGoal, 0, currentTarget);
+        if (finalCompleted) progressWithin = currentTarget;
+        int remainingToNext = hasNextTier ? Mathf.Max(0, nextGoal - rawProgress) : 0;
+
+        int cumulativeReward = 0;
+        if (tiers.Count > 0)
+        {
+            for (int i = 0; i < Mathf.Min(unlockedTiers, tiers.Count); i++)
+            {
+                var reward = tiers[i].reward;
+                if (reward != null) cumulativeReward += Mathf.Max(0, reward.perkPoints);
+            }
+        }
+        if (row.IsUnlocked)
+        {
+            cumulativeReward += Mathf.Max(0, def.PointsReward);
+        }
+
+        int nextReward = 0;
+        if (hasNextTier)
+        {
+            if (tiers.Count > 0 && unlockedTiers < tiers.Count)
+            {
+                var reward = tiers[unlockedTiers].reward;
+                nextReward = reward != null ? Mathf.Max(0, reward.perkPoints) : 0;
+                if (unlockedTiers == tiers.Count - 1)
+                {
+                    nextReward = Mathf.Max(0, def.PointsReward);
+                }
+            }
+            else
+            {
+                nextReward = Mathf.Max(0, def.PointsReward);
+            }
+        }
+
+        string currentDisplay = def.DisplayName;
+        if (tiers.Count > 0)
+        {
+            var currentTier = tiers[Mathf.Clamp(currentTierIndex, 0, tiers.Count - 1)];
+            if (!string.IsNullOrEmpty(currentTier.displayName)) currentDisplay = currentTier.displayName;
+        }
+
+        string nextDisplay = null;
+        if (hasNextTier)
+        {
+            if (tiers.Count > 0 && unlockedTiers < tiers.Count)
+            {
+                var nextTier = tiers[unlockedTiers];
+                nextDisplay = !string.IsNullOrEmpty(nextTier.displayName) ? nextTier.displayName : def.DisplayName;
+            }
+            else
+            {
+                nextDisplay = def.DisplayName;
+            }
+        }
+
+        return new AchievementTierProgressInfo(
+            row,
+            totalTiers,
+            currentTierIndex,
+            previousGoal,
+            currentGoal,
+            nextGoal,
+            currentTarget,
+            progressWithin,
+            remainingToNext,
+            cumulativeReward,
+            nextReward,
+            hasNextTier,
+            finalCompleted,
+            currentDisplay,
+            nextDisplay
+        );
+    }
+
+    private static int GetTierGoal(List<AchievementDefinition.Tier> tiers, int index, int finalGoal)
+    {
+        if (tiers == null || tiers.Count == 0)
+        {
+            if (index < 0) return 0;
+            return Mathf.Max(1, finalGoal);
+        }
+
+        if (index < 0) return 0;
+        if (index >= tiers.Count) return Mathf.Max(1, finalGoal);
+        return Mathf.Max(1, tiers[index].goal);
     }
 
     private void HandleFloorReached(MetaEvents.FloorReachedPayload payload)

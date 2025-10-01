@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class GameEvents
@@ -19,6 +20,7 @@ public static class GameEvents
     public static event Action OnEnemyAttackModifiersChanged;
     public static event Action OnCardManaCostModifiersChanged;
     public static event Action OnCardHealthModifiersChanged;
+    public static event Action<CardAcquisitionContext, RarityWeightBuilder> ModifyCardRarityWeights;
     public static event Action OnCardAttackModifiersChanged;
 
     // Raise helpers
@@ -55,7 +57,28 @@ public static class GameEvents
         => ApplyModifierChain(ModifyCardManaCost, card, baseValue);
         
     public static int ApplyCardHealthModifiers(Card card, int baseValue)
-         => ApplyModifierChain(ModifyCardHealth, card, baseValue);
+        => ApplyModifierChain(ModifyCardHealth, card, baseValue);    
+
+    public static Dictionary<CardRarity, float> ApplyRarityWeightModifiers(CardAcquisitionContext context, Dictionary<CardRarity, float> baseWeights)
+    {
+        if (ModifyCardRarityWeights == null)
+            return baseWeights;
+
+        var builder = new RarityWeightBuilder(baseWeights);
+        foreach (var handler in ModifyCardRarityWeights.GetInvocationList())
+        {
+            try
+            {
+                ((Action<CardAcquisitionContext, RarityWeightBuilder>)handler)(context, builder);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[GameEvents] Rarity weight modifier threw exception: {ex.Message}");
+            }
+        }
+
+        return builder.Build();
+    }
 
     public static int ApplyCardAttackModifiers(Card card, int baseValue)
         => ApplyModifierChain(ModifyCardAttack, card, baseValue);

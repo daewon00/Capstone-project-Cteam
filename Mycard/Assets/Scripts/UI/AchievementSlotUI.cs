@@ -2,7 +2,6 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Game.Save;
 
 /// <summary>
 /// 개별 업적 정보를 표시하고 진행도에 따라 뷰를 업데이트하는 슬롯 UI입니다.
@@ -17,66 +16,117 @@ public class AchievementSlotUI : MonoBehaviour
     [SerializeField] private Slider progressSlider;
     [SerializeField] private GameObject unlockedBadge;
     [SerializeField] private TMP_Text unlockedAtText;
+    [SerializeField] private TMP_Text cumulativeRewardText;
+    [SerializeField] private TMP_Text nextRewardText;
     [SerializeField] private GameObject newTag;
     [SerializeField] private TMP_Text tierText;
 
     /// <summary>
     /// 업적 정의와 진행도를 받아 슬롯을 초기화합니다.
     /// </summary>
-    public void Init(AchievementDefinition def, AchievementProgress prog, bool isNew, int newlyUnlockedTier)
+    public void Init(AchievementDefinition def, AchievementTierProgressInfo info, bool isNew, int newlyUnlockedTier)
     {
-        bool hiddenAndLocked = def.Hidden && (prog == null || !prog.IsUnlocked);
-        string displayName = hiddenAndLocked ? "???" : def.DisplayName;
-        string desc = hiddenAndLocked ? "???" : def.Description;
+        var progress = info.Progress;
+        int totalTiers = Mathf.Max(1, info.TotalTiers);
+        int unlockedTierCount = Mathf.Clamp(progress.HighestTierUnlocked, 0, totalTiers);
+        bool finalCompleted = info.IsFinalTierCompleted || progress.IsUnlocked;
+
+        string displayName = def.Hidden && !finalCompleted ? "???" : def.DisplayName;
+        string description = def.Hidden && !finalCompleted ? "???" : def.Description;
 
         if (nameText) nameText.text = displayName;
-        if (descText) descText.text = desc;
-        if (rewardText) rewardText.text = $"+{def.PointsReward} pt";
+        if (descText) descText.text = description;
+        if (rewardText) rewardText.text = $"최종 보상: +{Mathf.Max(0, def.PointsReward)} pt";
 
-        int target = Mathf.Max(1, def.ProgressTarget);
-        int value = Mathf.Clamp(prog?.Progress ?? 0, 0, target);
-        bool unlocked = prog?.IsUnlocked == true;
+        // 슬라이더 및 기본 진행 텍스트
+        int currentTarget = Mathf.Max(1, info.CurrentTierTarget);
+        int currentValue = Mathf.Clamp(info.ProgressWithinCurrentTier, 0, currentTarget);
 
         if (progressSlider)
         {
-            progressSlider.gameObject.SetActive(!unlocked);
-            progressSlider.minValue = 0;
-            progressSlider.maxValue = target;
-            progressSlider.value = value;
+            bool showSlider = !finalCompleted && info.HasNextTier && currentTarget > 0;
+            progressSlider.gameObject.SetActive(showSlider);
+            if (showSlider)
+            {
+                progressSlider.minValue = 0;
+                progressSlider.maxValue = currentTarget;
+                progressSlider.value = currentValue;
+            }
         }
+
         if (progressText)
         {
-            progressText.gameObject.SetActive(!unlocked);
-            progressText.text = $"{value} / {target}";
+            if (finalCompleted)
+            {
+                progressText.gameObject.SetActive(true);
+                progressText.text = $"{progress.Progress} / {info.CurrentTierGoal} (완료)";
+            }
+            else
+            {
+                progressText.gameObject.SetActive(true);
+                progressText.text = $"{currentValue} / {currentTarget}";
+            }
         }
-        if (unlockedBadge) unlockedBadge.SetActive(unlocked);
+
+        if (unlockedBadge) unlockedBadge.SetActive(finalCompleted);
+
         if (unlockedAtText)
         {
-            if (unlocked && !string.IsNullOrEmpty(prog.UnlockedAtUtc))
-                unlockedAtText.text = System.DateTime.TryParse(prog.UnlockedAtUtc, out var dt) ? dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : prog.UnlockedAtUtc;
+            if (progress.IsUnlocked && !string.IsNullOrEmpty(progress.UnlockedAtUtc))
+            {
+                unlockedAtText.text = System.DateTime.TryParse(progress.UnlockedAtUtc, out var dt)
+                    ? dt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                    : progress.UnlockedAtUtc;
+            }
             else
+            {
                 unlockedAtText.text = string.Empty;
+            }
         }
-        int tierCount = def.Tiers != null && def.Tiers.Count > 0 ? def.Tiers.Count : 1;
-        int unlockedTier = Mathf.Clamp(prog?.HighestTierUnlocked ?? 0, 0, tierCount);
+
+        if (cumulativeRewardText)
+        {
+            cumulativeRewardText.text = $"누적 보상: +{info.CumulativeRewardPoints} pt";
+        }
+
+        if (nextRewardText)
+        {
+            if (finalCompleted)
+            {
+                nextRewardText.text = "추가 보상 없음";
+            }
+            else
+            {
+                int nextReward = Mathf.Max(0, info.NextRewardPoints);
+                string label = info.HasNextTier ? "다음 보상" : "최종 보상";
+                nextRewardText.text = nextReward > 0
+                    ? $"{label}: +{nextReward} pt"
+                    : $"{label}: 없음";
+            }
+        }
 
         if (tierText)
         {
-            if (tierCount <= 1)
+            if (totalTiers <= 1)
             {
                 tierText.gameObject.SetActive(false);
             }
             else
             {
                 tierText.gameObject.SetActive(true);
-                StringBuilder stars = new StringBuilder(tierCount);
-                for (int i = 1; i <= tierCount; i++)
+                StringBuilder stars = new StringBuilder(totalTiers);
+                for (int i = 0; i < totalTiers; i++)
                 {
-                    stars.Append(i <= unlockedTier ? '★' : '☆');
+                    stars.Append(i < unlockedTierCount ? '★' : '☆');
                 }
+
                 if (newlyUnlockedTier > 0)
                 {
-                    tierText.text = $"티어: {stars}  ↑ {newlyUnlockedTier}/{tierCount}";
+                    tierText.text = $"티어: {stars}  ↑ {newlyUnlockedTier}/{totalTiers}";
+                }
+                else if (finalCompleted)
+                {
+                    tierText.text = $"티어: {stars} (완료)";
                 }
                 else
                 {

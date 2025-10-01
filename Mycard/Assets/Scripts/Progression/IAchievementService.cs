@@ -14,8 +14,9 @@ public interface IAchievementService
     IReadOnlyList<AchievementTierUnlock> GetNewlyUnlockedTiers(bool consume = false);
 
     // UI 조회용 API
-    System.Collections.Generic.IReadOnlyList<AchievementDefinition> GetAllDefinitions();
-    System.Collections.Generic.IReadOnlyDictionary<string, Game.Save.AchievementProgress> GetProgressSnapshot(string profileId);
+    IReadOnlyList<AchievementDefinition> GetAllDefinitions();
+    IReadOnlyDictionary<string, Game.Save.AchievementProgress> GetProgressSnapshot(string profileId);
+    IReadOnlyDictionary<string, AchievementTierProgressInfo> GetTierInfoSnapshot(string profileId);
 }
 
 /// <summary>
@@ -35,4 +36,60 @@ public readonly struct AchievementTierUnlock
     public int TierIndex { get; }
     public int TierCount { get; }
     public string DisplayName { get; }
+}
+
+/// <summary>
+/// 업적의 티어 진행과 누적/다음 보상을 함께 노출하기 위한 DTO입니다.
+/// </summary>
+public readonly struct AchievementTierProgressInfo
+{
+    public AchievementTierProgressInfo(
+        Game.Save.AchievementProgress progress,
+        int totalTiers,
+        int currentTierIndex,
+        int previousTierGoal,
+        int currentTierGoal,
+        int nextTierGoal,
+        int currentTierTarget,
+        int progressWithinCurrentTier,
+        int remainingToNextTier,
+        int cumulativeRewardPoints,
+        int nextRewardPoints,
+        bool hasNextTier,
+        bool isFinalTierCompleted,
+        string currentTierDisplayName,
+        string nextTierDisplayName)
+    {
+        Progress = progress;
+        TotalTiers = totalTiers;
+        CurrentTierIndex = currentTierIndex;
+        PreviousTierGoal = previousTierGoal;
+        CurrentTierGoal = currentTierGoal;
+        NextTierGoal = nextTierGoal;
+        CurrentTierTarget = currentTierTarget;
+        ProgressWithinCurrentTier = progressWithinCurrentTier;
+        RemainingToNextTier = remainingToNextTier;
+        CumulativeRewardPoints = cumulativeRewardPoints;
+        NextRewardPoints = nextRewardPoints;
+        HasNextTier = hasNextTier;
+        IsFinalTierCompleted = isFinalTierCompleted;
+        CurrentTierDisplayName = currentTierDisplayName;
+        NextTierDisplayName = nextTierDisplayName;
+    }
+
+    public Game.Save.AchievementProgress Progress { get; }
+    public int TotalTiers { get; }
+    public int CurrentTierIndex { get; }
+    public int PreviousTierGoal { get; }
+    public int CurrentTierGoal { get; }
+    public int NextTierGoal { get; }
+    public int CurrentTierTarget { get; }
+    public int ProgressWithinCurrentTier { get; }
+    public int RemainingToNextTier { get; }
+    public int CumulativeRewardPoints { get; }
+    public int NextRewardPoints { get; }
+    public bool HasNextTier { get; }
+    public bool IsFinalTierCompleted { get; }
+    public string CurrentTierDisplayName { get; }
+    public string NextTierDisplayName { get; }
 }

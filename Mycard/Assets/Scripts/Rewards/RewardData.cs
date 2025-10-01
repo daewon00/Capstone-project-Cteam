@@ -39,4 +39,5 @@ public class RewardCardOption
 {
     public string CardId;
     public bool IsUpgraded;
+    public CardRarity Rarity;
 }

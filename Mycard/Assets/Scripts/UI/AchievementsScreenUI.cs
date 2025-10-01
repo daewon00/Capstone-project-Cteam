@@ -2,8 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Linq;
 using System.Collections.Generic;
-using Game.Save;
-using System; // for StringComparer
+using System;
 using UnityEngine.UI;
 
 /// <summary>
@@ -16,16 +15,15 @@ public class AchievementsScreenUI : MonoBehaviour
     [SerializeField] private Transform slotsContainer;
     [SerializeField] private AchievementSlotUI slotPrefab;
     [SerializeField] private TMP_Text summaryText;
-    [SerializeField] private UnityEngine.UI.Button closeButton;
+    [SerializeField] private Button closeButton;
     [SerializeField] private ScrollRect scrollRect; // optional: auto-found if not bound
 
     private IAchievementService _achievements;
-    private IDatabase _db;
     private string _profileId = "P1";
     private bool _initialized;
 
     private List<AchievementDefinition> _defs = new();
-    private Dictionary<string, AchievementProgress> _progress = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, AchievementTierProgressInfo> _displayInfo = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _newlyAchievements = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, int> _newTierUnlocks = new(StringComparer.OrdinalIgnoreCase);
 
@@ -36,7 +34,6 @@ public class AchievementsScreenUI : MonoBehaviour
     {
         if (_initialized) return;
         _achievements = ServiceRegistry.GetRequired<IAchievementService>();
-        _db = ServiceRegistry.GetRequired<IDatabase>();
         _profileId = GameContext.I != null ? GameContext.I.ProfileId : "P1";
 
         if (closeButton)
@@ -80,11 +77,15 @@ public class AchievementsScreenUI : MonoBehaviour
     private void RefreshUI()
     {
         EnsureInitialized();
-        if (slotsContainer == null || slotPrefab == null) { Debug.LogWarning("[AchievementsScreenUI] Missing bindings"); return; }
+        if (slotsContainer == null || slotPrefab == null)
+        {
+            Debug.LogWarning("[AchievementsScreenUI] Missing bindings");
+            return;
+        }
 
         _defs = _achievements.GetAllDefinitions().ToList();
-        var snapshot = _achievements.GetProgressSnapshot(_profileId);
-        _progress = snapshot.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
+        var infoSnapshot = _achievements.GetTierInfoSnapshot(_profileId);
+        _displayInfo = infoSnapshot.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
         _newlyAchievements = new HashSet<string>(_achievements.GetNewlyUnlockedSinceLastFlush(consume: true) ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
 
         _newTierUnlocks.Clear();
@@ -99,45 +100,51 @@ public class AchievementsScreenUI : MonoBehaviour
         }
 
         // Clear children
-        for (int i = slotsContainer.childCount - 1; i >= 0; i--) Destroy(slotsContainer.GetChild(i).gameObject);
+        for (int i = slotsContainer.childCount - 1; i >= 0; i--)
+        {
+            Destroy(slotsContainer.GetChild(i).gameObject);
+        }
 
         // Stats
         int unlockedCount = 0;
-        foreach (var d in _defs)
+        foreach (var def in _defs)
         {
-            if (_progress.TryGetValue(d.Id, out var p) && p.IsUnlocked) unlockedCount++;
+            if (_displayInfo.TryGetValue(def.Id, out var info) && (info.Progress.IsUnlocked || info.IsFinalTierCompleted))
+            {
+                unlockedCount++;
+            }
         }
 
-        // Sort: New → Locked(by ratio desc) → Unlocked → Name
+        // Sort: New → 진행도 높은 순 → 완료 → 이름
         var sorted = _defs
             .OrderByDescending(d => _newlyAchievements.Contains(d.Id) || _newTierUnlocks.ContainsKey(d.Id))
             .ThenByDescending(d =>
             {
-                _progress.TryGetValue(d.Id, out var p);
-                bool unlocked = p?.IsUnlocked == true;
-                return unlocked ? 0 : (float)(p?.Progress ?? 0) / Mathf.Max(1, d.ProgressTarget);
+                if (!_displayInfo.TryGetValue(d.Id, out var info)) return 0f;
+                if (info.IsFinalTierCompleted) return 0f;
+                return info.CurrentTierTarget > 0
+                    ? (float)info.ProgressWithinCurrentTier / info.CurrentTierTarget
+                    : 0f;
             })
-            .ThenByDescending(d => _progress.TryGetValue(d.Id, out var p) && (p?.IsUnlocked == true))
+            .ThenByDescending(d => _displayInfo.TryGetValue(d.Id, out var info) && info.IsFinalTierCompleted)
             .ThenBy(d => d.DisplayName);
 
         foreach (var def in sorted)
         {
-            _progress.TryGetValue(def.Id, out var prog);
+            if (!_displayInfo.TryGetValue(def.Id, out var info)) continue;
             bool isNewAchievement = _newlyAchievements.Contains(def.Id);
             _newTierUnlocks.TryGetValue(def.Id, out var newTierReached);
             var slot = Instantiate(slotPrefab, slotsContainer);
-            slot.Init(def, prog, isNewAchievement, newTierReached);
+            slot.Init(def, info, isNewAchievement, newTierReached);
         }
 
         // Refresh layout + reset scroll to top
         try
         {
             Canvas.ForceUpdateCanvases();
-            var rt = slotsContainer as RectTransform;
-            if (rt != null)
+            if (slotsContainer is RectTransform rt)
             {
                 LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
-                // Some layout setups need two passes
                 LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
             }
             if (scrollRect != null)
