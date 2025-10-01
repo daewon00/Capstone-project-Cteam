@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
+  m_Name: CARD_TitanVanguard
+  m_EditorClassIdentifier: 
+  cardName: "타이탄 선봉대"
+  CardId: CARD_TITAN_VANGUARD
+  actionDescription: "압도적인 체격으로 전장을 지배합니다."
+  cardLore: 
+  currentHealth: 6
+  attackPower: 7
+  manaCost: 5
+  characterSprite: {fileID: 21300000, guid: 004257126f8f47a4a98a9d521d09bdcc, type: 3}
+  bgSprite: {fileID: 21300000, guid: 5b8d453954560794a8e87dbd37b7847d, type: 3}
+  rarity: 3
+  effects: []
+  removeAfterCombat: 0

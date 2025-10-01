@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
+  m_Name: CARD_SiegeConqueror
+  m_EditorClassIdentifier: 
+  cardName: "공성 정복자"
+  CardId: CARD_SIEGE_CONQUEROR
+  actionDescription: "항상 관통 공격을 사용합니다."
+  cardLore: 
+  currentHealth: 4
+  attackPower: 6
+  manaCost: 4
+  characterSprite: {fileID: 21300000, guid: 28ab477fda36bcc49924dd1056453ff8, type: 3}
+  bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
+  rarity: 3
+  effects:
+  - type: 4
+    timing: 5
+    target: 0
+    potency: 0
+    value: 0
+    payloadId: 
+    stackable: 0
+    maxStacks: 0
+  removeAfterCombat: 0
