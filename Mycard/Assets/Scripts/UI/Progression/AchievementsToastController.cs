@@ -147,8 +147,9 @@ public sealed class AchievementsToastController : MonoBehaviour
 
     private void Enqueue(MetaEvents.AchievementUnlockedPayload p)
     {
-        // Optional de-dupe: if already visible, ignore
-        if (dedupeWithinWindow && _visibleIds.Contains(p.AchievementId)) return;
+        // Optional de-dupe: if already visible, ignore (per achievement + tier)
+        var key = GetToastKey(p);
+        if (dedupeWithinWindow && _visibleIds.Contains(key)) return;
         _queue.Enqueue(p);
         TryDequeue();
     }
@@ -165,7 +166,8 @@ public sealed class AchievementsToastController : MonoBehaviour
     private IEnumerator ShowToastCo(MetaEvents.AchievementUnlockedPayload p)
     {
         _showing++;
-        _visibleIds.Add(p.AchievementId);
+        var key = GetToastKey(p);
+        _visibleIds.Add(key);
 
         // Build view (prefab-first, fallback to simple generated)
         AchievementToastView view = null;
@@ -183,13 +185,23 @@ public sealed class AchievementsToastController : MonoBehaviour
         var rowLE = rowGO.GetComponent<LayoutElement>();
         rowLE.flexibleHeight = 0;
         if (_anchor == null) { TryEnsureSetup(); }
+        string titleText = !string.IsNullOrEmpty(p.TierDisplayName) ? p.TierDisplayName : (string.IsNullOrEmpty(p.DisplayName) ? p.AchievementId : p.DisplayName);
+        int tierIndex = p.TierIndex <= 0 ? 1 : p.TierIndex;
+        int tierCount = p.TierCount <= 0 ? 1 : p.TierCount;
+        if (tierCount > 1)
+        {
+            titleText = $"{titleText} ({tierIndex}/{tierCount})";
+        }
+        string subtitle = !string.IsNullOrEmpty(p.Description) ? p.Description : (p.IsFinalTier ? "최종 티어 달성!" : "새로운 티어를 획득했습니다.");
+        string secondary = p.Points > 0 ? $"+{Mathf.Max(0, p.Points)} pt" : (tierCount > 1 ? $"Tier {tierIndex}/{tierCount}" : string.Empty);
+
         if (toastPrefab != null)
         {
             view = Instantiate(toastPrefab, rowRT);
             rt = view.GetComponent<RectTransform>();
             cg = view.CanvasGroup;
             if (cg != null) cg.alpha = 0f;
-            view.Bind(p);
+            view.Bind(p, titleText, subtitle, secondary);
             // Use view's layout for row height if available
             var vLE = view.GetComponent<LayoutElement>();
             if (vLE != null && vLE.preferredHeight > 0)
@@ -216,13 +228,21 @@ public sealed class AchievementsToastController : MonoBehaviour
             var titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
             titleGO.transform.SetParent(go.transform, false);
             var titleTMP = titleGO.GetComponent<TextMeshProUGUI>();
-            titleTMP.text = string.IsNullOrEmpty(p.DisplayName) ? p.AchievementId : p.DisplayName;
+            titleTMP.text = titleText;
             titleTMP.fontSize = 22f; titleTMP.color = new Color(1f, 0.95f, 0.7f, 1f);
             var subGO = new GameObject("Subtitle", typeof(RectTransform), typeof(TextMeshProUGUI));
             subGO.transform.SetParent(go.transform, false);
             var subTMP = subGO.GetComponent<TextMeshProUGUI>();
-            subTMP.text = string.IsNullOrEmpty(p.Description) ? $"+{p.Points} pt" : p.Description;
+            subTMP.text = subtitle;
             subTMP.fontSize = 16f; subTMP.color = new Color(0.9f, 0.9f, 0.95f, 1f);
+            if (!string.IsNullOrEmpty(secondary))
+            {
+                var extraGO = new GameObject("Secondary", typeof(RectTransform), typeof(TextMeshProUGUI));
+                extraGO.transform.SetParent(go.transform, false);
+                var extraTMP = extraGO.GetComponent<TextMeshProUGUI>();
+                extraTMP.text = secondary;
+                extraTMP.fontSize = 14f; extraTMP.color = new Color(0.8f, 0.85f, 1f, 1f);
+            }
             // Default row height for fallback
             rowLE.preferredHeight = itemSize.y;
             // Anchor to top-right inside row
@@ -233,7 +253,7 @@ public sealed class AchievementsToastController : MonoBehaviour
 
         if (rt == null || this == null || _anchor == null)
         {
-            _visibleIds.Remove(p.AchievementId);
+            _visibleIds.Remove(key);
             _showing--;
             if (rowRT != null) Destroy(rowRT.gameObject);
             yield break;
@@ -249,12 +269,12 @@ public sealed class AchievementsToastController : MonoBehaviour
         {
             t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / slideTime);
-            if (rt == null) { _visibleIds.Remove(p.AchievementId); _showing--; yield break; }
+            if (rt == null) { _visibleIds.Remove(key); _showing--; yield break; }
             rt.anchoredPosition = Vector2.Lerp(start, end, EaseOutCubic(k));
             if (cg != null) cg.alpha = Mathf.Lerp(0f, 1f, k);
             yield return null;
         }
-        if (rt == null) { _visibleIds.Remove(p.AchievementId); _showing--; yield break; }
+        if (rt == null) { _visibleIds.Remove(key); _showing--; yield break; }
         rt.anchoredPosition = end;
         if (cg != null) cg.alpha = 1f;
 
@@ -264,7 +284,7 @@ public sealed class AchievementsToastController : MonoBehaviour
         while (timer < hold)
         {
             timer += Time.unscaledDeltaTime;
-            if (rt == null) { _visibleIds.Remove(p.AchievementId); _showing--; yield break; }
+            if (rt == null) { _visibleIds.Remove(key); _showing--; yield break; }
             yield return null;
         }
 
@@ -275,7 +295,7 @@ public sealed class AchievementsToastController : MonoBehaviour
         {
             t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / fadeTime);
-            if (rt == null) { _visibleIds.Remove(p.AchievementId); _showing--; yield break; }
+            if (rt == null) { _visibleIds.Remove(key); _showing--; yield break; }
             rt.anchoredPosition = Vector2.Lerp(end, outPos, k);
             if (cg != null) cg.alpha = Mathf.Lerp(1f, 0f, k);
             yield return null;
@@ -283,10 +303,18 @@ public sealed class AchievementsToastController : MonoBehaviour
         if (cg != null) cg.alpha = 0f;
 
         // Cleanup
-        _visibleIds.Remove(p.AchievementId);
+        _visibleIds.Remove(key);
         if (rowRT != null && rowRT.gameObject != null) Destroy(rowRT.gameObject);
         _showing--;
         TryDequeue();
+    }
+
+    private static string GetToastKey(MetaEvents.AchievementUnlockedPayload payload)
+    {
+        int tier = payload.TierIndex <= 0 ? 1 : payload.TierIndex;
+        return string.IsNullOrEmpty(payload.AchievementId)
+            ? tier.ToString()
+            : $"{payload.AchievementId}#{tier}";
     }
 
     private static float EaseOutCubic(float x)

@@ -181,12 +181,8 @@ public class GameInitializer : MonoBehaviour
             try
             {
                 var ach = ServiceRegistry.Get<IAchievementService>();
-                ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS_T1", 1);
-                ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS_T1");
-                ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS_T2", 1);
-                ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS_T2");
-                ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS_T3", 1);
-                ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS_T3");
+                ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS", 1);
+                ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log("[BossFlow][GI] OnEnemyCardDestroyed handler executed.");
 #endif

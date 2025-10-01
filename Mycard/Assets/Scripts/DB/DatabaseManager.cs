@@ -98,6 +98,7 @@ public sealed class DatabaseManager
         _conn.CreateTable<MapLayoutStorage>();
 
         EnsureCurrentRunCompanionColumn();
+        EnsureAchievementProgressTierColumn();
 
         // ==== CardRuntimeState 핵심 인덱스 생성 ====
         try
@@ -149,6 +150,26 @@ public sealed class DatabaseManager
         catch (Exception e)
         {
             Debug.LogError($"[DB] EnsureCurrentRunCompanionColumn failed: {e.Message}");
+        }
+    }
+
+    private void EnsureAchievementProgressTierColumn()
+    {
+        try
+        {
+            var columns = _conn.GetTableInfo("AchievementProgress");
+            bool hasColumn = columns.Any(c => string.Equals(c.Name, "HighestTierUnlocked", StringComparison.OrdinalIgnoreCase));
+            if (!hasColumn)
+            {
+                _conn.Execute("ALTER TABLE AchievementProgress ADD COLUMN HighestTierUnlocked INTEGER NOT NULL DEFAULT 0;");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[DB] Added HighestTierUnlocked column to AchievementProgress.");
+#endif
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DB] EnsureAchievementProgressTierColumn failed: {e.Message}");
         }
     }
 
@@ -882,6 +903,7 @@ public sealed class DatabaseManager
                 existing.IsUnlocked = row.IsUnlocked;
                 existing.Progress = row.Progress;
                 existing.UnlockedAtUtc = row.UnlockedAtUtc;
+                existing.HighestTierUnlocked = row.HighestTierUnlocked;
                 conn.Update(existing);
             }
         });

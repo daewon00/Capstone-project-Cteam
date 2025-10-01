@@ -1,3 +1,4 @@
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -17,11 +18,12 @@ public class AchievementSlotUI : MonoBehaviour
     [SerializeField] private GameObject unlockedBadge;
     [SerializeField] private TMP_Text unlockedAtText;
     [SerializeField] private GameObject newTag;
+    [SerializeField] private TMP_Text tierText;
 
     /// <summary>
     /// 업적 정의와 진행도를 받아 슬롯을 초기화합니다.
     /// </summary>
-    public void Init(AchievementDefinition def, AchievementProgress prog, bool isNew)
+    public void Init(AchievementDefinition def, AchievementProgress prog, bool isNew, int newlyUnlockedTier)
     {
         bool hiddenAndLocked = def.Hidden && (prog == null || !prog.IsUnlocked);
         string displayName = hiddenAndLocked ? "???" : def.DisplayName;
@@ -55,7 +57,34 @@ public class AchievementSlotUI : MonoBehaviour
             else
                 unlockedAtText.text = string.Empty;
         }
-        if (newTag) newTag.SetActive(isNew);
+        int tierCount = def.Tiers != null && def.Tiers.Count > 0 ? def.Tiers.Count : 1;
+        int unlockedTier = Mathf.Clamp(prog?.HighestTierUnlocked ?? 0, 0, tierCount);
+
+        if (tierText)
+        {
+            if (tierCount <= 1)
+            {
+                tierText.gameObject.SetActive(false);
+            }
+            else
+            {
+                tierText.gameObject.SetActive(true);
+                StringBuilder stars = new StringBuilder(tierCount);
+                for (int i = 1; i <= tierCount; i++)
+                {
+                    stars.Append(i <= unlockedTier ? '★' : '☆');
+                }
+                if (newlyUnlockedTier > 0)
+                {
+                    tierText.text = $"티어: {stars}  ↑ {newlyUnlockedTier}/{tierCount}";
+                }
+                else
+                {
+                    tierText.text = $"티어: {stars}";
+                }
+            }
+        }
+
+        if (newTag) newTag.SetActive(isNew || newlyUnlockedTier > 0);
     }
 }
-

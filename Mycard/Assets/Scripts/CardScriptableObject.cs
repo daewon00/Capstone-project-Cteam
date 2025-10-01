@@ -19,7 +19,12 @@ public class CardScriptableObject : ScriptableObject
     public Sprite characterSprite, bgSprite;
 
     [SerializeField]
+    private CardRarity rarity = CardRarity.Common;
+
+    [SerializeField]
     private List<CardEffectDefinition> effects = new();
+
+    public CardRarity Rarity => rarity;
 
     public IReadOnlyList<CardEffectDefinition> Effects => effects;
 
@@ -47,4 +52,12 @@ public class CardScriptableObject : ScriptableObject
         Dark
     }
     */
+}
+
+public enum CardRarity
+{
+    Common = 0,
+    Rare = 1,
+    Heroic = 2,
+    Legendary = 3
 }

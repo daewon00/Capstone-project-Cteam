@@ -1,31 +1,30 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Game.Save;
 
 /// <summary>
 /// 업적 정의를 로드하고 진행도를 집계하며 특전 포인트 지급을 담당하는 서비스입니다.
+/// 티어 기반 업적을 지원하도록 확장되었습니다.
 /// </summary>
 public sealed class AchievementService : IAchievementService
 {
     private readonly IDatabase _db;
     private readonly Dictionary<string, AchievementDefinition> _defs;
-    private readonly Dictionary<string, int> _pending = new();
-    private readonly List<string> _newlyUnlocked = new();
+    private readonly Dictionary<string, List<string>> _legacyTierIdMap;
+    private readonly Dictionary<string, AchievementProgress> _progressCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _pendingFinalSet = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<string> _pendingFinalList = new();
+    private readonly Dictionary<string, AchievementTierUnlock> _pendingTierHighlights = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, int> _singleRunFloorCount = new(StringComparer.OrdinalIgnoreCase);
     private string _profileId = "P1";
 
-    // 런 단위 업적을 위해 사용되는 인메모리 카운터
-    private readonly Dictionary<string, int> _singleRunFloorCount = new(System.StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// DB 핸들을 받아 업적 서비스를 초기화하고 메타 이벤트를 구독합니다.
-    /// </summary>
     public AchievementService(IDatabase db)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
-        _defs = LoadDefinitions();
+        _defs = LoadDefinitions(out _legacyTierIdMap);
 
-        // 서비스가 직접 처리하는 메타 이벤트를 구독합니다.
         try
         {
             MetaEvents.OnFloorReached += HandleFloorReached;
@@ -34,168 +33,353 @@ public sealed class AchievementService : IAchievementService
         catch { }
     }
 
-    /// <summary>
-    /// 업적 집계 대상 프로필을 변경합니다.
-    /// </summary>
     public void RebindProfile(string profileId)
     {
         _profileId = string.IsNullOrEmpty(profileId) ? "P1" : profileId;
+        _progressCache.Clear();
+        _singleRunFloorCount.Clear();
+
+        try
+        {
+            MigrateLegacyProgress();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[AchievementService] Legacy migration failed: {e.Message}");
+        }
     }
 
-    /// <summary>
-    /// 지정한 업적에 진행도 증가치를 더해 둡니다.
-    /// </summary>
     public void ReportProgress(string achievementId, int delta)
     {
         if (string.IsNullOrEmpty(achievementId) || delta == 0) return;
-        _pending.TryGetValue(achievementId, out int cur);
-        _pending[achievementId] = cur + delta;
+        if (!_defs.TryGetValue(achievementId, out var def)) return;
+
+        var row = GetOrCreateProgress(achievementId);
+        if (row.IsUnlocked) return;
+
+        row.Progress = Mathf.Max(0, row.Progress + delta);
+        ProcessProgress(def, row);
+        _db.UpsertAchievementProgress(row);
     }
 
-    /// <summary>
-    /// 누적된 진행도가 목표를 달성했는지 확인하고 필요하면 해금합니다.
-    /// </summary>
     public void UnlockIfEligible(string achievementId)
     {
+        if (string.IsNullOrEmpty(achievementId)) return;
         if (!_defs.TryGetValue(achievementId, out var def)) return;
-        var row = _db.LoadAchievementProgress(_profileId, achievementId);
-        if (row != null && row.IsUnlocked) return;
 
-        int current = row?.Progress ?? 0;
-        _pending.TryGetValue(achievementId, out int delta);
-        int total = current + delta;
-        if (total >= Mathf.Max(1, def.ProgressTarget))
+        var row = GetOrCreateProgress(achievementId);
+        if (row.IsUnlocked) return;
+
+        ProcessProgress(def, row);
+        if (row.IsUnlocked)
         {
-            UnlockInternal(achievementId, def.PointsReward);
-            _pending[achievementId] = 0; // 소진된 진행도를 초기화합니다.
+            _db.UpsertAchievementProgress(row);
         }
     }
 
-    /// <summary>
-    /// 조건 검사 없이 바로 업적을 해금합니다.
-    /// </summary>
     public void UnlockDirect(string achievementId, int pointsAward)
     {
-        UnlockInternal(achievementId, pointsAward);
-    }
+        if (string.IsNullOrEmpty(achievementId)) return;
+        if (!_defs.TryGetValue(achievementId, out var def)) return;
 
-    /// <summary>
-    /// 업적을 해금하고 포인트를 지급한 뒤 브로드캐스트합니다.
-    /// </summary>
-    private void UnlockInternal(string achievementId, int points)
-    {
-        var row = _db.LoadAchievementProgress(_profileId, achievementId) ?? new AchievementProgress
-        {
-            ProfileId = _profileId,
-            AchievementId = achievementId,
-        };
-        if (row.IsUnlocked) return; // 이미 해금되어 있으면 무시합니다.
-        row.IsUnlocked = true;
-        row.UnlockedAtUtc = DateTime.UtcNow.ToString("o");
+        var row = GetOrCreateProgress(achievementId);
+        int tierCount = GetTierCount(def);
+        row.Progress = Mathf.Max(row.Progress, def.GetFinalGoal());
+        row.HighestTierUnlocked = tierCount;
+        CompleteFinalTier(def, row, pointsAward > 0 ? pointsAward : def.PointsReward, tierCount, broadcastTier: true);
         _db.UpsertAchievementProgress(row);
-        _db.AddPerkPoints(_profileId, points);
-        _newlyUnlocked.Add(achievementId);
-
-        // 실시간 UI 알림(토스트)을 위해 해금 사실을 브로드캐스트합니다.
-        try
-        {
-            _defs.TryGetValue(achievementId, out var def);
-            MetaEvents.RaiseAchievementUnlocked(new MetaEvents.AchievementUnlockedPayload
-            {
-                ProfileId = _profileId,
-                AchievementId = achievementId,
-                DisplayName = def != null ? def.DisplayName : achievementId,
-                Description = def != null ? def.Description : string.Empty,
-                Points = (def != null && def.PointsReward > 0) ? def.PointsReward : points,
-                UnlockedAtUtc = row.UnlockedAtUtc,
-                RunId = GameContext.I != null ? GameContext.I.RunId : string.Empty
-            });
-        }
-        catch { }
     }
 
-    /// <summary>
-    /// 누적된 진행도를 DB에 반영하고 아직 미해금 업적을 재검사합니다.
-    /// </summary>
     public void Flush()
     {
-        // 대기 중인 진행도를 일괄 반영합니다.
-        foreach (var kv in _pending)
-        {
-            var id = kv.Key; var delta = kv.Value;
-            if (!_defs.TryGetValue(id, out var def)) continue;
-            var row = _db.LoadAchievementProgress(_profileId, id) ?? new AchievementProgress
-            {
-                ProfileId = _profileId,
-                AchievementId = id,
-                IsUnlocked = false,
-                Progress = 0
-            };
-            row.Progress = Mathf.Max(0, row.Progress + delta);
-            _db.UpsertAchievementProgress(row);
-            if (row.Progress >= Mathf.Max(1, def.ProgressTarget) && !row.IsUnlocked)
-            {
-                UnlockInternal(id, def.PointsReward);
-            }
-        }
-        _pending.Clear();
+        // ReportProgress 단계에서 즉시 반영되도록 변경되었으므로 여기서는 대기열 처리 필요 없음.
+        // 기존 호출부와의 호환성을 위해 메서드는 남겨둡니다.
     }
 
-    /// <summary>
-    /// 마지막 Flush 이후 새로 해금된 업적 ID 목록을 반환합니다.
-    /// </summary>
-    public IReadOnlyList<string> GetNewlyUnlockedSinceLastFlush()
-        => _newlyUnlocked.AsReadOnly();
+    public IReadOnlyList<string> GetNewlyUnlockedSinceLastFlush(bool consume = false)
+    {
+        var snapshot = _pendingFinalList.ToList();
+        if (consume)
+        {
+            _pendingFinalList.Clear();
+            _pendingFinalSet.Clear();
+        }
+        return snapshot;
+    }
 
-    /// <summary>
-    /// 로드된 모든 업적 정의를 반환합니다.
-    /// </summary>
+    public IReadOnlyList<AchievementTierUnlock> GetNewlyUnlockedTiers(bool consume = false)
+    {
+        var snapshot = _pendingTierHighlights.Values.ToArray();
+        if (consume)
+        {
+            _pendingTierHighlights.Clear();
+        }
+        return snapshot;
+    }
+
     public IReadOnlyList<AchievementDefinition> GetAllDefinitions()
         => new List<AchievementDefinition>(_defs.Values);
 
-    /// <summary>
-    /// 지정한 프로필의 업적 진행도를 즉시 조회합니다.
-    /// </summary>
     public IReadOnlyDictionary<string, AchievementProgress> GetProgressSnapshot(string profileId)
     {
         var map = new Dictionary<string, AchievementProgress>(StringComparer.OrdinalIgnoreCase);
         var pid = string.IsNullOrEmpty(profileId) ? _profileId : profileId;
         foreach (var id in _defs.Keys)
         {
-            var row = _db.LoadAchievementProgress(pid, id);
-            if (row == null)
+            var row = _db.LoadAchievementProgress(pid, id) ?? new AchievementProgress
             {
-                row = new AchievementProgress
-                {
-                    ProfileId = pid,
-                    AchievementId = id,
-                    IsUnlocked = false,
-                    Progress = 0,
-                    UnlockedAtUtc = null
-                };
-            }
+                ProfileId = pid,
+                AchievementId = id,
+                IsUnlocked = false,
+                Progress = 0,
+                UnlockedAtUtc = null,
+                HighestTierUnlocked = 0
+            };
             map[id] = row;
         }
         return map;
     }
 
-    /// <summary>
-    /// Resources에서 업적 정의를 로드하거나 기본 더미 데이터를 생성합니다.
-    /// </summary>
-    private static Dictionary<string, AchievementDefinition> LoadDefinitions()
+    private AchievementProgress GetOrCreateProgress(string achievementId)
     {
-        var dict = new Dictionary<string, AchievementDefinition>(StringComparer.OrdinalIgnoreCase);
+        if (_progressCache.TryGetValue(achievementId, out var cached) && cached != null)
+        {
+            return cached;
+        }
+
+        var row = _db.LoadAchievementProgress(_profileId, achievementId) ?? new AchievementProgress
+        {
+            ProfileId = _profileId,
+            AchievementId = achievementId,
+            IsUnlocked = false,
+            Progress = 0,
+            HighestTierUnlocked = 0,
+            UnlockedAtUtc = null
+        };
+        _progressCache[achievementId] = row;
+        return row;
+    }
+
+    private void ProcessProgress(AchievementDefinition def, AchievementProgress row)
+    {
+        int finalGoal = def.GetFinalGoal();
+        var tiers = NormalizeTiers(def);
+
+        if (tiers.Count == 0)
+        {
+            if (!row.IsUnlocked && row.Progress >= finalGoal)
+            {
+                CompleteFinalTier(def, row, def.PointsReward, 1, broadcastTier: true);
+            }
+            return;
+        }
+
+        int previousHighest = Mathf.Max(0, row.HighestTierUnlocked);
+        int newHighest = previousHighest;
+        for (int i = previousHighest; i < tiers.Count; i++)
+        {
+            var tier = tiers[i];
+            int tierGoal = Mathf.Max(1, tier.goal);
+            if (row.Progress < tierGoal) break;
+
+            newHighest = i + 1;
+            ApplyTierReward(def, tier);
+            BroadcastTierUnlocked(def, row, tier, newHighest, tiers.Count, isFinalTier: (i == tiers.Count - 1));
+        }
+
+        if (newHighest > previousHighest)
+        {
+            row.HighestTierUnlocked = newHighest;
+        }
+
+        if (!row.IsUnlocked && row.HighestTierUnlocked >= tiers.Count && row.Progress >= finalGoal)
+        {
+            CompleteFinalTier(def, row, def.PointsReward, tiers.Count, broadcastTier: false);
+        }
+    }
+
+    private void CompleteFinalTier(AchievementDefinition def, AchievementProgress row, int pointsAward, int tierCount, bool broadcastTier)
+    {
+        if (row.IsUnlocked) return;
+
+        row.IsUnlocked = true;
+        row.UnlockedAtUtc = DateTime.UtcNow.ToString("o");
+        row.HighestTierUnlocked = Mathf.Max(row.HighestTierUnlocked, tierCount);
+
+        int totalPoints = pointsAward > 0 ? pointsAward : def.PointsReward;
+        if (totalPoints > 0)
+        {
+            _db.AddPerkPoints(_profileId, totalPoints);
+        }
+
+        if (_pendingFinalSet.Add(def.Id))
+        {
+            _pendingFinalList.Add(def.Id);
+        }
+
+        var payload = BuildPayload(def, row, tierCount, tierCount, true, totalPoints);
+        MetaEvents.RaiseAchievementUnlocked(payload);
+
+        if (broadcastTier)
+        {
+            _pendingTierHighlights[def.Id] = new AchievementTierUnlock(def.Id, tierCount, tierCount, def.DisplayName);
+        }
+    }
+
+    private void ApplyTierReward(AchievementDefinition def, AchievementDefinition.Tier tier)
+    {
+        if (tier?.reward == null) return;
+        if (tier.reward.perkPoints > 0)
+        {
+            _db.AddPerkPoints(_profileId, tier.reward.perkPoints);
+        }
+
+        if (!string.IsNullOrEmpty(tier.reward.rewardType))
+        {
+            Debug.Log($"[AchievementService] Tier reward hook pending: id={def.Id}, type={tier.reward.rewardType}, payload={tier.reward.rewardPayload}");
+        }
+    }
+
+    private void BroadcastTierUnlocked(AchievementDefinition def, AchievementProgress row, AchievementDefinition.Tier tier, int tierIndex, int tierCount, bool isFinalTier)
+    {
+        _pendingTierHighlights[def.Id] = new AchievementTierUnlock(def.Id, tierIndex, tierCount, def.DisplayName);
+
+        if (!tier.announce && !isFinalTier)
+        {
+            return;
+        }
+
+        var payload = BuildPayload(def, row, tierIndex, tierCount, isFinalTier, tier.reward?.perkPoints ?? 0, tier.displayName);
+        MetaEvents.RaiseAchievementUnlocked(payload);
+    }
+
+    private static List<AchievementDefinition.Tier> NormalizeTiers(AchievementDefinition def)
+    {
+        if (def.Tiers == null) return new List<AchievementDefinition.Tier>();
+        var ordered = def.Tiers
+            .Where(t => t != null)
+            .OrderBy(t => Mathf.Max(1, t.goal))
+            .ToList();
+        return ordered;
+    }
+
+    private static int GetTierCount(AchievementDefinition def)
+    {
+        var tiers = def.Tiers?.Count ?? 0;
+        return Mathf.Max(1, tiers == 0 ? 1 : tiers);
+    }
+
+    private MetaEvents.AchievementUnlockedPayload BuildPayload(AchievementDefinition def, AchievementProgress row, int tierIndex, int tierCount, bool isFinalTier, int points, string tierDisplayName = null)
+    {
+        return new MetaEvents.AchievementUnlockedPayload
+        {
+            ProfileId = _profileId,
+            AchievementId = def.Id,
+            DisplayName = def.DisplayName,
+            Description = def.Description,
+            Points = points,
+            UnlockedAtUtc = row.UnlockedAtUtc,
+            RunId = GameContext.I != null ? GameContext.I.RunId : string.Empty,
+            TierIndex = tierIndex,
+            TierCount = tierCount,
+            IsFinalTier = isFinalTier,
+            TierDisplayName = string.IsNullOrEmpty(tierDisplayName) ? def.DisplayName : tierDisplayName
+        };
+    }
+
+    private static Dictionary<string, AchievementDefinition> LoadDefinitions(out Dictionary<string, List<string>> legacyTierMap)
+    {
+        legacyTierMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var grouped = new Dictionary<string, List<(AchievementDefinition def, int tierIndex)>>(StringComparer.OrdinalIgnoreCase);
         try
         {
             var assets = Resources.LoadAll<AchievementDefinition>("Progression/Achievements");
-            foreach (var a in assets)
+            foreach (var asset in assets)
             {
-                if (a != null && !string.IsNullOrEmpty(a.Id)) dict[a.Id] = a;
+                if (asset == null || string.IsNullOrEmpty(asset.Id)) continue;
+
+                // 이미 티어 데이터가 구성된 자산은 그대로 사용
+                if (asset.Tiers != null && asset.Tiers.Count > 0)
+                {
+                    grouped[asset.Id] = new List<(AchievementDefinition, int)> { (asset, 0) };
+                    continue;
+                }
+
+                if (TryParseTierId(asset.Id, out var baseId, out int tierIndex))
+                {
+                    if (!grouped.TryGetValue(baseId, out var list))
+                    {
+                        list = new List<(AchievementDefinition, int)>();
+                        grouped[baseId] = list;
+                    }
+                    list.Add((asset, tierIndex));
+                }
+                else
+                {
+                    grouped[asset.Id] = new List<(AchievementDefinition, int)> { (asset, 0) };
+                }
             }
         }
         catch (Exception e)
         {
             Debug.LogWarning($"[AchievementService] SO load failed: {e.Message}");
+        }
+
+        var dict = new Dictionary<string, AchievementDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in grouped)
+        {
+            var list = kv.Value;
+            if (list == null || list.Count == 0) continue;
+
+            if (list.Count == 1 && list[0].tierIndex == 0)
+            {
+                var asset = list[0].def;
+                if (asset != null && !string.IsNullOrEmpty(asset.Id))
+                {
+                    dict[asset.Id] = asset;
+                }
+                continue;
+            }
+
+            list.Sort((a, b) => a.tierIndex.CompareTo(b.tierIndex));
+            var aggregated = ScriptableObject.CreateInstance<AchievementDefinition>();
+            aggregated.Id = kv.Key;
+            aggregated.DisplayName = list[0].def.DisplayName;
+            aggregated.Description = list[list.Count - 1].def.Description;
+            aggregated.Hidden = list.Any(x => x.def.Hidden);
+            aggregated.Tiers = new List<AchievementDefinition.Tier>(list.Count);
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                var entry = list[i];
+                var tier = new AchievementDefinition.Tier
+                {
+                    goal = Mathf.Max(1, entry.def.ProgressTarget),
+                    reward = new AchievementDefinition.TierReward
+                    {
+                        perkPoints = entry.def.PointsReward,
+                        rewardType = string.Empty,
+                        rewardPayload = string.Empty
+                    },
+                    displayName = entry.def.DisplayName,
+                    announce = true
+                };
+
+                aggregated.Tiers.Add(tier);
+            }
+
+            // 최종 티어는 별도 특전 포인트로 지급하므로 Reward → 0 처리하고 ProgressTarget/PointsReward 갱신
+            if (aggregated.Tiers.Count > 0)
+            {
+                var lastTier = aggregated.Tiers[aggregated.Tiers.Count - 1];
+                aggregated.PointsReward = Mathf.Max(0, lastTier.reward.perkPoints);
+                aggregated.ProgressTarget = Mathf.Max(1, lastTier.goal);
+                lastTier.reward.perkPoints = 0; // 최종 티어 보상은 서비스의 PointsReward로 지급
+                aggregated.Tiers[aggregated.Tiers.Count - 1] = lastTier;
+            }
+
+            dict[aggregated.Id] = aggregated;
+            legacyTierMap[aggregated.Id] = list.Select(l => l.def.Id).ToList();
         }
 
         if (dict.Count == 0)
@@ -207,17 +391,104 @@ public sealed class AchievementService : IAchievementService
             firstWin.PointsReward = 1;
             firstWin.ProgressTarget = 1;
             dict[firstWin.Id] = firstWin;
+            legacyTierMap[firstWin.Id] = new List<string>();
         }
+
         return dict;
     }
 
-    // --- 서비스 내부에서 처리하는 메타 이벤트 핸들러 ---
+    private static bool TryParseTierId(string id, out string baseId, out int tierIndex)
+    {
+        baseId = id;
+        tierIndex = 0;
+        if (string.IsNullOrEmpty(id)) return false;
+
+        var idx = id.LastIndexOf("_T", StringComparison.OrdinalIgnoreCase);
+        if (idx <= 0 || idx >= id.Length - 2) return false;
+
+        var suffix = id.Substring(idx + 2);
+        if (int.TryParse(suffix, out var parsed) && parsed > 0)
+        {
+            baseId = id.Substring(0, idx);
+            tierIndex = parsed;
+            return true;
+        }
+        return false;
+    }
+
+    private void MigrateLegacyProgress()
+    {
+        if (_legacyTierIdMap == null || _legacyTierIdMap.Count == 0) return;
+
+        foreach (var kvp in _legacyTierIdMap)
+        {
+            if (!_defs.TryGetValue(kvp.Key, out var def)) continue;
+
+            var row = _db.LoadAchievementProgress(_profileId, kvp.Key) ?? new AchievementProgress
+            {
+                ProfileId = _profileId,
+                AchievementId = kvp.Key,
+                IsUnlocked = false,
+                Progress = 0,
+                HighestTierUnlocked = 0,
+                UnlockedAtUtc = null
+            };
+
+            int tierCount = Mathf.Max(1, def.Tiers?.Count ?? 1);
+            int highestTier = row.HighestTierUnlocked;
+            int progress = row.Progress;
+            bool unlocked = row.IsUnlocked;
+            string unlockedAt = row.UnlockedAtUtc;
+
+            var legacyIds = kvp.Value;
+            for (int i = 0; i < legacyIds.Count; i++)
+            {
+                var legacyId = legacyIds[i];
+                var legacyRow = _db.LoadAchievementProgress(_profileId, legacyId);
+                if (legacyRow == null) continue;
+
+                progress = Mathf.Max(progress, legacyRow.Progress);
+                if (legacyRow.IsUnlocked && (i + 1) > highestTier)
+                {
+                    highestTier = i + 1;
+                    if (!string.IsNullOrEmpty(legacyRow.UnlockedAtUtc))
+                    {
+                        unlockedAt = legacyRow.UnlockedAtUtc;
+                    }
+                }
+            }
+
+            bool changed = false;
+            if (progress > row.Progress)
+            {
+                row.Progress = progress;
+                changed = true;
+            }
+            if (highestTier > row.HighestTierUnlocked)
+            {
+                row.HighestTierUnlocked = highestTier;
+                changed = true;
+            }
+
+            bool shouldBeUnlocked = highestTier >= tierCount;
+            if (shouldBeUnlocked && !row.IsUnlocked)
+            {
+                row.IsUnlocked = true;
+                row.UnlockedAtUtc = string.IsNullOrEmpty(unlockedAt) ? row.UnlockedAtUtc : unlockedAt;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                _db.UpsertAchievementProgress(row);
+            }
+        }
+    }
+
     private void HandleFloorReached(MetaEvents.FloorReachedPayload payload)
     {
-        // 런 ID가 비어 있으면 무시합니다.
         if (payload.RunId == null) return;
 
-        // DB를 참고해 런 단위 카운터의 초기값을 보정합니다.
         if (!_singleRunFloorCount.ContainsKey(payload.RunId))
         {
             try
@@ -226,8 +497,7 @@ public sealed class AchievementService : IAchievementService
                 var lr = _db.LoadCurrentRun(payload.RunId);
                 if (lr != null && lr.Nodes != null)
                 {
-                    // 방문한 층 수의 고유 개수를 세어 횟수를 유추합니다.
-                    var distinctFloors = new System.Collections.Generic.HashSet<int>();
+                    var distinctFloors = new HashSet<int>();
                     foreach (var n in lr.Nodes)
                     {
                         if (n != null && n.Visited) distinctFloors.Add(n.Floor);
@@ -239,49 +509,30 @@ public sealed class AchievementService : IAchievementService
             catch { _singleRunFloorCount[payload.RunId] = 0; }
         }
 
-        // 1) 누적 이동 층수: FloorReached마다 +1을 합산하고 티어 업적을 검증합니다.
         try
         {
-            ReportProgress("ACH_TRAVERSE_FLOORS_TOTAL_T1", 1);
-            UnlockIfEligible("ACH_TRAVERSE_FLOORS_TOTAL_T1");
-
-            ReportProgress("ACH_TRAVERSE_FLOORS_TOTAL_T2", 1);
-            UnlockIfEligible("ACH_TRAVERSE_FLOORS_TOTAL_T2");
-
-            ReportProgress("ACH_TRAVERSE_FLOORS_TOTAL_T3", 1);
-            UnlockIfEligible("ACH_TRAVERSE_FLOORS_TOTAL_T3");
+            ReportProgress("ACH_TRAVERSE_FLOORS_TOTAL", 1);
+            UnlockIfEligible("ACH_TRAVERSE_FLOORS_TOTAL");
         }
         catch { }
 
-        // 2) 런 단위 이동 층수: 런별 카운터로 임계치를 검사합니다.
         try
         {
             _singleRunFloorCount.TryGetValue(payload.RunId, out int cur);
-            cur += 1; // 층을 이동할 때마다 +1
+            cur += 1;
             _singleRunFloorCount[payload.RunId] = cur;
 
-            // 정의된 목표치에 도달하면 직접 해금합니다.
-            if (_defs.TryGetValue("ACH_TRAVERSE_FLOORS_SINGLE_RUN_T1", out var def1))
+            if (_defs.TryGetValue("ACH_TRAVERSE_FLOORS_SINGLE_RUN", out var singleRunDef))
             {
-                if (cur >= Math.Max(1, def1.ProgressTarget))
-                {
-                    UnlockDirect(def1.Id, def1.PointsReward);
-                }
-            }
-            if (_defs.TryGetValue("ACH_TRAVERSE_FLOORS_SINGLE_RUN_T2", out var def2))
-            {
-                if (cur >= Math.Max(1, def2.ProgressTarget))
-                {
-                    UnlockDirect(def2.Id, def2.PointsReward);
-                }
+                var row = GetOrCreateProgress("ACH_TRAVERSE_FLOORS_SINGLE_RUN");
+                row.Progress = Mathf.Max(row.Progress, cur);
+                ProcessProgress(singleRunDef, row);
+                _db.UpsertAchievementProgress(row);
             }
         }
         catch { }
     }
 
-    /// <summary>
-    /// 런 종료 시 런 단위 카운터를 초기화합니다.
-    /// </summary>
     private void HandleRunEnded(MetaEvents.RunEndedPayload payload)
     {
         if (payload.RunId == null) return;

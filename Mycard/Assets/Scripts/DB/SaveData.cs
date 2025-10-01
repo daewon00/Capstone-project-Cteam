@@ -96,6 +96,7 @@ namespace Game.Save
         public bool IsUnlocked { get; set; }
         public int Progress { get; set; }
         public string UnlockedAtUtc { get; set; }
+        public int HighestTierUnlocked { get; set; }
     }
 
     /// <summary>

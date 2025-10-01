@@ -52,6 +52,10 @@ public static class MetaEvents
         public int Points;
         public string UnlockedAtUtc;
         public string RunId; // 선택적으로 사용되는 RunId
+        public int TierIndex;
+        public int TierCount;
+        public bool IsFinalTier;
+        public string TierDisplayName;
     }
 
     // --- 이벤트 ---
@@ -106,7 +110,7 @@ public static class MetaEvents
     public static void RaiseAchievementUnlocked(AchievementUnlockedPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[MetaEvents] AchievementUnlocked: id={payload.AchievementId}, name={payload.DisplayName}, +{payload.Points}pt");
+        UnityEngine.Debug.Log($"[MetaEvents] AchievementUnlocked: id={payload.AchievementId}, tier={payload.TierIndex}/{payload.TierCount}, final={payload.IsFinalTier}, +{payload.Points}pt");
 #endif
         OnAchievementUnlocked?.Invoke(payload);
     }

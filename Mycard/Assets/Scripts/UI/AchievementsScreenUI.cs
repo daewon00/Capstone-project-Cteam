@@ -26,7 +26,8 @@ public class AchievementsScreenUI : MonoBehaviour
 
     private List<AchievementDefinition> _defs = new();
     private Dictionary<string, AchievementProgress> _progress = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> _newly = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _newlyAchievements = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, int> _newTierUnlocks = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// 필요한 서비스와 UI 바인딩을 지연 초기화합니다.
@@ -84,7 +85,18 @@ public class AchievementsScreenUI : MonoBehaviour
         _defs = _achievements.GetAllDefinitions().ToList();
         var snapshot = _achievements.GetProgressSnapshot(_profileId);
         _progress = snapshot.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
-        _newly = new HashSet<string>(_achievements.GetNewlyUnlockedSinceLastFlush() ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+        _newlyAchievements = new HashSet<string>(_achievements.GetNewlyUnlockedSinceLastFlush(consume: true) ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+
+        _newTierUnlocks.Clear();
+        var tierUnlocks = _achievements.GetNewlyUnlockedTiers(consume: true);
+        if (tierUnlocks != null)
+        {
+            foreach (var info in tierUnlocks)
+            {
+                if (string.IsNullOrEmpty(info.AchievementId)) continue;
+                _newTierUnlocks[info.AchievementId] = Mathf.Max(_newTierUnlocks.TryGetValue(info.AchievementId, out var cur) ? cur : 0, info.TierIndex);
+            }
+        }
 
         // Clear children
         for (int i = slotsContainer.childCount - 1; i >= 0; i--) Destroy(slotsContainer.GetChild(i).gameObject);
@@ -98,7 +110,7 @@ public class AchievementsScreenUI : MonoBehaviour
 
         // Sort: New → Locked(by ratio desc) → Unlocked → Name
         var sorted = _defs
-            .OrderByDescending(d => _newly.Contains(d.Id))
+            .OrderByDescending(d => _newlyAchievements.Contains(d.Id) || _newTierUnlocks.ContainsKey(d.Id))
             .ThenByDescending(d =>
             {
                 _progress.TryGetValue(d.Id, out var p);
@@ -111,9 +123,10 @@ public class AchievementsScreenUI : MonoBehaviour
         foreach (var def in sorted)
         {
             _progress.TryGetValue(def.Id, out var prog);
-            bool isNew = _newly.Contains(def.Id);
+            bool isNewAchievement = _newlyAchievements.Contains(def.Id);
+            _newTierUnlocks.TryGetValue(def.Id, out var newTierReached);
             var slot = Instantiate(slotPrefab, slotsContainer);
-            slot.Init(def, prog, isNew);
+            slot.Init(def, prog, isNewAchievement, newTierReached);
         }
 
         // Refresh layout + reset scroll to top
