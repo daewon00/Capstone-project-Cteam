@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
+  m_Name: CARD_SwiftVanguard
+  m_EditorClassIdentifier: 
+  cardName: "질풍 선봉대"
+  CardId: CARD_SWIFT_VANGUARD
+  actionDescription: "빠른 전진으로 전열을 돌파합니다."
+  cardLore: 
+  currentHealth: 3
+  attackPower: 3
+  manaCost: 2
+  characterSprite: {fileID: 21300000, guid: 4fd243a4738ef344180927cb79988569, type: 3}
+  bgSprite: {fileID: 21300000, guid: 5b8d453954560794a8e87dbd37b7847d, type: 3}
+  rarity: 2
+  effects: []
+  removeAfterCombat: 0
