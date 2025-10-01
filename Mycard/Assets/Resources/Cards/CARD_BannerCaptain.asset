@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
+  m_Name: CARD_BannerCaptain
+  m_EditorClassIdentifier: 
+  cardName: "깃발 대장"
+  CardId: CARD_BANNER_CAPTAIN
+  actionDescription: "생존하는 동안 아군 전열 카드의 공격력이 1 증가합니다."
+  cardLore: 
+  currentHealth: 5
+  attackPower: 2
+  manaCost: 4
+  characterSprite: {fileID: 21300000, guid: b7ae2cc239ca7dd4eb45ac845d2fa034, type: 3}
+  bgSprite: {fileID: 21300000, guid: e3d89e19a761a504ba8b8e785d1a420e, type: 3}
+  rarity: 1
+  effects:
+  - type: 10
+    timing: 4
+    target: 0
+    potency: 0
+    value: 1
+    payloadId: 
+    stackable: 1
+    maxStacks: 0
+  removeAfterCombat: 0
