@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e4e51ebb68bed044857706078ea19bc, type: 3}
+  m_Name: Companion_RareTest
+  m_EditorClassIdentifier: 
+  CompanionId: COMP_rare_test
+  DisplayName: "\uB808\uC5B4 \uD14C\uC2A4\uD2B8"
+  Description: "\uC0C8\uB85C \uB9CC\uB4E0 \uB808\uC5B4 \uCE74\uB4DC\uB9CC \uD3EC\uD568\uD55C
+    \uD14C\uC2A4\uD2B8 \uB3D9\uB8CC."
+  Portrait: {fileID: 21300000, guid: 60ae13c7eb8dd0a4982cbcc063243d23, type: 3}
+  StartingCardIds:
+  - CARD_VETERAN_SPEARMAN
+  - CARD_RADIANT_WARDEN
+  - CARD_SHADOW_DUELIST
+  - CARD_BLADESTORM_CAPTAIN
+  - CARD_BROOD_GENERAL
+  - CARD_SIEGE_VANGUARD
+  - CARD_THORN_SENTINEL
+  - CARD_BLOOD_CHAMPION
+  - CARD_SWIFT_CAPTAIN
+  - CARD_ARCANE_STRATEGIST
+  - CARD_BANNER_CAPTAIN
+  StartingRelicIds: []
+  StartingPotionIds: []
+  MaxHpBonus: 100
+  GoldBonus: 1000
+  EnergyMaxBonus: 20
