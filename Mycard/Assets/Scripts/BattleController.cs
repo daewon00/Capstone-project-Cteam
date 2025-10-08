@@ -200,6 +200,34 @@ public class BattleController : MonoBehaviour
         _playerStatsInitialized = true;
     }
 
+    /// <summary>
+    /// Encounter 설정으로부터 적 리더의 체력/마나 값을 덮어씁니다.
+    /// </summary>
+    public void ApplyEnemyStats(int baseHealth, int maxMana, int startingMana)
+    {
+        if (baseHealth > 0)
+        {
+            enemyHealth = Mathf.Max(1, baseHealth);
+        }
+
+        if (maxMana > 0)
+        {
+            enemymaxMana = Mathf.Max(1, maxMana);
+        }
+
+        currentEnemyMaxMana = Mathf.Max(0, enemymaxMana);
+
+        if (startingMana >= 0)
+        {
+            startingEnemeyMana = Mathf.Clamp(startingMana, 0, currentEnemyMaxMana);
+        }
+
+        enemyMana = Mathf.Clamp(startingEnemeyMana, 0, currentEnemyMaxMana);
+
+        UIController.instance?.setEnemyHealthText(enemyHealth);
+        UIController.instance?.SetEnemyManaText(enemyMana);
+    }
+
     public void MarkRestored()
     {
         _battleStarted = true;
@@ -513,7 +541,9 @@ public class BattleController : MonoBehaviour
         if (currentPhase != TurnOrder.playerActive)
             return Playability.NotPlayerTurn;
         if (card == null) return Playability.NotEnoughMana;
-        if (playerMana < card.manaCost)
+
+        int effectiveCost = Mathf.Max(0, card.GetEffectiveManaCost());
+        if (playerMana < effectiveCost)
             return Playability.NotEnoughMana;
         return Playability.Ok;
     }
@@ -543,7 +573,6 @@ public class BattleController : MonoBehaviour
         else
         {
             UIController.instance.ShowManaWarning();
-            UIController.instance.drawCardButton.SetActive(false);
         }
     }
 

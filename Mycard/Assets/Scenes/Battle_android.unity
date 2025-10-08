@@ -1903,7 +1903,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _battleController: {fileID: 6979081813517262895}
   _handController: {fileID: 8135307613220409027}
+  _enemyController: {fileID: 0}
   _cardPrefab: {fileID: 2177406694648586450, guid: 7597e66270171af4fbeda47477a3ccf6, type: 3}
+  _normalEncounter: {fileID: 11400000, guid: a35900d605fe749ab9bc34e77177b8be, type: 2}
+  _eliteEncounter: {fileID: 11400000, guid: e3a7146a5ea4f48a9986c795919ee824, type: 2}
+  _bossEncounter: {fileID: 11400000, guid: 5ae0f949405674ef39962c9445c4657c, type: 2}
+  _fallbackEncounter: {fileID: 11400000, guid: a35900d605fe749ab9bc34e77177b8be, type: 2}
 --- !u!4 &1842348417
 Transform:
   m_ObjectHideFlags: 0
