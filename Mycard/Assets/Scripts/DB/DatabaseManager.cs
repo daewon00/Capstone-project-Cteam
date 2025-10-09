@@ -96,9 +96,11 @@ public sealed class DatabaseManager
         _conn.CreateTable<RunStageState>();
         _conn.CreateTable<ActiveBattleState>();
         _conn.CreateTable<MapLayoutStorage>();
+        _conn.CreateTable<TutorialProgress>();
 
         EnsureCurrentRunCompanionColumn();
         EnsureAchievementProgressTierColumn();
+        EnsureCurrentRunTutorialColumn();
 
         // ==== CardRuntimeState 핵심 인덱스 생성 ====
         try
@@ -129,6 +131,9 @@ public sealed class DatabaseManager
 
         try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_RunPerkSnapshot ON RunPerkSnapshot (RunId, EffectKey)"); }
         catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_RunPerkSnapshot 생성 경고: {e.Message}"); }
+
+        try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_TutorialProgress_ProfileTutorial ON TutorialProgress (ProfileId, TutorialId)"); }
+        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_TutorialProgress 생성 경고: {e.Message}"); }
     }
 
     private void EnsureCurrentRunCompanionColumn()
@@ -170,6 +175,26 @@ public sealed class DatabaseManager
         catch (Exception e)
         {
             Debug.LogError($"[DB] EnsureAchievementProgressTierColumn failed: {e.Message}");
+        }
+    }
+
+    private void EnsureCurrentRunTutorialColumn()
+    {
+        try
+        {
+            var columns = _conn.GetTableInfo("CurrentRun");
+            bool hasColumn = columns.Any(c => string.Equals(c.Name, "IsTutorialRun", StringComparison.OrdinalIgnoreCase));
+            if (!hasColumn)
+            {
+                _conn.Execute("ALTER TABLE CurrentRun ADD COLUMN IsTutorialRun INTEGER NOT NULL DEFAULT 0;");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("[DB] Added IsTutorialRun column to CurrentRun.");
+#endif
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DB] EnsureCurrentRunTutorialColumn failed: {e.Message}");
         }
     }
 
@@ -756,6 +781,40 @@ public sealed class DatabaseManager
     {
         if (string.IsNullOrEmpty(runId)) return;
         _conn.Table<ActiveBattleState>().Delete(x => x.RunId == runId);
+    }
+
+    public TutorialProgress LoadTutorialProgress(string profileId, string tutorialId)
+    {
+        if (string.IsNullOrEmpty(profileId) || string.IsNullOrEmpty(tutorialId)) return null;
+        return _conn.Table<TutorialProgress>()
+            .FirstOrDefault(x => x.ProfileId == profileId && x.TutorialId == tutorialId);
+    }
+
+    public void UpsertTutorialProgress(TutorialProgress row)
+    {
+        if (row == null) return;
+        row.ProfileId ??= "P1";
+        row.TutorialId ??= TutorialIds.CoreOnboarding;
+        row.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
+
+        var existing = _conn.Table<TutorialProgress>()
+            .FirstOrDefault(x => x.ProfileId == row.ProfileId && x.TutorialId == row.TutorialId);
+
+        if (existing != null)
+        {
+            row.Id = existing.Id;
+            _conn.Update(row);
+        }
+        else
+        {
+            _conn.Insert(row);
+        }
+    }
+
+    public void DeleteTutorialProgress(string profileId, string tutorialId)
+    {
+        if (string.IsNullOrEmpty(profileId) || string.IsNullOrEmpty(tutorialId)) return;
+        _conn.Table<TutorialProgress>().Delete(x => x.ProfileId == profileId && x.TutorialId == tutorialId);
     }
 
     // --- RNG 상태 저장/로드 ---

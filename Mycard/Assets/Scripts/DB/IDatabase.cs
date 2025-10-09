@@ -84,6 +84,11 @@ public interface IDatabase
     List<PerkAllocation> LoadPerkAllocations(string profileId);
     void SavePerkAllocations(string profileId, IEnumerable<PerkAllocation> perks);
     void ApplyPerkAdjustments(string profileId, IEnumerable<PerkAllocation> perks, int pointsDelta);
+
+    // --- Tutorial progress ---
+    TutorialProgress LoadTutorialProgress(string profileId, string tutorialId);
+    void UpsertTutorialProgress(TutorialProgress row);
+    void DeleteTutorialProgress(string profileId, string tutorialId);
     
     
 }

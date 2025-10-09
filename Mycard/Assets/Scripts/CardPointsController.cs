@@ -46,9 +46,7 @@ public class CardPointsController : MonoBehaviour
         {
             var playerCard = (i < playerCardPoints.Length && playerCardPoints[i] != null)
                 ? playerCardPoints[i].activeCard : null;
-            int baseAtk = playerCard?.attackPower ?? 0;
-            int finalAtk = GameEvents.ApplyPlayerAttackModifiers(baseAtk);
-            finalAtk = AdjustForOwnerAura(playerCard, finalAtk);
+            int finalAtk = playerCard != null ? playerCard.CalculateCombatAttack() : 0;
             if (playerCard == null)
                 continue;
 
@@ -126,9 +124,7 @@ public class CardPointsController : MonoBehaviour
             if (enemyCard == null)
                 continue;
 
-            int baseAtk = enemyCard.attackPower;
-            int finalAtk = GameEvents.ApplyEnemyAttackModifiers(baseAtk);
-            finalAtk = AdjustForOwnerAura(enemyCard, finalAtk);
+            int finalAtk = enemyCard.CalculateCombatAttack();
             bool usePierce = _effectService?.HasEffect(enemyCard, CardEffectType.Pierce) ?? false;
 
             Card targetCard = (!usePierce && playerCardPoints[i].activeCard != null)
@@ -203,16 +199,5 @@ public class CardPointsController : MonoBehaviour
                 }
             }
         }
-    }
-
-    private int AdjustForOwnerAura(Card card, int attackValue)
-    {
-        if (card == null || _effectService == null)
-            return attackValue;
-
-        var snapshot = _effectService.CaptureCardState(card);
-        if (snapshot != null && snapshot.auraBonus > 0)
-            attackValue = Mathf.Max(0, attackValue - snapshot.auraBonus);
-        return attackValue;
     }
 }

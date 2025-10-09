@@ -71,6 +71,7 @@ public sealed class RunLifecycleService : IRunLifecycleService
         runService?.RebindRun(string.Empty);
 
         ServiceRegistry.Get<IModifierService>()?.RebindRun(string.Empty);
+        ServiceRegistry.Get<ITutorialService>()?.ResetActiveRun();
 
         // 이벤트 매니저는 런별로 생성되므로 해제합니다.
         ServiceRegistry.Register<IEventManager>(null);

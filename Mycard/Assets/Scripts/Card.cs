@@ -11,8 +11,6 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 {
     public CardScriptableObject cardSO; //카드 설계도
 
-    public static Card instance;
-
     public bool isPlayer;   //플레이어 카드인지 참 거짓
 
     public int currentHealth;   //카드 체력
@@ -83,7 +81,6 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     void Awake()
     {
         _originalScale = transform.localScale;
-        instance = this; 
         if (_iconDatabase == null && iconDatabaseOverride != null)
             _iconDatabase = iconDatabaseOverride;
     }
@@ -318,6 +315,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             assignedPlace.activeCard = null;
         }
+        assignedPlace = null;
+        transform.SetParent(null, true);
+        inHand = false;
 
         effectService?.UnregisterBoardCard(this);
 
@@ -424,8 +424,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         UpdateSkillIcon();
     }
 
-    // 플레이어 카드면 유물 체인을 통과한 "표시용 공격력"을 돌려줌
-    public int GetEffectiveAttack()
+    /// <summary>
+    /// 카드 공격력을 모든 런타임 보정(카드 전용 → 소유자 전역 → 오라 차감)까지 적용한 값으로 계산합니다.
+    /// 전투 피해량 산출과 UI 표시가 동일한 계산 경로를 사용하도록 이 메서드를 공유합니다.
+    /// </summary>
+    public int CalculateCombatAttack(bool includeAuraPenalty = true)
     {
         int value = attackPower;
         if (BattleController.instance != null)
@@ -442,7 +445,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             }
         }
 
-        if (assignedPlace != null)
+        if (includeAuraPenalty && assignedPlace != null)
         {
             var effectService = ServiceRegistry.Get<ICardEffectService>();
             if (effectService != null)
@@ -455,6 +458,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         return value;
     }
+
+    // 플레이어 카드면 유물 체인을 통과한 "표시용 공격력"을 돌려줌
+    public int GetEffectiveAttack() => CalculateCombatAttack();
 
     public int GetEffectiveManaCost()
     {
