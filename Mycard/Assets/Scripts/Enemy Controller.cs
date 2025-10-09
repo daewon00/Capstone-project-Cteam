@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Game.Save;
 using BattleSnapshot;
@@ -30,6 +31,24 @@ public class EnemyController : MonoBehaviour
     public IReadOnlyList<CardScriptableObject> CurrentHand => cardsInHand;
     public IReadOnlyList<Card> StagedCards => stagedCards;
     public int startHandSize;
+    [Header("Turn Settings")]
+    [SerializeField, Tooltip("적 턴마다 드로우할 카드 수입니다. Encounter 설정으로 덮어씁니다.")]
+    private int _cardsPerTurn = 2;
+
+    private bool _deckInitialized;
+
+    public int DrawPerTurn => _cardsPerTurn;
+    public AITpye CurrentAIType => enemyAIType;
+    public IReadOnlyList<CardScriptableObject> DeckTemplate
+    {
+        get
+        {
+            if (deckToUse == null)
+                deckToUse = new List<CardScriptableObject>();
+            return deckToUse;
+        }
+    }
+
     void Start()
     {
         SetupDeck();
@@ -38,6 +57,8 @@ public class EnemyController : MonoBehaviour
         {
             SetupHand();
         }
+
+        _deckInitialized = true;
     }
 
     // Update is called once per frame
@@ -106,15 +127,19 @@ public class EnemyController : MonoBehaviour
         }
         if (enemyAIType != AITpye.placeFromDeck )
         {
-            for(int i = 0; i< BattleController.instance.cardToDrawPerTurn; i++) 
+            int draws = Mathf.Max(0, _cardsPerTurn);
+            for(int i = 0; i< draws; i++) 
             {
+                if (activeCards.Count == 0)
+                {
+                    SetupDeck();
+                    if (activeCards.Count == 0)
+                        break;
+                }
+
                 cardsInHand.Add(activeCards[0]);
                 activeCards.RemoveAt(0);
 
-                if(activeCards.Count == 0)
-                {
-                    SetupDeck();
-                }
             }
         }
 
@@ -364,7 +389,7 @@ public class EnemyController : MonoBehaviour
         List<CardScriptableObject> cardsToPlay = new List<CardScriptableObject>();
         foreach(CardScriptableObject card in cardsInHand)
         {
-            if(card.manaCost <= BattleController.instance.enemyMana)
+            if(card != null && Mathf.Max(0, card.manaCost) <= BattleController.instance.enemyMana)
             {
                 cardsToPlay.Add(card);
 
@@ -486,6 +511,39 @@ public class EnemyController : MonoBehaviour
                 card.assignedPlace = slot;
                 slot.activeCard = card;
                 stagedCards.Add(card);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Encounter 설정을 적용해 덱/AI/턴 규칙을 갱신합니다.
+    /// </summary>
+    public void ApplyEncounter(EnemyEncounterConfig config)
+    {
+        if (config == null)
+            return;
+
+        enemyAIType = config.PickRandomAiType();
+        startHandSize = Mathf.Max(0, config.StartHandSize);
+        _cardsPerTurn = Mathf.Max(0, config.DrawPerTurn);
+
+        if (deckToUse == null)
+            deckToUse = new List<CardScriptableObject>();
+        deckToUse.Clear();
+        if (config.DeckCards != null)
+            deckToUse.AddRange(config.DeckCards.Where(c => c != null));
+
+        activeCards.Clear();
+        cardsInHand.Clear();
+        stagedCards.Clear();
+
+        if (_deckInitialized)
+        {
+            SetupDeck();
+            if (enemyAIType != AITpye.placeFromDeck)
+            {
+                cardsInHand.Clear();
+                SetupHand();
             }
         }
     }

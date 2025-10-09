@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Game.Save;
@@ -12,12 +14,21 @@ public class BattleSceneBootstrap : MonoBehaviour
     [Header("연결할 컨트롤러")]
     [SerializeField] private BattleController _battleController;
     [SerializeField] private HandController _handController;
+    [SerializeField] private EnemyController _enemyController;
     [SerializeField] private Card _cardPrefab; // 핸드에 생성할 카드 프리팹(권장: 명시 지정)
+
+    [Header("Encounter Configs")]
+    [SerializeField, Tooltip("일반 전투에 사용할 Encounter 설정")] private EnemyEncounterConfig _normalEncounter;
+    [SerializeField, Tooltip("엘리트 전투에 사용할 Encounter 설정")] private EnemyEncounterConfig _eliteEncounter;
+    [SerializeField, Tooltip("보스 전투에 사용할 Encounter 설정")] private EnemyEncounterConfig _bossEncounter;
+    [SerializeField, Tooltip("비어 있는 경우 사용할 기본 Encounter 설정(선택)")] private EnemyEncounterConfig _fallbackEncounter;
 
     /// <summary>
     /// 전투 중 카드 인스턴스를 생성할 때 사용할 기본 카드 프리팹입니다.
     /// </summary>
     public static Card CardPrefabReference { get; private set; }
+
+    private EnemyEncounterConfig _activeEncounter;
 
     /// <summary>
     /// 필수 의존성을 검증하고 핸드/덱 서비스 바인딩을 준비합니다.
@@ -32,6 +43,8 @@ public class BattleSceneBootstrap : MonoBehaviour
             return;
         }
 
+        EnsureEnemyControllerReference();
+
         var deckService = ServiceRegistry.GetRequired<IDeckService>();
         var cardCatalog = ServiceRegistry.GetRequired<ICardCatalog>();
 
@@ -39,6 +52,9 @@ public class BattleSceneBootstrap : MonoBehaviour
         if (cardCatalog == null) Debug.LogWarning("[BattleSceneBootstrap] ICardCatalog를 찾지 못했습니다.");
         if (deckService != null) GameServices.RegisterDeck(deckService);
         CardPrefabReference = _cardPrefab;
+
+        ConfigureEncounter();
+
         // HandServiceBinder를 부착하고 즉시 초기화합니다.
         var binder = _handController.GetComponent<HandServiceBinder>();
         if (binder == null) binder = _handController.gameObject.AddComponent<HandServiceBinder>();
@@ -148,6 +164,10 @@ public class BattleSceneBootstrap : MonoBehaviour
             }
 
             payload.sceneName = SceneManager.GetActiveScene().name;
+            if (_activeEncounter != null && string.IsNullOrEmpty(payload.enemyId))
+            {
+                payload.enemyId = _activeEncounter.EncounterId;
+            }
             stageService.SetStage(RunStageType.Battle, payload.sceneName, RunStageService.ToJson(payload));
         }
 
@@ -194,5 +214,128 @@ public class BattleSceneBootstrap : MonoBehaviour
         {
             _battleController.StartBattle();
         }
+    }
+
+    private void EnsureEnemyControllerReference()
+    {
+        if (_enemyController == null)
+        {
+            _enemyController = EnemyController.instance != null
+                ? EnemyController.instance
+                : FindObjectOfType<EnemyController>();
+        }
+    }
+
+    private void ConfigureEncounter()
+    {
+        EnsureEnemyControllerReference();
+        if (_enemyController == null || _battleController == null)
+            return;
+
+        var kind = ResolveBattleKind();
+        string storedEnemyId = ResolveStoredEnemyId(out var storedKind);
+        if (storedKind.HasValue)
+            kind = storedKind.Value;
+
+        var encounter = ResolveEncounter(kind, storedEnemyId);
+        if (encounter == null)
+        {
+            Debug.LogWarning("[BattleSceneBootstrap] Encounter 구성을 찾지 못해 기본 설정으로 진행합니다.");
+            return;
+        }
+
+        _activeEncounter = encounter;
+        _enemyController.ApplyEncounter(encounter);
+        _battleController.ApplyEnemyStats(encounter.EnemyBaseHealth, encounter.EnemyMaxMana, encounter.EnemyStartingMana);
+    }
+
+    private GameContext.BattleKind ResolveBattleKind()
+    {
+        if (GameContext.I != null)
+            return GameContext.I.CurrentBattleKind;
+
+        return (GameContext.BattleKind)PlayerPrefs.GetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
+    }
+
+    private string ResolveStoredEnemyId(out GameContext.BattleKind? storedKind)
+    {
+        storedKind = null;
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService != null && stageService.TryGetPayload(out RunStagePayloads.Battle payload) && payload != null)
+        {
+            if (payload.battleKind >= 0 && payload.battleKind <= (int)GameContext.BattleKind.Boss)
+            {
+                storedKind = (GameContext.BattleKind)payload.battleKind;
+            }
+            return payload.enemyId;
+        }
+        return null;
+    }
+
+    private EnemyEncounterConfig ResolveEncounter(GameContext.BattleKind kind, string enemyId)
+    {
+        var encounter = FindEncounterById(enemyId);
+        if (encounter != null)
+            return encounter;
+
+        encounter = GetEncounterForKind(kind);
+        if (encounter != null)
+            return encounter;
+
+        return BuildRuntimeFallback(kind);
+    }
+
+    private EnemyEncounterConfig GetEncounterForKind(GameContext.BattleKind kind)
+    {
+        switch (kind)
+        {
+            case GameContext.BattleKind.Elite:
+                return _eliteEncounter ?? _fallbackEncounter;
+            case GameContext.BattleKind.Boss:
+                return _bossEncounter ?? _fallbackEncounter;
+            default:
+                return _normalEncounter ?? _fallbackEncounter;
+        }
+    }
+
+    private EnemyEncounterConfig FindEncounterById(string enemyId)
+    {
+        if (string.IsNullOrEmpty(enemyId))
+            return null;
+
+        foreach (var candidate in EnumerateConfiguredEncounters())
+        {
+            if (candidate != null && string.Equals(candidate.EncounterId, enemyId, StringComparison.Ordinal))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    private IEnumerable<EnemyEncounterConfig> EnumerateConfiguredEncounters()
+    {
+        if (_normalEncounter != null) yield return _normalEncounter;
+        if (_eliteEncounter != null) yield return _eliteEncounter;
+        if (_bossEncounter != null) yield return _bossEncounter;
+        if (_fallbackEncounter != null) yield return _fallbackEncounter;
+    }
+
+    private EnemyEncounterConfig BuildRuntimeFallback(GameContext.BattleKind kind)
+    {
+        if (_enemyController == null)
+            return null;
+
+        var runtime = ScriptableObject.CreateInstance<EnemyEncounterConfig>();
+        runtime.hideFlags = HideFlags.DontUnloadUnusedAsset | HideFlags.DontSave;
+        runtime.SetEncounterId($"{kind}_Fallback");
+        runtime.SetAiOptions(new[] { _enemyController.CurrentAIType });
+        runtime.SetStartHandSize(_enemyController.startHandSize);
+        runtime.SetDrawPerTurn(_enemyController.DrawPerTurn);
+        int baseHp = _battleController != null ? Mathf.Max(1, _battleController.enemyHealth) : 10;
+        int maxMana = _battleController != null ? Mathf.Max(1, _battleController.enemymaxMana) : 3;
+        int startMana = _battleController != null ? Mathf.Max(0, _battleController.startingEnemeyMana) : maxMana;
+        runtime.SetEnemyStats(baseHp, maxMana, startMana);
+        runtime.SetDeck(_enemyController.DeckTemplate);
+        return runtime;
     }
 }
