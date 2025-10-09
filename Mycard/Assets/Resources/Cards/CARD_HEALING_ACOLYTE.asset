@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
-  m_Name: Test Card4
+  m_Name: CARD_HEALING_ACOLYTE
   m_EditorClassIdentifier: 
-  cardName: test4
-  CardId: CARD_4
-  actionDescription: 
+  cardName: 치유 사제
+  CardId: CARD_HEALING_ACOLYTE
+  actionDescription: 전열의 부상을 간단한 기도로 회복시킵니다.
   cardLore: 
   currentHealth: 1
   attackPower: 1

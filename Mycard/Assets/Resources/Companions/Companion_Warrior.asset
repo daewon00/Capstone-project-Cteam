@@ -16,7 +16,12 @@ MonoBehaviour:
   DisplayName: "\uB098\uC774\uD2B8"
   Description: 
   Portrait: {fileID: 21300000, guid: 60ae13c7eb8dd0a4982cbcc063243d23, type: 3}
-  StartingCardIds: []
+  StartingCardIds:
+  - CARD_TOWER_SHIELD
+  - CARD_AMBUSH_ARCHER
+  - CARD_HEALING_ACOLYTE
+  - CARD_TRAINING_BLADE
+  - CARD_VIGILANT_GUARD
   StartingRelicIds: []
   StartingPotionIds: []
   MaxHpBonus: 10

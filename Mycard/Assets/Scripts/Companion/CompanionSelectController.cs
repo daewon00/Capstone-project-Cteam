@@ -130,14 +130,19 @@ public class CompanionSelectController : MonoBehaviour
             string NewId() => $"{runId}-{(++counter):X8}";
 
             var cards = new List<CardInDeck>();
-            // 기본 덱
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_2", IsUpgraded = false });
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_3", IsUpgraded = false });
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_4", IsUpgraded = false });
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_5", IsUpgraded = false });
-            // 동료 전용 카드
-            foreach (var cid in _selected.StartingCardIds)
-                cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = cid, IsUpgraded = false });
+            if (_selected.StartingCardIds != null && _selected.StartingCardIds.Count > 0)
+            {
+                foreach (var cid in _selected.StartingCardIds)
+                {
+                    if (string.IsNullOrEmpty(cid))
+                        continue;
+                    cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = cid, IsUpgraded = false });
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[CompanionSelect] Starting deck is empty for companion {_selected.CompanionId}. 런이 비어 있는 덱으로 시작합니다.");
+            }
 
             var relics = _selected.StartingRelicIds
                 .Select(id => new RelicInPossession { RunId = runId, RelicId = id, Stacks = 1, UsesLeft = -1 })
