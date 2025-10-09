@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: HpUpPotion
   m_EditorClassIdentifier: 
   relicId: HPup
-  displayName: hpup
-  description: player HP up
+  displayName: "\uC790\uC591\uAC15\uC7A5\uC81C"
+  description: "\uD50C\uB808\uC774\uC5B4\uC758 \uCCB4\uB825\uC774 15\uC99D\uAC00\uD569\uB2C8\uB2E4\n-\uAE38\uAC70\uB9AC\uC5D0\uC11C
+    \uD314\uC558\uC9C0\uB9CC \uD6A8\uACFC\uB294 \uD655\uC2E4\uD569\uB2C8\uB2E4-"
   icon: {fileID: 21300000, guid: 6fa1f5b1c9e7ab64db9198069e495df3, type: 3}
   stackable: 0
   maxStacks: 1

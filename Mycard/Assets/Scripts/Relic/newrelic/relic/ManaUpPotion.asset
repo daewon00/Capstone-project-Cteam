@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: ManaUpPotion
   m_EditorClassIdentifier: 
   relicId: MANAup
-  displayName: MANAup
-  description: player Mana up
-  icon: {fileID: 21300000, guid: 86ad81468b9f5c74389f9006c44701e4, type: 3}
+  displayName: "\uACE0\uB300\uC758 \uC720\uBB3C"
+  description: "\uD50C\uB808\uC774\uC5B4\uC758 \uB9C8\uB098\uB97C 1\uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4\n-\uC5B4\uB5A4
+    \uAC15\uB825\uD55C \uC720\uBB3C\uC758 \uB2E8\uD3B8\uC785\uB2C8\uB2E4-"
+  icon: {fileID: -5737684265345199933, guid: 75b2d6226cb09f349b4e77c4d16656ce, type: 3}
   stackable: 0
   maxStacks: 1
   effects:

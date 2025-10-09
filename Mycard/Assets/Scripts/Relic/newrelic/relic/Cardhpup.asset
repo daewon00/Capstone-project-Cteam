@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Cardhpup
   m_EditorClassIdentifier: 
   relicId: cardhp
-  displayName: "\uCE74\uB4DC\uC758 hp\uC5C5"
-  description: "\uCE74\uB4DC hp\uC5C5 \uD50C\uB808\uC774\uC5B4 \uD134\uB9C8\uB2E4
-    \uC801\uC6A9 1\uD134\uC5D0 \uD55C\uBC88 "
+  displayName: "\uC218\uC0C1\uD55C \uB8E8\uBE44"
+  description: "\uBB34\uC791\uC704 \uCE74\uB4DC\uC758 \uCCB4\uB825\uC774 3\uD134\uB9C8\uB2E4
+    2\uC99D\uAC00\uC2DC\uD0A8\uB2E4\n-\uC774\uC0C1\uD55C \uBE5B\uC774 \uB098\uB294
+    \uBCF4\uC11D \uC785\uC5D0\uC11C \uB0A9\uC758 \uB9DB\uC774\uB098\uB294\uAC70 \uAC19\uB2E4-"
   icon: {fileID: 21300000, guid: 8892e787182de9b41bfef4c1d8adf29e, type: 3}
   stackable: 0
   maxStacks: 1
@@ -28,7 +29,7 @@ MonoBehaviour:
     triggerCondition:
       conditionType: 4
       hpThreshold: 0
-      turnInterval: 1
+      turnInterval: 3
       startTurnOffset: 0
       countEnemyTurns: 0
     duration:

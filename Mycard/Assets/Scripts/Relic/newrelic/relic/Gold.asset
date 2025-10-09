@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Gold
   m_EditorClassIdentifier: 
   relicId: Gold
-  displayName: Gold
-  description: "\uD50C\uB808\uC774\uC5B4\uAC00 10\uC774\uD558\uB9CC\uD07C \uB0A8\uC73C\uBA74
-    \uACE8\uB4DC \uCD94\uAC00"
-  icon: {fileID: 21300000, guid: 87bf61e478edf3a4e99f472ee4c7e087, type: 3}
+  displayName: "\uD669\uAE08"
+  description: "\uD50C\uB808\uC774\uC5B4\uC758 \uCCB4\uB825 10\uC774\uD558\uB9CC\uD07C
+    \uB0A8\uC73C\uBA74 \uACE8\uB4DC\uB97C \uC900\uB2E4\n-\uC5C9\uB9DD\uC9C4\uCC3D\uC774
+    \uB418\uC5B4\uC11C \uB4DC\uB514\uC5B4 \uD589\uC6B4\uC774 \uC628\uAC78\uAE4C\uC694?-"
+  icon: {fileID: 21300000, guid: 302ade5b69d7a8140b27ee8ed11f2553, type: 3}
   stackable: 0
   maxStacks: 1
   effects:

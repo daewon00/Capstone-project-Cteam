@@ -13,10 +13,12 @@ MonoBehaviour:
   m_Name: Manadiscount
   m_EditorClassIdentifier: 
   relicId: manadis
-  displayName: "\uB9C8\uB098 \uC18C\uBAA8\uAC10\uC18C"
-  description: "\uB9C8\uB098\uC18C\uBE44\uB7C9\uC774 \uC904\uC5B4\uB4ED\uB2C8\uB2E4
-    \uBB34\uC791\uC704 \uCE74\uB4DC\uC758 \uB9C8\uB098\uAC00 \uC904\uC5B4\uB4ED\uB2C8\uB2E4"
-  icon: {fileID: 21300000, guid: 604ea6e1255e6cb4e824bcf055c1ec2c, type: 3}
+  displayName: "\uD2B9\uBCC4\uD55C \uBD80\uC801"
+  description: "\uBB34\uC791\uC704 \uCE74\uB4DC\uC758 \uB9C8\uB098\uC18C\uBE44\uAC00
+    3\uD134\uB9C8\uB2E4 1\uAC10\uC18C\uD55C\uB2E4\n-\uBD80\uC801\uC758 \uD798\uC73C\uB85C
+    \uB354 \uC801\uC740 \uD798\uC73C\uB85C \uBD80\uB97C\uC218 \uC788\uC744\uAC70
+    \uAC19\uB2E4-"
+  icon: {fileID: 21300000, guid: f2670b26607af804f9189c765366b809, type: 3}
   stackable: 0
   maxStacks: 1
   effects:
@@ -26,9 +28,9 @@ MonoBehaviour:
     scaleByStacks: 0
     payloadId: 
     triggerCondition:
-      conditionType: 1
+      conditionType: 4
       hpThreshold: 0
-      turnInterval: 1
+      turnInterval: 3
       startTurnOffset: 0
       countEnemyTurns: 0
     duration:

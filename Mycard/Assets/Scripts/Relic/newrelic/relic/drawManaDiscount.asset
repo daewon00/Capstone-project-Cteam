@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: drawManaDiscount
   m_EditorClassIdentifier: 
   relicId: drawManaDiscount
-  displayName: drawmanadis
-  description: "3\uD134\uB9C8\uB2E4 \uCE74\uB4DC \uC804\uCCB4 \uB9C8\uB098 1\uAC10\uC18C"
-  icon: {fileID: 21300000, guid: 18ce67d360c0bab43a16ce92fcbeb15c, type: 3}
+  displayName: "\uD2B9\uBCC4\uACC4\uC57D"
+  description: "10\uD134\uC774 \uC9C0\uB098\uBA74 \uCE74\uB4DC\uC758 \uCF54\uC2A4\uD2B8\uAC00
+    \uC804\uBD80 1 \uAC10\uC18C\uD55C\uB2E4\n-\uACC4\uC57D\uC740 \uC2E0\uC911\uD788-"
+  icon: {fileID: 21300000, guid: f10bdf05cedb87140bfc83183fe2607a, type: 3}
   stackable: 0
   maxStacks: 1
   effects:
@@ -27,7 +28,7 @@ MonoBehaviour:
     triggerCondition:
       conditionType: 4
       hpThreshold: 0
-      turnInterval: 3
+      turnInterval: 10
       startTurnOffset: 0
       countEnemyTurns: 0
     duration:

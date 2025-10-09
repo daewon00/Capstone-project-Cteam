@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: cardattackup
   m_EditorClassIdentifier: 
   relicId: cardattackup
-  displayName: 
-  description: "\uCE74\uB4DC\uC758 \uACF5\uACA9\uB825 \uC99D\uAC00 3\uD134\uB9C8\uB2E4
-    2\uC99D\uAC00"
-  icon: {fileID: 21300000, guid: 60ae13c7eb8dd0a4982cbcc063243d23, type: 3}
+  displayName: "\uBBFF\uC74C\uC758 \uC7A5\uAC11"
+  description: "\uBB34\uC791\uC704 \uCE74\uB4DC\uC758 \uACF5\uACA9\uB825\uC774 3\uD134\uB9C8\uB2E4
+    2\uC99D\uAC00\uD55C\uB2E4\n-\uBBFF\uC74C\uC73C\uB85C\uC11C \uCE74\uB4DC\uC5D0
+    \uD798\uC744 \uC900\uB2E4-"
+  icon: {fileID: 21300000, guid: afe2f67115ec3734287d4dd9221b6cc2, type: 3}
   stackable: 0
   maxStacks: 1
   effects:
