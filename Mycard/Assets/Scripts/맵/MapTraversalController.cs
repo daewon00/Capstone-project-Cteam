@@ -262,7 +262,7 @@ public class MapTraversalController : MonoBehaviour
             return;
         }
 
-        if (target.nodeType == NodeType.Event)
+        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest)
         {
             try
             {
@@ -401,7 +401,7 @@ public class MapTraversalController : MonoBehaviour
             return;
         }
 
-        if (target.nodeType == NodeType.Event)
+        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest)
         {
             var session = PrepareEventSession(target);
             if (session != null)

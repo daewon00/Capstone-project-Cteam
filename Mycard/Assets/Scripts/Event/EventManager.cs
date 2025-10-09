@@ -102,7 +102,7 @@ public sealed class EventManager : IEventManager
     /// </summary>
     public bool ApplyChoice(EventSessionDTO session, EventChoiceDTO choice)
     {
-        if (choice == null || _run == null)
+        if (session == null || choice == null || _run == null)
         {
             return false;
         }
@@ -111,6 +111,8 @@ public sealed class EventManager : IEventManager
         bool shouldReturnToMap = false;
 
         var effects = choice.effects ?? Array.Empty<EventEffectDTO>();
+
+        int hpBefore = _run.CurrentHp;
 
         foreach (var effect in effects)
         {
@@ -232,6 +234,10 @@ public sealed class EventManager : IEventManager
             }
         }
 
+        int hpAfter = _run.CurrentHp;
+        int hpDeltaTotal = hpAfter - hpBefore;
+        int maxHpAfter = _run.MaxHpBase + _run.MaxHpFromPerks + _run.MaxHpFromRelics;
+
         if (shouldReturnToMap)
         {
             // --- 3. 상세한 결과 기록 생성 ---
@@ -244,13 +250,14 @@ public sealed class EventManager : IEventManager
             };
 
             // --- 4. MapNodeState에 해결 기록 저장 ---
+            var resolvedNodeType = ResolveNodeType(session.eventId);
             var node = new MapNodeState
             {
                 RunId = _run.RunId,
                 Act = _run.Act,
                 Floor = _run.Floor,
                 NodeIndex = _run.NodeIndex,
-                Type = Game.Save.NodeType.Event,
+                Type = resolvedNodeType,
                 Visited = true,
                 Cleared = true,
                 EventResolutionJson = JsonUtility.ToJson(resolution)
@@ -284,6 +291,7 @@ public sealed class EventManager : IEventManager
             }
 
             var nextSession = BuildSession(eventSO, nextStage);
+            ApplyOutcomeTokens(nextSession, hpDeltaTotal, hpAfter, maxHpAfter);
             nextSession.eventId = session.eventId;
             nextSession.pickedChoiceId = choice.id;
             nextSession.stageId = nextStage.stageId;
@@ -321,6 +329,39 @@ public sealed class EventManager : IEventManager
         public string resolvedAtUtc;
     }
 
+    private static void ApplyOutcomeTokens(EventSessionDTO session, int hpDelta, int hpCurrent, int hpMax)
+    {
+        if (session == null) return;
+        session.description = FormatOutcomeTokens(session.description, hpDelta, hpCurrent, hpMax);
+        if (session.choices == null) return;
+
+        foreach (var choice in session.choices)
+        {
+            if (choice == null) continue;
+            choice.label = FormatOutcomeTokens(choice.label, hpDelta, hpCurrent, hpMax);
+        }
+    }
+
+    private static string FormatOutcomeTokens(string text, int hpDelta, int hpCurrent, int hpMax)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        return text
+            .Replace("{HP_DELTA}", hpDelta.ToString())
+            .Replace("{HP_DELTA_ABS}", Mathf.Abs(hpDelta).ToString())
+            .Replace("{HP_CURRENT}", hpCurrent.ToString())
+            .Replace("{HP_MAX}", hpMax.ToString());
+    }
+
+    private static Game.Save.NodeType ResolveNodeType(string eventId)
+    {
+        if (!string.IsNullOrEmpty(eventId) && string.Equals(eventId, EventIds.CampfireRest, StringComparison.Ordinal))
+        {
+            return Game.Save.NodeType.Rest;
+        }
+
+        return Game.Save.NodeType.Event;
+    }
+
     private void HydrateSession(EventSessionDTO dto)
     {
         if (dto == null) return;
@@ -352,8 +393,16 @@ public sealed class EventManager : IEventManager
         }
 
         dto.stageId = stage.stageId;
-        dto.description = stage.description ?? string.Empty;
-        dto.choices = stage.choices?.Select(ConvertChoiceToDto).ToArray() ?? Array.Empty<EventChoiceDTO>();
+
+        if (string.IsNullOrEmpty(dto.description))
+        {
+            dto.description = stage.description ?? string.Empty;
+        }
+
+        if (dto.choices == null || dto.choices.Length == 0)
+        {
+            dto.choices = stage.choices?.Select(ConvertChoiceToDto).ToArray() ?? Array.Empty<EventChoiceDTO>();
+        }
         dto.resolved = false;
     }
 
