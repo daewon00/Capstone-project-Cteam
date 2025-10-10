@@ -198,6 +198,7 @@ public class MapTraversalController : MonoBehaviour
                     var db = ServiceRegistry.GetRequired<IDatabase>();
                     db.UpsertNodeState(operation.PendingVisited);
                     db.UpdateRunPosition(_run.RunId, _run.Act, _run.Floor, _run.NodeIndex);
+                    ServiceRegistry.Get<ITutorialService>()?.NotifyMapNodeVisited(_run.Act, _run.Floor, _run.NodeIndex);
 
                     if (operation.PreviousFloor != operation.PendingVisited.Floor)
                     {
@@ -262,7 +263,7 @@ public class MapTraversalController : MonoBehaviour
             return;
         }
 
-        if (target.nodeType == NodeType.Event)
+        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest)
         {
             try
             {
@@ -401,7 +402,7 @@ public class MapTraversalController : MonoBehaviour
             return;
         }
 
-        if (target.nodeType == NodeType.Event)
+        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest)
         {
             var session = PrepareEventSession(target);
             if (session != null)
@@ -568,6 +569,20 @@ public class MapTraversalController : MonoBehaviour
                 Debug.Log("<color=red>INVALID CLICK: Action ignored.</color>");
                 CleanupAfterFailure();
                 return;
+            }
+
+            if (isMoveToChild)
+            {
+                var tutorialService = ServiceRegistry.Get<ITutorialService>();
+                if (tutorialService != null && tutorialService.IsTutorialRun)
+                {
+                    if (!tutorialService.CanMoveToNode(_run.Act, target.floor, target.index))
+                    {
+                        Debug.Log("[MapTraversalController] Tutorial gating prevented movement to this node.");
+                        CleanupAfterFailure();
+                        return;
+                    }
+                }
             }
 
             if (isMoveToChild)

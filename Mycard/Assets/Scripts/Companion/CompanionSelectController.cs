@@ -13,6 +13,7 @@ using System.Collections.Generic;
 public class CompanionSelectController : MonoBehaviour
 {
     [SerializeField] private string mapScene = "Map Scene";
+    [SerializeField] private string tutorialBattleScene = "Battle_android";
     
     [Header("Run Defaults")]
     [SerializeField] private int startingAct = 1;
@@ -111,6 +112,9 @@ public class CompanionSelectController : MonoBehaviour
             float baseGold = baseStartingGold + _selected.GoldBonus;
             float finalGold = modSvc != null ? modSvc.Apply("STARTING_GOLD", baseGold, ModifierScope.CurrentRun) : baseGold;
 
+            var tutorialService = ServiceRegistry.Get<ITutorialService>();
+            bool startTutorialRun = tutorialService != null && tutorialService.BeginTutorialIfNeeded(TutorialIds.CoreOnboarding);
+
             var run = new CurrentRun {
                 RunId = runId, ProfileId = profileId, // ProfileId는 나중에 로그인 시스템과 연동
                 CompanionId = _selected.CompanionId,
@@ -121,6 +125,7 @@ public class CompanionSelectController : MonoBehaviour
                 CurrentHp = baseMaxHp + _selected.MaxHpBonus,
                 MaxHpBase = baseMaxHp + _selected.MaxHpBonus,
                 EnergyMax = baseEnergyMax + _selected.EnergyMaxBonus,
+                IsTutorialRun = startTutorialRun,
                 CreatedAtUtc = System.DateTime.UtcNow.ToString("o"),
                 UpdatedAtUtc = System.DateTime.UtcNow.ToString("o"),
             };
@@ -130,14 +135,19 @@ public class CompanionSelectController : MonoBehaviour
             string NewId() => $"{runId}-{(++counter):X8}";
 
             var cards = new List<CardInDeck>();
-            // 기본 덱
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_2", IsUpgraded = false });
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_3", IsUpgraded = false });
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_4", IsUpgraded = false });
-            cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = "CARD_5", IsUpgraded = false });
-            // 동료 전용 카드
-            foreach (var cid in _selected.StartingCardIds)
-                cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = cid, IsUpgraded = false });
+            if (_selected.StartingCardIds != null && _selected.StartingCardIds.Count > 0)
+            {
+                foreach (var cid in _selected.StartingCardIds)
+                {
+                    if (string.IsNullOrEmpty(cid))
+                        continue;
+                    cards.Add(new CardInDeck { InstanceId = NewId(), RunId = runId, CardId = cid, IsUpgraded = false });
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[CompanionSelect] Starting deck is empty for companion {_selected.CompanionId}. 런이 비어 있는 덱으로 시작합니다.");
+            }
 
             var relics = _selected.StartingRelicIds
                 .Select(id => new RelicInPossession { RunId = runId, RelicId = id, Stacks = 1, UsesLeft = -1 })
@@ -152,6 +162,8 @@ public class CompanionSelectController : MonoBehaviour
             db.CreateNewRunSnapshot(run, cards, relics, potions);
             EnsureRunRngSeeds(runId, db);
 
+            tutorialService?.BindRun(runId, startTutorialRun);
+
             // 3.5. 월렛을 새로운 런에 재바인딩하여 UI와 동기화합니다.
             ServiceRegistry.Get<IWalletService>()?.RebindRun(runId);
 
@@ -165,13 +177,28 @@ public class CompanionSelectController : MonoBehaviour
             if (stageService != null)
             {
                 stageService.RebindRun(runId);
-                var locationPayload = new RunStagePayloads.Location
+                if (startTutorialRun)
                 {
-                    act = run.Act,
-                    floor = run.Floor,
-                    nodeIndex = run.NodeIndex
-                };
-                stageService.SetStage(RunStageType.Map, mapScene, RunStageService.ToJson(locationPayload));
+                    var battlePayload = new RunStagePayloads.Battle
+                    {
+                        act = run.Act,
+                        floor = run.Floor,
+                        nodeIndex = run.NodeIndex,
+                        battleKind = (int)GameContext.BattleKind.Normal,
+                        sceneName = tutorialBattleScene
+                    };
+                    stageService.SetStage(RunStageType.Battle, tutorialBattleScene, RunStageService.ToJson(battlePayload));
+                }
+                else
+                {
+                    var locationPayload = new RunStagePayloads.Location
+                    {
+                        act = run.Act,
+                        floor = run.Floor,
+                        nodeIndex = run.NodeIndex
+                    };
+                    stageService.SetStage(RunStageType.Map, mapScene, RunStageService.ToJson(locationPayload));
+                }
             }
 
             // 3.8. 이벤트 매니저 등록(조건부): 런이 생성된 시점에 EventManager를 등록합니다.
@@ -188,8 +215,25 @@ public class CompanionSelectController : MonoBehaviour
                 Debug.LogWarning($"[CompanionSelect] EventManager registration failed: {e.Message}");
             }
 
-            // 4. 맵 씬으로 이동합니다.
-            SceneManager.LoadScene(mapScene);
+            if (startTutorialRun)
+            {
+                if (GameContext.I != null)
+                {
+                    GameContext.I.CurrentBattleKind = GameContext.BattleKind.Normal;
+                }
+                try
+                {
+                    PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
+                    PlayerPrefs.Save();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[CompanionSelect] Failed to persist currentBattleKind: {e.Message}");
+                }
+            }
+
+            var nextScene = startTutorialRun ? tutorialBattleScene : mapScene;
+            SceneManager.LoadScene(nextScene);
         }
         catch (System.Exception e)
         {

@@ -63,7 +63,7 @@ public static class BattleDeckRuntimeSync
         if (card.inHand)
             return CardLocation.Hand;
 
-        if (card.assignedPlace != null)
+        if (card.assignedPlace != null && card.assignedPlace.activeCard == card)
             return card.isPlayer ? CardLocation.PlayerField : CardLocation.EnemyField;
 
         return CardLocation.DiscardPile;

@@ -70,6 +70,7 @@ public class MapGenerator : MonoBehaviour
     [Header("이벤트 풀")]
     [SerializeField] private EventPoolDefinition eventPoolDefinition;
     [SerializeField] private string defaultEventId = "GoldenIdolEvent";
+    [SerializeField] private string restEventId = EventIds.CampfireRest;
 
     [Header("레이아웃 정리(교차선 감소)")]
     [SerializeField] private bool enableBarycenterOrdering = true; // 배리센터 정렬 적용 여부
@@ -299,6 +300,22 @@ public class MapGenerator : MonoBehaviour
         return snapshot;
     }
 
+    private void AssignRestEventOverrides()
+    {
+        if (mapData == null || mapData.Count == 0) return;
+        if (string.IsNullOrEmpty(restEventId)) return;
+
+        foreach (var layer in mapData)
+        {
+            foreach (var node in layer)
+            {
+                if (node == null || node.nodeType != NodeType.Rest) continue;
+                if (!string.IsNullOrEmpty(node.eventIdOverride)) continue;
+                node.eventIdOverride = restEventId;
+            }
+        }
+    }
+
     private void RebuildMapDataFromSnapshot(MapLayoutSnapshot snapshot)
     {
         mapData = new List<List<MapDataNode>>();
@@ -422,6 +439,13 @@ public class MapGenerator : MonoBehaviour
         if (mapData == null || mapData.Count == 0) return;
 
         var usedIds = new HashSet<string>(StringComparer.Ordinal);
+
+        AssignRestEventOverrides();
+
+        if (!string.IsNullOrEmpty(restEventId))
+        {
+            usedIds.Add(restEventId);
+        }
 
         foreach (var layer in mapData)
         {

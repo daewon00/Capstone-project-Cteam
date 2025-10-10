@@ -37,6 +37,26 @@ public class RunService : IRunService
         _runId = runId ?? string.Empty;
         _hasCommitted = false;
         Debug.Log($"[RunService] Rebound to Run ID: {_runId}");
+
+        var tutorialService = ServiceRegistry.Get<ITutorialService>();
+        if (tutorialService != null)
+        {
+            bool isTutorialRun = false;
+            if (!string.IsNullOrEmpty(_runId))
+            {
+                try
+                {
+                    var row = _database.LoadCurrentRun(_runId);
+                    isTutorialRun = row?.Run?.IsTutorialRun ?? false;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[RunService] Failed to query tutorial state: {e.Message}");
+                }
+            }
+
+            tutorialService.BindRun(_runId, isTutorialRun);
+        }
     }
 
     /// <summary>
@@ -99,6 +119,8 @@ public class RunService : IRunService
                 });
             }
             catch { }
+
+            ServiceRegistry.Get<ITutorialService>()?.CompleteTutorial(TutorialIds.CoreOnboarding);
 
             // 런 종료 요약을 작성하고 클리어 상태로 저장합니다.
             var summary = new RunSummary
@@ -164,6 +186,8 @@ public class RunService : IRunService
             });
         }
         catch { }
+
+        ServiceRegistry.Get<ITutorialService>()?.NotifyBattleCompleted();
 
         Debug.Log("[RunService] Node cleared. Rewards saved. Transitioning to Map Scene.");
         RunCacheSynchronizer.Sync();

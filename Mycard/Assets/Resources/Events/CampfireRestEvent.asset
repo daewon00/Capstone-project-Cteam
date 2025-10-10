@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: CampfireRestEvent
+  m_EditorClassIdentifier: 
+  eventId: CampfireRestEvent
+  legacyDescription: "\uB9C8\uC6B4\uD130\uB97C \uB458\uB7EC\uC2F8\uACE0 \uC2DC\uC791\uD558\uB294
+    \uAC15\uD558\uB294 \uC26C\uC74C\uC774 \uAC00\uB4DD\uD569\uB2C8\uB2E4."
+  legacyChoices: []
+  stages:
+  - stageId: campfire_intro
+    description: "\uD0C0\uC624\uB974\uB294 \uBAA8\uB2E5\uBD88\uC774 \uC9C0\uCE5C
+      \uBAB8\uC744 \uB178\uB824\uC90D\uB2C8\uB2E4. \uC7A0\uC2DC \uC228\uC744 \uB3CC\uB9AC\uBA70
+      \uBB34\uC5C7\uC744 \uD560\uC9C0 \uC120\uD0DD\uD558\uC138\uC694."
+    choices:
+    - id: rest_heal
+      label: "\uD734\uC2DD\uC744 \uCDE8\uD55C\uB2E4 (\uCCB4\uB825 30% \uD68C\uBCF5)"
+      effects:
+      - type: 6
+        amount: 30
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: rest_result
+    - id: rest_upgrade
+      label: "\uCE74\uB4DC\uB97C \uB2E8\uB824\uD55C\uB2E4 (\uC900\uBE44 \uC911)"
+      effects: []
+      nextStageId: rest_upgrade_placeholder
+  - stageId: rest_result
+    description: "\uD3B8\uC548\uD55C \uD734\uC2DD\uC73C\uB85C \uD65C\uB825\uC744
+      \uB418\uCC3E\uC558\uC2B5\uB2C8\uB2E4. \uCCB4\uB825\uC774 {HP_DELTA_ABS}\uB9CC\uD07C
+      \uD68C\uBCF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (\uD604\uC7AC \uCCB4\uB825: {HP_CURRENT}/{HP_MAX})"
+    choices:
+    - id: rest_finish
+      label: "\uC790\uB9AC\uB97C \uC815\uB9AC\uD558\uACE0 \uC5EC\uC815\uC744 \uACC4\uC18D\uD55C\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: rest_upgrade_placeholder
+    description: "\uC544\uC9C1\uC740 \uCE74\uB4DC\uB97C \uC190\uC5D0\uC11C \uB193\uC744
+      \uB54C\uAC00 \uC544\uB2D0 \uAC83 \uAC19\uC2B5\uB2C8\uB2E4. \uB2E4\uC74C \uD734\uC2DD
+      \uAE30\uD68C\uB97C \uB178\uB824 \uBCF4\uB294\uAC8C \uC88B\uACA0\uC2B5\uB2C8\uB2E4."
+    choices:
+    - id: upgrade_back
+      label: "\uC790\uB9AC\uB97C \uC815\uB9AC\uD558\uACE0 \uC5EC\uC815\uC744 \uACC4\uC18D\uD55C\uB2E4"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

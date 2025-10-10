@@ -171,6 +171,12 @@ public class BattleSceneBootstrap : MonoBehaviour
             stageService.SetStage(RunStageType.Battle, payload.sceneName, RunStageService.ToJson(payload));
         }
 
+        var tutorialService = ServiceRegistry.Get<ITutorialService>();
+        if (tutorialService != null)
+        {
+            tutorialService.BindRun(runId, runRow?.IsTutorialRun ?? false);
+        }
+
         BattleSnapshotDTO resume = null;
         try
         {

@@ -112,10 +112,9 @@ public class NodeGoScene : MonoBehaviour
     // 버튼에서 이 함수 하나만 연결하면 됨
     public void GoToAssignedScene()
     {
-        // 노드 타입이 이벤트이면, 아무것도 하지 않고 즉시 함수를 종료
-        if (nodeType == NodeType.Event)
+        // 이벤트/휴식 노드는 총괄 컨트롤러가 처리하므로 직접 로드하지 않습니다.
+        if (nodeType == NodeType.Event || nodeType == NodeType.Rest)
             return;
-
 
         // 이벤트가 아닐 경우에만, 기존 로직대로 씬을 찾아 이동합니다.
         if (!string.IsNullOrEmpty(assignedScene))

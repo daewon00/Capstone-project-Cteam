@@ -165,6 +165,7 @@ namespace Game.Save
         [PrimaryKey] public string RunId { get; set; } // 현재 판의 고유 식별자.
         [Indexed] public string ProfileId { get; set; }
         [Indexed] public string CompanionId { get; set; }               // 선택된 동료 ID.
+        public bool IsTutorialRun { get; set; }                         // 튜토리얼 런 여부.
         public int Act { get; set; }                            // 현재 챕터.
         public int Floor { get; set; }                          // 현재 층.
         public int NodeIndex { get; set; }                      // 현재 몇 번째 노드에 있는지 (예: 0, 1, 2).
@@ -373,6 +374,24 @@ namespace Game.Save
         public List<RngState> RngStates;
         public RunStageState Stage;
         public ActiveBattleState BattleState;
+    }
+
+    // ==== 튜토리얼 진행도 ====
+    [Table("TutorialProgress")]
+    public class TutorialProgress
+    {
+        [PrimaryKey, AutoIncrement] public int Id { get; set; }
+        [Indexed] public string ProfileId { get; set; }
+        [Indexed] public string TutorialId { get; set; }
+        public int CurrentStep { get; set; }
+        public bool IsCompleted { get; set; }
+        public string FlagsJson { get; set; }
+        public string UpdatedAtUtc { get; set; }
+    }
+
+    public static class TutorialIds
+    {
+        public const string CoreOnboarding = "core_onboarding";
     }
 
 }

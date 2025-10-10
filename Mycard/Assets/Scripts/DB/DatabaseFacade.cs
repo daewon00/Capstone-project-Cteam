@@ -134,6 +134,15 @@ public sealed class DatabaseFacade : IDatabase
     public void ApplyPerkAdjustments(string profileId, System.Collections.Generic.IEnumerable<PerkAllocation> perks, int pointsDelta)
         => DatabaseManager.Instance.ApplyPerkAdjustments(profileId, perks, pointsDelta);
 
+    public TutorialProgress LoadTutorialProgress(string profileId, string tutorialId)
+        => DatabaseManager.Instance.LoadTutorialProgress(profileId, tutorialId);
+
+    public void UpsertTutorialProgress(TutorialProgress row)
+        => DatabaseManager.Instance.UpsertTutorialProgress(row);
+
+    public void DeleteTutorialProgress(string profileId, string tutorialId)
+        => DatabaseManager.Instance.DeleteTutorialProgress(profileId, tutorialId);
+
     //
 
 

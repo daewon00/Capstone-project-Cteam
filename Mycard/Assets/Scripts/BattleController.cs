@@ -13,12 +13,12 @@ public class BattleController : MonoBehaviour
     private ICardEffectService _effectService;
     internal static bool SkipInitialSetup { get; set; }
 
-    [Header("Dependencies")]
+[Header("필수 의존성 (씬에서 연결 필요)")]
 
-    [Header("전투 규칙 설정")]
-    [SerializeField] private int _initialHandCount = 5;
-    [SerializeField] private int _handLimit = 10;
-    [SerializeField] private int _drawCardCost = 2; // 드로우 버튼 비용
+[Header("전투 규칙 설정")]
+[SerializeField, Tooltip("전투 시작 시 손에 들어오는 기본 카드 수입니다. 초반 난이도를 조절할 때 사용하세요.")] private int _initialHandCount = 5;
+[SerializeField, Tooltip("한 번에 손에 들 수 있는 카드 최대 수입니다. 제한을 넘는 드로우는 취소됩니다.")] private int _handLimit = 10;
+[SerializeField, Tooltip("플레이어가 수동 드로우 버튼을 눌렀을 때 차감되는 마나량입니다.")] private int _drawCardCost = 2;
 
     // Phase 2 준비: 서비스 주입(전투 흐름에서 IDeckService 사용 예정)
     private IDeckService _deckService;
@@ -112,19 +112,19 @@ public class BattleController : MonoBehaviour
     }
 
 
-    [Header("Player Fallback Defaults")]
-    [SerializeField] private int _fallbackPlayerHealth = 30;
-    [SerializeField] private int _fallbackPlayerMaxMana = 3;
-    [SerializeField] private int _fallbackPlayerStartingMana = 3;
+[Header("플레이어 기본값 (런 정보 없을 때 사용)")]
+[SerializeField, Tooltip("런 데이터가 없을 때 플레이어가 시작하는 체력입니다.")] private int _fallbackPlayerHealth = 30;
+[SerializeField, Tooltip("런 데이터가 없을 때 플레이어 최대 마나입니다.")] private int _fallbackPlayerMaxMana = 3;
+[SerializeField, Tooltip("전투 시작 시 채워둘 플레이어 현재 마나입니다.")] private int _fallbackPlayerStartingMana = 3;
 
-    [Header("Enemy Defaults")]
-    [SerializeField] private int _fallbackEnemyHealth = 10;
-    public int enemymaxMana = 3;
-    public int startingEnemeyMana = 3;
+[Header("적 기본값 (런 정보 없을 때 사용)")]
+[SerializeField, Tooltip("런 데이터가 없을 때 적 리더의 체력입니다.")] private int _fallbackEnemyHealth = 10;
+[Tooltip("런 데이터가 없을 때 적이 가질 수 있는 최대 마나입니다.")] public int enemymaxMana = 3;
+[Tooltip("전투 시작 시 적이 보유하는 초기 마나입니다.")] public int startingEnemeyMana = 3;
 
-    [Header("Turn Draw Settings")]
-    public int startingcardAmount = 5;  //첫 드로우 카드 수
-    public int cardToDrawPerTurn = 2;   //매턴 드로우 카드 수
+[Header("턴 드로우 설정")]
+[Tooltip("레거시 값입니다. 현재는 사용하지 않으며 필요 시 StartBattle 로직과 함께 조정하세요.")] public int startingcardAmount = 5;
+[Tooltip("각 턴 시작 시 자동으로 드로우되는 카드 수입니다.")] public int cardToDrawPerTurn = 2;
 
     // --- 전투 중 갱신되는 런타임 값들 ---
     public int playerMana { get; set; }   //플레이어 마나

@@ -140,6 +140,19 @@ public class GameInitializer : MonoBehaviour
         Debug.Log("[BossFlow][GI] Registered Perk/Modifier/Achievement services.");
 #endif
 
+        var tutorialService = new TutorialService(dbFacade);
+        var profileId = GameContext.I != null ? GameContext.I.ProfileId : "P1";
+        tutorialService.RebindProfile(profileId);
+        bool isTutorialRun = runData?.Run?.IsTutorialRun ?? false;
+        if (!string.IsNullOrEmpty(runId))
+        {
+            tutorialService.BindRun(runId, isTutorialRun);
+        }
+        ServiceRegistry.Register<ITutorialService>(tutorialService);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[BossFlow][GI] Registered ITutorialService (runId='{runId}', tutorialRun={isTutorialRun}).");
+#endif
+
         // 5.6 업적 이벤트 구독: 게임 이벤트 허브 → 업적 서비스
         // 전투 승리: '첫 전투 승리' 진행도 증가 및 해금 시도
         MetaEvents.OnCombatVictory += payload =>
