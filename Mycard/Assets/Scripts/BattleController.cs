@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Game.Save;
 using BattleSnapshot;
-
+using DG.Tweening;
 // Phase 2: 조립 책임자 역할 부여. 다른 컨트롤러보다 먼저 실행되도록 우선순위 부여
 [DefaultExecutionOrder(-9000)]
 public class BattleController : MonoBehaviour
@@ -421,7 +421,12 @@ public class BattleController : MonoBehaviour
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
-
+                    UIController.instance.FieldShowButton.SetActive(true);
+                    UIController.instance.FieldBackButton.SetActive(true);
+                    DOVirtual.DelayedCall(0.35f, () =>
+                    {
+                        UIController.instance.EnemyUI.SetActive(true);
+                    });
                     if (currentPlayerMaxMana < playermaxMana) // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
                     {
                         currentPlayerMaxMana++;
@@ -478,7 +483,9 @@ public class BattleController : MonoBehaviour
     {
         UIController.instance.endTurnButton.SetActive(false);
         UIController.instance.drawCardButton.SetActive(false);
-
+        UIController.instance.FieldBackButton.SetActive(false);
+        UIController.instance.FieldShowButton.SetActive(false);
+        UIController.instance.EnemyUI.SetActive(false);
         RequestSnapshot("BeforePlayerEndTurn");
         GameEvents.RaiseTurnEnd(true);   // 추가 +++ 플레이어 턴 종료
         AdvanceTurn();
