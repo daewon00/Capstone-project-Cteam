@@ -157,7 +157,8 @@ public class HandServiceBinder : MonoBehaviour
         newCard.gameObject.SetActive(true);
         newCard.transform.SetParent(_hand.transform, false);
         newCard.transform.position = immediateSpawnAt;
-        newCard.Initialize(state.InstanceId, so, _deckService, ResolveIconDatabase());
+        bool isUpgraded = state.IsUpgraded();
+        newCard.Initialize(state.InstanceId, so, _deckService, ResolveIconDatabase(), isUpgraded);
         _hand.AddCardToHand(newCard);
         _hand.ResumeLayoutFor(newCard);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -179,6 +180,7 @@ public class HandServiceBinder : MonoBehaviour
         Debug.Log($"[HandServiceBinder] View registered: go={newCard.name}, parent={(newCard.transform.parent!=null?newCard.transform.parent.name:"<none>")}, active={newCard.gameObject.activeSelf}, layer={newCard.gameObject.layer}, handCount={_hand.heldCards?.Count}");
 #endif
         GameEvents.RaiseCardDrawn(newCard);
+        BattleDeckRuntimeSync.UpdateCardState(newCard);
     }
 
     /// <summary>

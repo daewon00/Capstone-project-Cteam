@@ -375,7 +375,7 @@ public sealed class CardEffectService : ICardEffectService
 
         Card token = UnityEngine.Object.Instantiate(prefab, targetPoint.transform.position, boardRotation);
         string instanceId = Guid.NewGuid().ToString("N");
-        token.Initialize(instanceId, tokenData, deck, _iconDatabase);
+        token.Initialize(instanceId, tokenData, deck, _iconDatabase, false);
         token.inHand = false;
         token.handPosition = -1;
         token.isPlayer = ownerState.IsPlayerOwner;

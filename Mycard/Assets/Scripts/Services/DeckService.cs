@@ -85,7 +85,7 @@ public class DeckService : IDeckService
         var newDeck = new List<CardRuntimeState>(legacy.Count);
         foreach (var row in legacy)
         {
-            newDeck.Add(new CardRuntimeState
+            var state = new CardRuntimeState
             {
                 InstanceId = row.InstanceId,
                 RunId = _currentRunId,
@@ -93,7 +93,9 @@ public class DeckService : IDeckService
                 Location = CardLocation.DrawPile,
                 OrderInPile = 0,
                 ModifiersJson = string.Empty
-            });
+            };
+            state.SetUpgraded(row.IsUpgraded);
+            newDeck.Add(state);
         }
 
         // 3) 초기 셔플은 deck-init 도메인을 사용합니다.
@@ -328,6 +330,7 @@ public class DeckService : IDeckService
             OrderInPile = 0,
             ModifiersJson = string.Empty
         };
+        newCard.SetUpgraded(isUpgraded);
 
         // 내부 캐시에 반영
         _cardsById[instanceId] = newCard;
@@ -351,6 +354,21 @@ public class DeckService : IDeckService
     {
         if (string.IsNullOrEmpty(instanceId)) return null;
         return _cardsById.TryGetValue(instanceId, out var state) ? state : null;
+    }
+
+    /// <summary>
+    /// 지정된 카드 인스턴스의 강화 상태를 갱신합니다.
+    /// </summary>
+    public bool SetCardUpgradeState(string instanceId, bool upgraded)
+    {
+        EnsureInitialized();
+        if (string.IsNullOrEmpty(instanceId)) return false;
+        if (!_cardsById.TryGetValue(instanceId, out var state) || state == null)
+            return false;
+
+        state.SetUpgraded(upgraded);
+        PersistAndBroadcast();
+        return true;
     }
 
     public void UpdateBattleCardState(BattleCardState state, CardLocation location)
@@ -397,7 +415,8 @@ public class DeckService : IDeckService
             cardState.OrderInPile = next;
             _nextOrderInPile[location] = next + 1;
         }
-        cardState.ModifiersJson = JsonUtility.ToJson(state);
+        cardState.SetUpgraded(state.isUpgraded);
+        cardState.SetSnapshot(state);
 
         var toList = GetPileList(location);
         if (!toList.Contains(state.instanceId))
@@ -441,7 +460,8 @@ public class DeckService : IDeckService
             if (!_cardsById.TryGetValue(id, out var cardState) || cardState == null) continue;
 
             cardState.CardId = targetCardId;
-            cardState.ModifiersJson = string.Empty;
+            cardState.SetUpgraded(upgrade);
+            cardState.SetSnapshot(null);
             transformed++;
         }
 
@@ -449,11 +469,6 @@ public class DeckService : IDeckService
         {
             PersistAndBroadcast();
             Debug.Log($"[DeckService] TransformCards → {transformed}장 변환 대상 카드ID='{targetCardId}' (upgrade flag={upgrade})");
-        }
-
-        if (upgrade)
-        {
-            Debug.LogWarning("[DeckService] TransformCards upgrade 플래그는 아직 별도 처리를 하지 않습니다. 카드 ID로 업그레이드 버전을 직접 지정해야 합니다.");
         }
 
         return transformed;
@@ -504,6 +519,8 @@ public class DeckService : IDeckService
         foreach (var c in allCards)
         {
             if (c == null || string.IsNullOrEmpty(c.InstanceId)) continue;
+            if (c.ModifiersJson == null)
+                c.ModifiersJson = string.Empty;
             _cardsById[c.InstanceId] = c;
             GetPileList(c.Location).Add(c.InstanceId);
         }

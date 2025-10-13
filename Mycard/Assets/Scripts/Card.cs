@@ -60,6 +60,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private EffectIconDatabase _iconDatabase;
     private bool _isInteractable = true;
     private bool _destroyBroadcasted; // 업적/메타 이벤트 중복 방지
+    public bool IsUpgraded { get; private set; }
 
     // 이벤트 기반 입력 상태(탭/드래그 구분)
     private bool _isDragging;
@@ -108,14 +109,17 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             return;
         }
 
-        attackPower = cardSO.attackPower;
+        if (!cardSO.UpgradeEnabled)
+            IsUpgraded = false;
+
+        attackPower = cardSO.GetAttackPower(IsUpgraded);
         /*if (isPlayer && PlayerBuffs.instance != null)
         {
             attackPower += PlayerBuffs.instance.attackBonus;
         }*/
-        manaCost = cardSO.manaCost;
+        manaCost = cardSO.GetManaCost(IsUpgraded);
 
-        InitializeHealthFromDefinition();
+        InitializeHealthFromDefinition(cardSO.GetHealth(IsUpgraded));
 
         UpdateCardDisplay();
 
@@ -134,9 +138,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         UpdateSkillIcon();
         //ApplyAttackBuffOutline(isPlayer && PlayerBuffs.instance != null && PlayerBuffs.instance.attackBonus > 0);
     }
-    private void InitializeHealthFromDefinition()
+    private void InitializeHealthFromDefinition(int baseHealth)
     {
-        _baseHealth = Mathf.Max(0, cardSO != null ? cardSO.currentHealth : currentHealth);
+        _baseHealth = Mathf.Max(0, baseHealth);
         _lastModifierMaxHealth = _baseHealth;
         currentHealth = _baseHealth;
         _healthInitialized = true;
@@ -181,7 +185,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     }
 
     // 서비스/식별자/데이터를 주입하는 초기화 진입점
-    public void Initialize(string instanceId, CardScriptableObject so, IDeckService deckService, EffectIconDatabase iconDatabase)
+    public void Initialize(string instanceId, CardScriptableObject so, IDeckService deckService, EffectIconDatabase iconDatabase, bool isUpgraded = false)
     {
         if (string.IsNullOrEmpty(instanceId) || so == null || deckService == null)
         {
@@ -194,6 +198,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         cardSO = so;
         _deckService = deckService;
         _iconDatabase = iconDatabase != null ? iconDatabase : iconDatabaseOverride;
+        IsUpgraded = isUpgraded && cardSO.UpgradeEnabled;
         SetupCard();
         SetInteractable(true);
     }
