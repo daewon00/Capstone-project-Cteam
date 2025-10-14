@@ -15,7 +15,7 @@ MonoBehaviour:
   CompanionId: COMP_legend_test
   DisplayName: "\uB808\uC804\uB4DC \uD14C\uC2A4\uD2B8"
   Description: "\uC804\uC124 \uCE74\uB4DC \uC804\uC6A9 \uD14C\uC2A4\uD2B8 \uB3D9\uB8CC."
-  Portrait: {fileID: 21300000, guid: 60ae13c7eb8dd0a4982cbcc063243d23, type: 3}
+  Portrait: {fileID: 21300000, guid: 9bafee56f84ffee4395735512d0064bc, type: 3}
   StartingCardIds:
   - CARD_TITAN_VANGUARD
   - CARD_AEGIS_ARCHON
