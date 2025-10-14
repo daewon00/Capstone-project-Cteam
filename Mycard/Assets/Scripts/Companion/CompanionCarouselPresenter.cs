@@ -9,18 +9,28 @@ using UnityEngine.UI;
 /// </summary>
 public class CompanionCarouselPresenter : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    [Header("Scene References")]
+    [Header("씬 참조")]
+    [Tooltip("캐러셀이 표시될 영역(RectTransform). RectMask2D가 권장됩니다.")]
     [SerializeField] private RectTransform viewport;
+    [Tooltip("중앙에 표시될 동료 카드 프리팹.")]
     [SerializeField] private CompanionDetailView detailPrefab;
+    [Tooltip("이전 동료로 이동하는 버튼.")]
     [SerializeField] private Button previousButton;
+    [Tooltip("다음 동료로 이동하는 버튼.")]
     [SerializeField] private Button nextButton;
 
-    [Header("Animation")]
+    [Header("애니메이션")]
+    [Tooltip("슬라이드로 판정되기까지 필요한 최소 드래그 거리(픽셀).")]
     [SerializeField, Min(10f)] private float dragThreshold = 120f;
+    [Tooltip("슬라이드 이동 거리를 강제로 지정합니다. 0이면 뷰포트 너비를 사용합니다.")]
     [SerializeField, Min(0f)] private float slideDistanceOverride = 0f;
+    [Tooltip("슬라이드 애니메이션이 완료되는 데 걸리는 시간(초).")]
     [SerializeField, Min(0.05f)] private float slideDuration = 0.28f;
+    [Tooltip("전환 중 옆 카드가 흐려질 정도(0=완전투명, 1=불투명).")]
     [SerializeField, Range(0f, 1f)] private float fadedAlpha = 0.55f;
+    [Tooltip("슬라이드 조건이 충족되지 않았을 때 제자리로 돌아오는 시간(초).")]
     [SerializeField, Min(0.05f)] private float snapBackDuration = 0.2f;
+    [Tooltip("이동 보간에 사용할 커브입니다. 기본은 Ease In/Out입니다.")]
     [SerializeField] private AnimationCurve slideCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     public event Action<CompanionDefinition> SelectionChanged;
@@ -178,7 +188,7 @@ public class CompanionCarouselPresenter : MonoBehaviour, IBeginDragHandler, IDra
         if (_companions.Count == 0)
             return;
 
-        _currentView = Instantiate(detailPrefab, viewport);
+        _currentView = InstantiateDetailView();
         _currentView.SetData(_companions[_currentIndex]);
         _currentView.SetAnchoredPosition(Vector2.zero);
         _currentView.SetAlpha(1f);
@@ -202,7 +212,7 @@ public class CompanionCarouselPresenter : MonoBehaviour, IBeginDragHandler, IDra
             _pendingView = null;
         }
 
-        _pendingView = Instantiate(detailPrefab, viewport);
+        _pendingView = InstantiateDetailView();
         _pendingView.SetData(_companions[targetIndex]);
 
         float distance = GetSlideDistance();
@@ -392,5 +402,25 @@ public class CompanionCarouselPresenter : MonoBehaviour, IBeginDragHandler, IDra
             value += count;
         }
         return value;
+    }
+
+    private CompanionDetailView InstantiateDetailView()
+    {
+        var view = Instantiate(detailPrefab, viewport);
+        AttachRelayIfNeeded(view);
+        return view;
+    }
+
+    private void AttachRelayIfNeeded(CompanionDetailView view)
+    {
+        if (view == null)
+            return;
+
+        var relay = view.GetComponent<CompanionCarouselDragRelay>();
+        if (relay == null)
+        {
+            relay = view.gameObject.AddComponent<CompanionCarouselDragRelay>();
+        }
+        relay.Initialize(this);
     }
 }
