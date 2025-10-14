@@ -29,6 +29,7 @@ public static class BattleDeckRuntimeSync
             attack = card.attackPower,
             slotIndex = ResolveSlotIndex(card),
             isPlayer = card.isPlayer,
+            isUpgraded = card.IsUpgraded,
             rotX = card.transform.eulerAngles.x,
             rotY = card.transform.eulerAngles.y,
             rotZ = card.transform.eulerAngles.z,
@@ -44,15 +45,12 @@ public static class BattleDeckRuntimeSync
     /// </summary>
     public static BattleCardState ParseModifiers(string json)
     {
-        if (string.IsNullOrEmpty(json)) return null;
-        try
-        {
-            return JsonUtility.FromJson<BattleCardState>(json);
-        }
-        catch
-        {
-            return null;
-        }
+        return CardRuntimeMetadata.FromJson(json).lastKnownState;
+    }
+
+    public static CardRuntimeMetadata ParseMetadata(string json)
+    {
+        return CardRuntimeMetadata.FromJson(json);
     }
 
     /// <summary>

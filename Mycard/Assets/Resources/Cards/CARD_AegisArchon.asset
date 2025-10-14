@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_AegisArchon
   m_EditorClassIdentifier: 
-  cardName: "수호의 대천사"
+  cardName: "\uC218\uD638\uC758 \uB300\uCC9C\uC0AC"
   CardId: CARD_AEGIS_ARCHON
-  actionDescription: "전장에 나올 때 자신에게 보호막 2를 부여합니다."
+  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC790\uC2E0\uC5D0\uAC8C
+    \uBCF4\uD638\uB9C9 2\uB97C \uBD80\uC5EC\uD569\uB2C8\uB2E4."
   cardLore: 
-  currentHealth: 6
-  attackPower: 5
   manaCost: 4
+  attackPower: 5
+  currentHealth: 6
   characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   rarity: 3
@@ -31,4 +32,10 @@ MonoBehaviour:
     payloadId: 
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 0
+    manaCost: 4
+    attackPower: 5
+    health: 6
+    initialized: 0
   removeAfterCombat: 0

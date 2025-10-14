@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using Game.Save;
-using System.Collections.Generic;
 
 /// <summary>
 /// 동료 선택 흐름을 관리하고 초기 런 상태를 구성한 뒤 맵 씬으로 전환합니다.
@@ -24,10 +24,11 @@ public class CompanionSelectController : MonoBehaviour
     [SerializeField] private float baseStartingGold = 300f;
 
     [Header("UI")]
-    public Transform gridParent;
-    public CompanionCardView cardPrefab;
-    public Button startButton;
-    public TMP_Text selectedLabel;
+    [SerializeField] private CompanionCarouselPresenter carousel;
+    [SerializeField] private Button startButton;
+    [SerializeField] private TMP_Text selectedLabel;
+    [SerializeField] private Button backButton;
+    [SerializeField] private string previousScene = "Main Menu";
 
     private CompanionDefinition _selected;
     private CompanionDefinition[] _all;
@@ -43,14 +44,41 @@ public class CompanionSelectController : MonoBehaviour
         // 동료 리스트 로드 (Resources/Companions 폴더에 저장된 SO)
         _all = Resources.LoadAll<CompanionDefinition>("Companions");
 
-        // (옵션) 잠금 해제 필터링: 지금은 모두 표시
-        foreach (var c in _all)
+        int initialIndex = 0;
+        if (_all != null && _all.Length > 0)
         {
-            var item = Instantiate(cardPrefab, gridParent);
-            item.Bind(c, OnSelect);
+            var previouslySelectedId = GameContext.I != null
+                ? GameContext.I.SelectedCompanionId
+                : PlayerPrefs.GetString("selectedCompanionId", string.Empty);
+
+            if (!string.IsNullOrEmpty(previouslySelectedId))
+            {
+                for (int i = 0; i < _all.Length; i++)
+                {
+                    if (_all[i] != null && string.Equals(_all[i].CompanionId, previouslySelectedId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        initialIndex = i;
+                        break;
+                    }
+                }
+            }
         }
 
-        startButton.onClick.AddListener(OnClickStart);
+        if (carousel != null)
+        {
+            carousel.SelectionChanged += OnSelect;
+            carousel.Initialize(_all, initialIndex);
+        }
+
+        if (startButton != null)
+        {
+            startButton.onClick.AddListener(OnClickStart);
+        }
+
+        if (backButton != null)
+        {
+            backButton.onClick.AddListener(OnClickBack);
+        }
         UpdateUI();
     }
 
@@ -60,7 +88,16 @@ public class CompanionSelectController : MonoBehaviour
     void OnSelect(CompanionDefinition data)
     {
         _selected = data;
-        GameContext.I.SelectedCompanionId = data.CompanionId;
+        if (_selected == null)
+        {
+            UpdateUI();
+            return;
+        }
+
+        if (GameContext.I != null)
+        {
+            GameContext.I.SelectedCompanionId = data.CompanionId;
+        }
         UpdateUI();
     }
 
@@ -69,7 +106,10 @@ public class CompanionSelectController : MonoBehaviour
     /// </summary>
     void UpdateUI()
     {
-        startButton.interactable = _selected != null;
+        if (startButton != null)
+        {
+            startButton.interactable = _selected != null;
+        }
         if (selectedLabel) selectedLabel.text = _selected ? $"선택: {_selected.DisplayName}" : "동료를 선택하세요";
     }
 
@@ -83,6 +123,31 @@ public class CompanionSelectController : MonoBehaviour
         BeginNewRun();
     }
 
+    void OnClickBack()
+    {
+        if (string.IsNullOrEmpty(previousScene))
+            return;
+
+        SceneManager.LoadScene(previousScene);
+    }
+
+    void OnDestroy()
+    {
+        if (startButton != null)
+        {
+            startButton.onClick.RemoveListener(OnClickStart);
+        }
+        if (backButton != null)
+        {
+            backButton.onClick.RemoveListener(OnClickBack);
+        }
+
+        if (carousel != null)
+        {
+            carousel.SelectionChanged -= OnSelect;
+        }
+    }
+
     void BeginNewRun()
     {
         if (_selected == null)
@@ -91,7 +156,10 @@ public class CompanionSelectController : MonoBehaviour
             return;
         }
 
-        startButton.interactable = false;
+        if (startButton != null)
+        {
+            startButton.interactable = false;
+        }
 
         try
         {
@@ -238,7 +306,10 @@ public class CompanionSelectController : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.LogError($"[CompanionSelect] Failed to start new run: {e.Message}");
-            startButton.interactable = true;
+            if (startButton != null)
+            {
+                startButton.interactable = true;
+            }
         }
     }
 

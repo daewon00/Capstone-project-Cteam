@@ -50,13 +50,15 @@ public class DeckCardItemView : MonoBehaviour
         BoundInstanceId = cardState?.InstanceId ?? string.Empty;
         BoundCardId = cardSO?.CardId ?? cardState?.CardId ?? string.Empty;
 
+        bool upgraded = cardState != null && cardState.IsUpgraded();
+
         if (cardSO != null)
         {
             if (cardNameText != null)
                 cardNameText.text = cardSO.cardName;
 
             if (costText != null)
-                costText.text = Mathf.Max(0, cardSO.manaCost).ToString();
+                costText.text = cardSO.GetManaCost(upgraded).ToString();
 
             if (descriptionText != null)
                 descriptionText.text = cardSO.actionDescription;
@@ -76,7 +78,7 @@ public class DeckCardItemView : MonoBehaviour
             if (cardBackgroundImage != null) cardBackgroundImage.sprite = null;
         }
 
-        UpdateStatTexts(cardSO);
+        UpdateStatTexts(cardSO, upgraded);
         UpdateEffectIcon(cardSO);
 
         // (선택사항) 카드 매수 표시 로직
@@ -94,10 +96,10 @@ public class DeckCardItemView : MonoBehaviour
         }
     }
 
-    private void UpdateStatTexts(CardScriptableObject cardSO)
+    private void UpdateStatTexts(CardScriptableObject cardSO, bool upgraded)
     {
-        int attack = cardSO != null ? cardSO.attackPower : 0;
-        int health = cardSO != null ? cardSO.currentHealth : 0;
+        int attack = cardSO != null ? cardSO.GetAttackPower(upgraded) : 0;
+        int health = cardSO != null ? cardSO.GetHealth(upgraded) : 0;
 
         if (attackText != null)
             attackText.text = Mathf.Max(0, attack).ToString();
@@ -199,4 +201,3 @@ public class DeckCardItemView : MonoBehaviour
         }
     }
 }
-

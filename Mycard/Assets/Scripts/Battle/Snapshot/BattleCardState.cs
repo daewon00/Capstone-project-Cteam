@@ -12,6 +12,7 @@ namespace BattleSnapshot
         public int attack;
         public int slotIndex;
         public bool isPlayer;
+        public bool isUpgraded;
         public float rotX;
         public float rotY;
         public float rotZ;

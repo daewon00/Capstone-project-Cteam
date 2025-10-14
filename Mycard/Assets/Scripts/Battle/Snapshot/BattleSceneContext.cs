@@ -68,9 +68,10 @@ public class BattleSceneContext
             Debug.LogWarning($"[BattleSceneContext] Missing SO for hand card {state.CardId}");
             return;
         }
+        bool isUpgraded = state.IsUpgraded();
         var card = Object.Instantiate(CardPrefab, Hand.transform.position, CardPrefab.transform.rotation);
         card.gameObject.SetActive(true);
-        card.Initialize(state.InstanceId, so, DeckService, _iconDatabase);
+        card.Initialize(state.InstanceId, so, DeckService, _iconDatabase, isUpgraded);
         card.isPlayer = true;
         card.inHand = true;
         card.transform.SetParent(Hand.transform, true);
@@ -131,9 +132,11 @@ public class BattleSceneContext
             Debug.LogWarning($"[BattleSceneContext] Missing SO for field card {runtime.CardId}");
             return;
         }
+        var metadata = runtime.GetMetadata();
+        bool isUpgraded = runtime.IsUpgraded();
         var card = Object.Instantiate(CardPrefab);
         card.gameObject.SetActive(true);
-        card.Initialize(runtime.InstanceId, so, DeckService, _iconDatabase);
+        card.Initialize(runtime.InstanceId, so, DeckService, _iconDatabase, isUpgraded);
         card.isPlayer = true;
         card.inHand = false;
         card.assignedPlace = slot;
@@ -141,7 +144,7 @@ public class BattleSceneContext
         card.transform.SetParent(slot.transform, true);
         card.transform.position = slot.transform.position;
 
-        var modifiers = BattleDeckRuntimeSync.ParseModifiers(runtime.ModifiersJson);
+        var modifiers = metadata.lastKnownState;
         CardEffectRuntimeSnapshot effectSnapshot = modifiers?.effectState;
         var boardRotation = HandController.instance != null
             ? HandController.instance.minpos.rotation
