@@ -422,7 +422,7 @@ public class BattleController : MonoBehaviour
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
                     UIController.instance.FieldShowButton.SetActive(true);
-                    UIController.instance.FieldBackButton.SetActive(true);
+                    
                     DOVirtual.DelayedCall(0.35f, () =>
                     {
                         UIController.instance.EnemyUI.SetActive(true);
