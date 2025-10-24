@@ -14,6 +14,7 @@ public sealed class EventManager : IEventManager
     private CurrentRun _run;
 
     private static readonly Dictionary<string, EventScriptableObject> EventCache = new();
+    private readonly HashSet<string> _seededRngDomains = new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
     /// 런 ID와 DB 핸들을 받아 이벤트 매니저를 초기화합니다.
@@ -113,6 +114,12 @@ public sealed class EventManager : IEventManager
         var effects = choice.effects ?? Array.Empty<EventEffectDTO>();
 
         int hpBefore = _run.CurrentHp;
+        var tokenReplacements = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["UPGRADE_MESSAGE"] = string.Empty,
+            ["UPGRADED_CARD_NAMES"] = string.Empty,
+            ["UPGRADED_COUNT"] = "0"
+        };
 
         foreach (var effect in effects)
         {
@@ -221,6 +228,14 @@ public sealed class EventManager : IEventManager
                     Debug.LogWarning("[EventManager] TransformCard 효과 적용 중 문제가 발생했습니다.");
                 }
             }
+            else if (effect.type == EventEffectType.UpgradeRandomCard)
+            {
+                handled = true;
+                if (!TryUpgradeRandomCards(effect, tokenReplacements))
+                {
+                    Debug.LogWarning("[EventManager] UpgradeRandomCard 효과 적용 중 문제가 발생했습니다.");
+                }
+            }
             else if (effect.type == EventEffectType.ReturnToMap)
             {
                 shouldReturnToMap = true;
@@ -237,6 +252,10 @@ public sealed class EventManager : IEventManager
         int hpAfter = _run.CurrentHp;
         int hpDeltaTotal = hpAfter - hpBefore;
         int maxHpAfter = _run.MaxHpBase + _run.MaxHpFromPerks + _run.MaxHpFromRelics;
+        tokenReplacements["HP_DELTA"] = hpDeltaTotal.ToString();
+        tokenReplacements["HP_DELTA_ABS"] = Mathf.Abs(hpDeltaTotal).ToString();
+        tokenReplacements["HP_CURRENT"] = hpAfter.ToString();
+        tokenReplacements["HP_MAX"] = maxHpAfter.ToString();
 
         if (shouldReturnToMap)
         {
@@ -291,7 +310,7 @@ public sealed class EventManager : IEventManager
             }
 
             var nextSession = BuildSession(eventSO, nextStage);
-            ApplyOutcomeTokens(nextSession, hpDeltaTotal, hpAfter, maxHpAfter);
+            ApplyTokenReplacements(nextSession, tokenReplacements);
             nextSession.eventId = session.eventId;
             nextSession.pickedChoiceId = choice.id;
             nextSession.stageId = nextStage.stageId;
@@ -305,6 +324,149 @@ public sealed class EventManager : IEventManager
         RunCacheSynchronizer.Sync();
         NotifyRunOverlay();
         return true;
+    }
+
+    private bool TryUpgradeRandomCards(EventEffectDTO effect, Dictionary<string, string> tokenReplacements)
+    {
+        var deckService = ServiceRegistry.Get<IDeckService>();
+        if (deckService == null)
+        {
+            SetUpgradeTokens(tokenReplacements, "카드를 관리하는 서비스가 없어 강화가 취소되었습니다.", Array.Empty<string>());
+            return false;
+        }
+
+        var catalog = ServiceRegistry.Get<ICardCatalog>();
+        if (catalog == null)
+        {
+            SetUpgradeTokens(tokenReplacements, "카드 데이터를 찾을 수 없어 강화가 취소되었습니다.", Array.Empty<string>());
+            return false;
+        }
+
+        var rng = ServiceRegistry.Get<IRngService>();
+        if (rng == null)
+        {
+            SetUpgradeTokens(tokenReplacements, "무작위 서비스를 찾을 수 없어 강화가 취소되었습니다.", Array.Empty<string>());
+            return false;
+        }
+
+        var candidates = new List<CardRuntimeState>();
+        var locations = new[]
+        {
+            CardLocation.Hand,
+            CardLocation.DrawPile,
+            CardLocation.DiscardPile,
+            CardLocation.ExhaustPile
+        };
+
+        foreach (var location in locations)
+        {
+            var cards = deckService.GetCardsInLocation(location);
+            if (cards == null) continue;
+
+            foreach (var card in cards)
+            {
+                if (card == null) continue;
+                if (card.IsUpgraded()) continue;
+                if (!catalog.TryGetCardData(card.CardId, out var cardData) || cardData == null || !cardData.UpgradeEnabled)
+                    continue;
+                candidates.Add(card);
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            SetUpgradeTokens(tokenReplacements, "강화할 수 있는 카드가 없어 조용히 휴식을 취했습니다.", Array.Empty<string>());
+            return true;
+        }
+
+        int countToUpgrade = effect.quantity > 0 ? effect.quantity : 1;
+        EnsureRngSeeded(rng, "event-card-upgrade");
+
+        var upgradedNames = new List<string>();
+        for (int i = 0; i < countToUpgrade && candidates.Count > 0; i++)
+        {
+            int index = rng.NextInt("event-card-upgrade", 0, candidates.Count);
+            var selected = candidates[index];
+            candidates.RemoveAt(index);
+
+            if (!catalog.TryGetCardData(selected.CardId, out var cardData) || cardData == null)
+            {
+                continue;
+            }
+
+            if (!deckService.SetCardUpgradeState(selected.InstanceId, true))
+            {
+                continue;
+            }
+
+            var displayName = !string.IsNullOrEmpty(cardData.cardName) ? cardData.cardName : cardData.name;
+            upgradedNames.Add(displayName);
+        }
+
+        if (upgradedNames.Count == 0)
+        {
+            SetUpgradeTokens(tokenReplacements, "강화 시도가 있었지만 덱 상태는 변하지 않았습니다.", Array.Empty<string>());
+            return true;
+        }
+
+        string message = upgradedNames.Count == 1
+            ? $"강화의 열기로 '{upgradedNames[0]}' 카드가 새롭게 태어났습니다."
+            : $"강화의 열기로 {upgradedNames.Count}장의 카드가 한층 더 강해졌습니다: {string.Join(", ", upgradedNames)}.";
+        SetUpgradeTokens(tokenReplacements, message, upgradedNames);
+        return true;
+    }
+
+    private static void SetUpgradeTokens(Dictionary<string, string> tokens, string message, IList<string> cardNames)
+    {
+        if (tokens == null) return;
+        tokens["UPGRADE_MESSAGE"] = message ?? string.Empty;
+        var names = cardNames != null && cardNames.Count > 0 ? string.Join(", ", cardNames) : string.Empty;
+        tokens["UPGRADED_CARD_NAMES"] = names;
+        tokens["UPGRADED_COUNT"] = (cardNames?.Count ?? 0).ToString();
+    }
+
+    private void EnsureRngSeeded(IRngService rng, string domain)
+    {
+        if (rng == null || string.IsNullOrEmpty(domain)) return;
+        if (_run == null || string.IsNullOrEmpty(_run.RunId)) return;
+        if (_seededRngDomains.Contains(domain)) return;
+
+        try
+        {
+            rng.Seed(domain, HashRunIdToSeed(_run.RunId, domain));
+            _seededRngDomains.Add(domain);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[EventManager] RNG 시드 설정 실패(domain={domain}): {e.Message}");
+        }
+    }
+
+    private static uint HashRunIdToSeed(string runId, string domain)
+    {
+        unchecked
+        {
+            uint hash = 2166136261u;
+            if (!string.IsNullOrEmpty(runId))
+            {
+                foreach (char c in runId)
+                {
+                    hash ^= c;
+                    hash *= 16777619u;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(domain))
+            {
+                foreach (char c in domain)
+                {
+                    hash ^= c;
+                    hash *= 16777619u;
+                }
+            }
+
+            return hash == 0u ? 1u : hash;
+        }
     }
 
     // 결과 기록용 내부 클래스
@@ -329,27 +491,28 @@ public sealed class EventManager : IEventManager
         public string resolvedAtUtc;
     }
 
-    private static void ApplyOutcomeTokens(EventSessionDTO session, int hpDelta, int hpCurrent, int hpMax)
+    private static void ApplyTokenReplacements(EventSessionDTO session, IReadOnlyDictionary<string, string> tokens)
     {
-        if (session == null) return;
-        session.description = FormatOutcomeTokens(session.description, hpDelta, hpCurrent, hpMax);
+        if (session == null || tokens == null || tokens.Count == 0) return;
+        session.description = ReplaceTokens(session.description, tokens);
         if (session.choices == null) return;
 
         foreach (var choice in session.choices)
         {
             if (choice == null) continue;
-            choice.label = FormatOutcomeTokens(choice.label, hpDelta, hpCurrent, hpMax);
+            choice.label = ReplaceTokens(choice.label, tokens);
         }
     }
 
-    private static string FormatOutcomeTokens(string text, int hpDelta, int hpCurrent, int hpMax)
+    private static string ReplaceTokens(string text, IReadOnlyDictionary<string, string> tokens)
     {
-        if (string.IsNullOrEmpty(text)) return text;
-        return text
-            .Replace("{HP_DELTA}", hpDelta.ToString())
-            .Replace("{HP_DELTA_ABS}", Mathf.Abs(hpDelta).ToString())
-            .Replace("{HP_CURRENT}", hpCurrent.ToString())
-            .Replace("{HP_MAX}", hpMax.ToString());
+        if (string.IsNullOrEmpty(text) || tokens == null || tokens.Count == 0) return text;
+        foreach (var pair in tokens)
+        {
+            if (string.IsNullOrEmpty(pair.Key)) continue;
+            text = text.Replace("{" + pair.Key + "}", pair.Value ?? string.Empty);
+        }
+        return text;
     }
 
     private static Game.Save.NodeType ResolveNodeType(string eventId)

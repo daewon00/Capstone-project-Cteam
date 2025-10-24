@@ -17,11 +17,12 @@ MonoBehaviour:
   actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC591\uC606\uC5D0 1/1
     \uD1A0\uD070 \uC18C\uD658"
   cardLore: 
-  currentHealth: 2
-  attackPower: 2
   manaCost: 4
+  attackPower: 2
+  currentHealth: 2
   characterSprite: {fileID: 21300000, guid: c25d855d2f6d6a04aa98bf5847ca2f88, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
+  rarity: 0
   effects:
   - type: 7
     timing: 0
@@ -31,4 +32,10 @@ MonoBehaviour:
     payloadId: TOKEN_SWARMLING
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 1
+    manaCost: 4
+    attackPower: 2
+    health: 3
+    initialized: 1
   removeAfterCombat: 0

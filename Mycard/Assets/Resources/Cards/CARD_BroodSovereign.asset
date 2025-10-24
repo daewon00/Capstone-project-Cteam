@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_BroodSovereign
   m_EditorClassIdentifier: 
-  cardName: "군체의 지배자"
+  cardName: "\uAD70\uCCB4\uC758 \uC9C0\uBC30\uC790"
   CardId: CARD_BROOD_SOVEREIGN
-  actionDescription: "전장에 나올 때 좌우 빈 칸에 2/2 무리를 소환합니다."
+  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC88C\uC6B0 \uBE48
+    \uCE78\uC5D0 2/2 \uBB34\uB9AC\uB97C \uC18C\uD658\uD569\uB2C8\uB2E4."
   cardLore: 
-  currentHealth: 8
-  attackPower: 7
   manaCost: 6
+  attackPower: 7
+  currentHealth: 8
   characterSprite: {fileID: 21300000, guid: c25d855d2f6d6a04aa98bf5847ca2f88, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   rarity: 3
@@ -31,4 +32,10 @@ MonoBehaviour:
     payloadId: TOKEN_SWARMLING
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 1
+    manaCost: 6
+    attackPower: 8
+    health: 8
+    initialized: 1
   removeAfterCombat: 0

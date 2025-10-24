@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_NightfallExterminator
   m_EditorClassIdentifier: 
-  cardName: "밤그림자 척결자"
+  cardName: "\uBC24\uADF8\uB9BC\uC790 \uCC99\uACB0\uC790"
   CardId: CARD_NIGHTFALL_EXTERMINATOR
-  actionDescription: "공격이 적중하면 대상 적 카드를 즉시 처치합니다."
+  actionDescription: "\uACF5\uACA9\uC774 \uC801\uC911\uD558\uBA74 \uB300\uC0C1 \uC801
+    \uCE74\uB4DC\uB97C \uC989\uC2DC \uCC98\uCE58\uD569\uB2C8\uB2E4."
   cardLore: 
-  currentHealth: 7
-  attackPower: 2
   manaCost: 4
+  attackPower: 2
+  currentHealth: 7
   characterSprite: {fileID: 21300000, guid: 913b6398cf3b1bf4986f496a0359ba9b, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   rarity: 3
@@ -31,4 +32,10 @@ MonoBehaviour:
     payloadId: 
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 1
+    manaCost: 3
+    attackPower: 2
+    health: 6
+    initialized: 1
   removeAfterCombat: 0

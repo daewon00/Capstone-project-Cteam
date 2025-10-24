@@ -33,8 +33,13 @@ MonoBehaviour:
       nextStageId: rest_result
     - id: rest_upgrade
       label: "\uCE74\uB4DC\uB97C \uB2E8\uB824\uD55C\uB2E4 (\uC900\uBE44 \uC911)"
-      effects: []
-      nextStageId: rest_upgrade_placeholder
+      effects:
+      - type: 9
+        amount: 0
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: rest_upgrade_result
   - stageId: rest_result
     description: "\uD3B8\uC548\uD55C \uD734\uC2DD\uC73C\uB85C \uD65C\uB825\uC744
       \uB418\uCC3E\uC558\uC2B5\uB2C8\uB2E4. \uCCB4\uB825\uC774 {HP_DELTA_ABS}\uB9CC\uD07C
@@ -49,10 +54,8 @@ MonoBehaviour:
         quantity: 0
         upgrade: 0
       nextStageId: 
-  - stageId: rest_upgrade_placeholder
-    description: "\uC544\uC9C1\uC740 \uCE74\uB4DC\uB97C \uC190\uC5D0\uC11C \uB193\uC744
-      \uB54C\uAC00 \uC544\uB2D0 \uAC83 \uAC19\uC2B5\uB2C8\uB2E4. \uB2E4\uC74C \uD734\uC2DD
-      \uAE30\uD68C\uB97C \uB178\uB824 \uBCF4\uB294\uAC8C \uC88B\uACA0\uC2B5\uB2C8\uB2E4."
+  - stageId: rest_upgrade_result
+    description: "{UPGRADE_MESSAGE}"
     choices:
     - id: upgrade_back
       label: "\uC790\uB9AC\uB97C \uC815\uB9AC\uD558\uACE0 \uC5EC\uC815\uC744 \uACC4\uC18D\uD55C\uB2E4"

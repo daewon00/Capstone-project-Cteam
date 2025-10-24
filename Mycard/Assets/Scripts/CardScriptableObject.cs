@@ -48,6 +48,15 @@ public class CardScriptableObject : ScriptableObject
 
     public int GetHealth(bool upgraded) => upgraded && UpgradeEnabled ? upgradeSettings.Health : currentHealth;
 
+    public string GetDisplayName(bool upgraded)
+    {
+        if (string.IsNullOrEmpty(cardName))
+            return upgraded && UpgradeEnabled ? $"{CardId}+" : CardId;
+        return upgraded && UpgradeEnabled ? $"{cardName}+" : cardName;
+    }
+
+    public static readonly Color UpgradeNameColor = new Color(0.3f, 0.95f, 0.45f);
+
     private void OnValidate()
     {
         if (upgradeSettings == null)

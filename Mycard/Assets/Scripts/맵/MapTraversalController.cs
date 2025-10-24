@@ -68,6 +68,7 @@ public class MapTraversalController : MonoBehaviour
         // 씬의 모든 노드 수집
         var list = FindObjectsByType<NodeGoScene>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         _nodes = list.ToDictionary(n => (n.floor, n.index), n => n);
+        RegisterNodeTargets();
 
         // 초기 표시
         PlaceMarker(_run.Floor, _run.NodeIndex);
@@ -178,6 +179,20 @@ public class MapTraversalController : MonoBehaviour
             _markerTween = null;
             FinalizePendingOperation(stageService);
         });
+    }
+
+    private void RegisterNodeTargets()
+    {
+        var tutorialService = ServiceRegistry.Get<ITutorialService>();
+        if (tutorialService == null || _nodes == null) return;
+
+        foreach (var node in _nodes.Values)
+        {
+            if (node == null) continue;
+            var target = node.GetComponent<TutorialTarget>() ?? node.gameObject.AddComponent<TutorialTarget>();
+            target.SetId($"map-node-{node.floor}-{node.index}");
+            target.SetFocusRect(node.transform as RectTransform);
+        }
     }
 
     private void FinalizePendingOperation(IRunStageService stageService)

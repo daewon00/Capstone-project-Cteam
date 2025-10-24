@@ -61,6 +61,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private bool _isInteractable = true;
     private bool _destroyBroadcasted; // 업적/메타 이벤트 중복 방지
     public bool IsUpgraded { get; private set; }
+    private Color _defaultNameColor = Color.white;
+    private bool _hasDefaultNameColor;
 
     // 이벤트 기반 입력 상태(탭/드래그 구분)
     private bool _isDragging;
@@ -82,6 +84,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     void Awake()
     {
         _originalScale = transform.localScale;
+        if (nameText != null && !_hasDefaultNameColor)
+        {
+            _defaultNameColor = nameText.color;
+            _hasDefaultNameColor = true;
+        }
         if (_iconDatabase == null && iconDatabaseOverride != null)
             _iconDatabase = iconDatabaseOverride;
     }
@@ -124,7 +131,15 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         UpdateCardDisplay();
 
         if (nameText != null)
-            nameText.text = cardSO.cardName;
+        {
+            if (!_hasDefaultNameColor)
+            {
+                _defaultNameColor = nameText.color;
+                _hasDefaultNameColor = true;
+            }
+            nameText.text = cardSO.GetDisplayName(IsUpgraded);
+            nameText.color = IsUpgraded && cardSO.UpgradeEnabled ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
+        }
         if (actionDescriptionText != null)
             actionDescriptionText.text = cardSO.actionDescription;
         if (loreText != null)
@@ -422,6 +437,12 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         //attackText.text = attackPower.ToString(); //기존
         if (costText != null)
             costText.text = GetEffectiveManaCost().ToString();
+
+        if (nameText != null && cardSO != null)
+        {
+            nameText.text = cardSO.GetDisplayName(IsUpgraded);
+            nameText.color = IsUpgraded && cardSO.UpgradeEnabled ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
+        }
 
         // (선택) 버프면 초록색 등 시각효과
         //bool buffed = isPlayer && shownAtk > attackPower;

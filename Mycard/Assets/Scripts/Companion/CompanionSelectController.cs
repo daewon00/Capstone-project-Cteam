@@ -64,6 +64,8 @@ public class CompanionSelectController : MonoBehaviour
             }
         }
 
+        RegisterStaticTargets();
+
         if (carousel != null)
         {
             carousel.SelectionChanged += OnSelect;
@@ -98,6 +100,7 @@ public class CompanionSelectController : MonoBehaviour
         {
             GameContext.I.SelectedCompanionId = data.CompanionId;
         }
+        ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, $"companion-select:{data.CompanionId}");
         UpdateUI();
     }
 
@@ -231,6 +234,7 @@ public class CompanionSelectController : MonoBehaviour
             EnsureRunRngSeeds(runId, db);
 
             tutorialService?.BindRun(runId, startTutorialRun);
+            tutorialService?.ReportAction(TutorialRequiredActionType.ButtonClick, "start-run");
 
             // 3.5. 월렛을 새로운 런에 재바인딩하여 UI와 동기화합니다.
             ServiceRegistry.Get<IWalletService>()?.RebindRun(runId);
@@ -311,6 +315,32 @@ public class CompanionSelectController : MonoBehaviour
                 startButton.interactable = true;
             }
         }
+    }
+
+    private void RegisterStaticTargets()
+    {
+        var tutorialService = ServiceRegistry.Get<ITutorialService>();
+        if (tutorialService == null) return;
+
+        if (startButton != null)
+        {
+            var target = EnsureTarget(startButton.gameObject, "start-button");
+            target?.SetFocusRect(startButton.transform as RectTransform);
+        }
+
+        if (carousel != null)
+        {
+            var target = EnsureTarget(carousel.gameObject, "companion-carousel");
+            target?.SetFocusRect(carousel.transform as RectTransform);
+        }
+    }
+
+    private static TutorialTarget EnsureTarget(GameObject go, string id)
+    {
+        if (go == null || string.IsNullOrEmpty(id)) return null;
+        var target = go.GetComponent<TutorialTarget>() ?? go.AddComponent<TutorialTarget>();
+        target.SetId(id);
+        return target;
     }
 
     /// <summary>
