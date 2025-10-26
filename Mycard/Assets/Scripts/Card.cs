@@ -31,9 +31,12 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     [SerializeField] private TMP_Text loreText;
     [SerializeField] private Image characterArt;
     [SerializeField] private Image bgArt;
+    [SerializeField] private Image frontArt;
+    [SerializeField] private Image rarityEmblem;
     [SerializeField] private Image skillEffectImage;
     [SerializeField] private TMP_Text skillEffectValueText;
     [SerializeField] private EffectIconDatabase iconDatabaseOverride;
+    [SerializeField] private CardVisualProfile visualProfileOverride;
 
     //카드 움직임 관련
     private Vector3 targetPoint;
@@ -63,6 +66,13 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public bool IsUpgraded { get; private set; }
     private Color _defaultNameColor = Color.white;
     private bool _hasDefaultNameColor;
+    private Color _attackDefaultColor = Color.white;
+    private bool _hasAttackDefaultColor;
+    private Color _healthDefaultColor = Color.white;
+    private bool _hasHealthDefaultColor;
+    private Color _costDefaultColor = Color.white;
+    private bool _hasCostDefaultColor;
+    private CardVisualProfile _visualProfile;
 
     // 이벤트 기반 입력 상태(탭/드래그 구분)
     private bool _isDragging;
@@ -89,8 +99,34 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             _defaultNameColor = nameText.color;
             _hasDefaultNameColor = true;
         }
+        if (attackText != null && !_hasAttackDefaultColor)
+        {
+            _attackDefaultColor = attackText.color;
+            _hasAttackDefaultColor = true;
+        }
+        if (healthText != null && !_hasHealthDefaultColor)
+        {
+            _healthDefaultColor = healthText.color;
+            _hasHealthDefaultColor = true;
+        }
+        if (costText != null && !_hasCostDefaultColor)
+        {
+            _costDefaultColor = costText.color;
+            _hasCostDefaultColor = true;
+        }
         if (_iconDatabase == null && iconDatabaseOverride != null)
             _iconDatabase = iconDatabaseOverride;
+        if (_visualProfile == null)
+            _visualProfile = ResolveVisualProfile();
+
+        ApplyReadabilityStyling();
+    }
+
+    private CardVisualProfile ResolveVisualProfile()
+    {
+        if (visualProfileOverride != null)
+            return visualProfileOverride;
+        return CardVisualRegistry.Profile;
     }
 
 
@@ -149,6 +185,25 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             characterArt.sprite = cardSO.characterSprite;
         if (bgArt != null)
             bgArt.sprite = cardSO.bgSprite;
+        if (frontArt != null)
+        {
+            var sprite = GetFrontSprite();
+            if (sprite != null)
+                frontArt.sprite = sprite;
+        }
+        if (rarityEmblem != null)
+        {
+            var emblem = GetRarityEmblem();
+            if (emblem != null)
+            {
+                rarityEmblem.enabled = true;
+                rarityEmblem.sprite = emblem;
+            }
+            else
+            {
+                rarityEmblem.enabled = false;
+            }
+        }
 
         UpdateSkillIcon();
         //ApplyAttackBuffOutline(isPlayer && PlayerBuffs.instance != null && PlayerBuffs.instance.attackBonus > 0);
@@ -160,6 +215,24 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         currentHealth = _baseHealth;
         _healthInitialized = true;
         RecalculateHealthFromModifiers(resetCurrent: true, updateDisplay: false);
+    }
+
+    private Sprite GetFrontSprite()
+    {
+        if (cardSO == null) return null;
+        if (_visualProfile == null)
+            _visualProfile = ResolveVisualProfile();
+        if (_visualProfile != null)
+            return _visualProfile.GetFront(cardSO.Rarity, IsUpgraded);
+        return frontArt != null ? frontArt.sprite : null;
+    }
+
+    private Sprite GetRarityEmblem()
+    {
+        if (cardSO == null) return null;
+        if (_visualProfile == null)
+            _visualProfile = ResolveVisualProfile();
+        return _visualProfile != null ? _visualProfile.GetEmblem(cardSO.Rarity) : null;
     }
 
     private void RecalculateHealthFromModifiers(bool resetCurrent, bool updateDisplay = true)
@@ -430,18 +503,74 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public void UpdateCardDisplay()
     {
         var shownAtk = GetEffectiveAttack(); //추가+++
+        var profile = CardReadabilityRegistry.Profile;
         if (attackText != null)
+        {
             attackText.text = shownAtk.ToString();//추가+++ 공격력증가
+            bool colorAtk = profile != null ? profile.colorizeAttackByModifier : true;
+            if (colorAtk)
+            {
+                var buff = profile != null ? profile.buffAttackColor : new Color(0.3f, 0.95f, 0.45f);
+                var debuff = profile != null ? profile.debuffAttackColor : new Color(1f, 0.4f, 0.4f);
+                if (shownAtk > attackPower) attackText.color = buff;
+                else if (shownAtk < attackPower) attackText.color = debuff;
+                else if (_hasAttackDefaultColor) attackText.color = _attackDefaultColor;
+            }
+        }
         if (healthText != null)
+        {
             healthText.text = currentHealth.ToString();
+            bool colorHealth = profile != null ? profile.colorizeHealthWhenDamaged : true;
+            if (colorHealth)
+            {
+                var damaged = profile != null ? profile.damagedHealthColor : new Color(1f, 0.8f, 0.3f);
+                if (MaxHealth > 0 && currentHealth < MaxHealth) healthText.color = damaged;
+                else if (_hasHealthDefaultColor) healthText.color = _healthDefaultColor;
+            }
+        }
         //attackText.text = attackPower.ToString(); //기존
         if (costText != null)
-            costText.text = GetEffectiveManaCost().ToString();
+        {
+            int effCost = GetEffectiveManaCost();
+            costText.text = effCost.ToString();
+            bool colorCost = profile != null ? profile.colorizeCostByAffordability : true;
+            if (colorCost && isPlayer && inHand && BattleController.instance != null)
+            {
+                bool canAfford = BattleController.instance.playerMana >= effCost;
+                var unaffordable = profile != null ? profile.unaffordableCostColor : new Color(1f, 0.45f, 0.45f);
+                costText.color = canAfford ? (_hasCostDefaultColor ? _costDefaultColor : costText.color) : unaffordable;
+            }
+            else if (_hasCostDefaultColor)
+            {
+                costText.color = _costDefaultColor;
+            }
+        }
 
         if (nameText != null && cardSO != null)
         {
             nameText.text = cardSO.GetDisplayName(IsUpgraded);
             nameText.color = IsUpgraded && cardSO.UpgradeEnabled ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
+        }
+
+        if (frontArt != null)
+        {
+            var sprite = GetFrontSprite();
+            if (sprite != null)
+                frontArt.sprite = sprite;
+        }
+
+        if (rarityEmblem != null)
+        {
+            var emblem = GetRarityEmblem();
+            if (emblem != null)
+            {
+                rarityEmblem.enabled = true;
+                rarityEmblem.sprite = emblem;
+            }
+            else
+            {
+                rarityEmblem.enabled = false;
+            }
         }
 
         // (선택) 버프면 초록색 등 시각효과
@@ -507,6 +636,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         GameEvents.OnEnemyAttackModifiersChanged += HandleAttackModifiersChanged;
         GameEvents.OnCardAttackModifiersChanged += HandleAttackModifiersChanged;
         GameEvents.OnCardHealthModifiersChanged += HandleHealthModifiersChanged;
+        GameEvents.OnPlayerManaChanged += HandlePlayerManaChanged;
+        GameEvents.OnCardManaCostModifiersChanged += HandleAttackModifiersChanged; // 비용 변경 시에도 표시 갱신
     }
 
     private void OnDisable()
@@ -517,6 +648,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         GameEvents.OnEnemyAttackModifiersChanged -= HandleAttackModifiersChanged;
         GameEvents.OnCardAttackModifiersChanged -= HandleAttackModifiersChanged;
         GameEvents.OnCardHealthModifiersChanged -= HandleHealthModifiersChanged;
+        GameEvents.OnPlayerManaChanged -= HandlePlayerManaChanged;
+        GameEvents.OnCardManaCostModifiersChanged -= HandleAttackModifiersChanged;
 
         // 비활성화 시 하이라이트 잔상 제거
         ClearHoverHighlight();
@@ -526,6 +659,31 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (assignedPlace != null || inHand)
             UpdateCardDisplay();
+    }
+
+    private void ApplyReadabilityStyling()
+    {
+        var profile = CardReadabilityRegistry.Profile;
+        bool enabled = profile != null ? profile.enableOutline : true;
+        if (!enabled) return;
+        float width = profile != null ? profile.outlineWidth : 0.18f;
+        var color = profile != null ? profile.outlineColor : new Color(0f, 0f, 0f, 0.65f);
+        bool oAtk = profile != null ? profile.outlineAttack : true;
+        bool oHp = profile != null ? profile.outlineHealth : true;
+        bool oCost = profile != null ? profile.outlineCost : true;
+        bool oEff = profile != null ? profile.outlineEffectValue : true;
+        bool oName = profile != null ? profile.outlineName : false;
+        if (oAtk) CardReadabilityApplier.ApplyOutline(attackText, width, color);
+        if (oHp) CardReadabilityApplier.ApplyOutline(healthText, width, color);
+        if (oCost) CardReadabilityApplier.ApplyOutline(costText, width, color);
+        if (oEff) CardReadabilityApplier.ApplyOutline(skillEffectValueText, width, color);
+        if (oName) CardReadabilityApplier.ApplyOutline(nameText, width, color);
+    }
+
+    private void HandlePlayerManaChanged(int current, int max)
+    {
+        if (!isPlayer || !inHand) return;
+        UpdateCardDisplay();
     }
     private void HandleHealthModifiersChanged()
     {

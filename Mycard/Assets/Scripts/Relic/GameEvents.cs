@@ -22,6 +22,7 @@ public static class GameEvents
     public static event Action OnCardHealthModifiersChanged;
     public static event Action<CardAcquisitionContext, RarityWeightBuilder> ModifyCardRarityWeights;
     public static event Action OnCardAttackModifiersChanged;
+    public static event Action<int,int> OnPlayerManaChanged;
 
     // Raise helpers
     public static void RaiseBattleStart() => OnBattleStart?.Invoke();
@@ -36,6 +37,7 @@ public static class GameEvents
     public static void RaiseCardManaCostModifiersChanged() => OnCardManaCostModifiersChanged?.Invoke();
     public static void RaiseCardHealthModifiersChanged() => OnCardHealthModifiersChanged?.Invoke();
     public static void RaiseCardAttackModifiersChanged() => OnCardAttackModifiersChanged?.Invoke();
+    public static void RaisePlayerManaChanged(int current, int max) => OnPlayerManaChanged?.Invoke(current, max);
     // Modifiers
     public static event Func<int, int> ModifyPlayerAttack;
     public static event Func<int, int> ModifyEnemyAttack;

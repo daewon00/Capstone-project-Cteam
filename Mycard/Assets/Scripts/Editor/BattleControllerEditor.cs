@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(BattleController))]
+[CanEditMultipleObjects]
 public class BattleControllerEditor : Editor
 {
     private SerializedProperty _script;
@@ -43,6 +44,12 @@ public class BattleControllerEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        if (serializedObject == null || serializedObject.targetObjects == null || serializedObject.targetObjects.Length == 0)
+            return;
+        foreach (var t in serializedObject.targetObjects)
+        {
+            if (t == null) return;
+        }
         serializedObject.Update();
 
         using (new EditorGUI.DisabledScope(true))

@@ -3,8 +3,10 @@ using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(CardScriptableObject))]
+[CanEditMultipleObjects]
 public class CardScriptableObjectEditor : Editor
 {
+    private SerializedProperty _scriptProp;
     private SerializedProperty _upgradeSettings;
     private SerializedProperty _upgradeEnabled;
     private SerializedProperty _upgradeCost;
@@ -13,6 +15,8 @@ public class CardScriptableObjectEditor : Editor
 
     private void OnEnable()
     {
+        if (serializedObject == null) return;
+        _scriptProp = serializedObject.FindProperty("m_Script");
         _upgradeSettings = serializedObject.FindProperty("upgradeSettings");
         if (_upgradeSettings != null)
         {
@@ -25,11 +29,21 @@ public class CardScriptableObjectEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        if (serializedObject == null || serializedObject.targetObjects == null || serializedObject.targetObjects.Length == 0)
+            return;
+        foreach (var t in serializedObject.targetObjects)
+        {
+            if (t == null) return;
+        }
+
         serializedObject.Update();
 
-        using (new EditorGUI.DisabledScope(true))
+        if (_scriptProp != null)
         {
-            EditorGUILayout.ObjectField("Script", MonoScript.FromScriptableObject((CardScriptableObject)target), typeof(MonoScript), false);
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.PropertyField(_scriptProp);
+            }
         }
 
         EditorGUILayout.PropertyField(serializedObject.FindProperty("cardName"));

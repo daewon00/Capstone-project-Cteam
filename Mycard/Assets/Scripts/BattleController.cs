@@ -193,6 +193,7 @@ public class BattleController : MonoBehaviour
         }
 
         UIController.instance?.SetPlayerManaText(playerMana);
+        GameEvents.RaisePlayerManaChanged(playerMana, currentPlayerMaxMana);
         UIController.instance?.SetEnemyManaText(enemyMana);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[BattleController] SetTurnStateFromSnapshot: turn={_turnCounter}, phase={currentPhase}, playerMana={playerMana}/{currentPlayerMaxMana}, enemyMana={enemyMana}/{currentEnemyMaxMana}");
@@ -323,6 +324,7 @@ public class BattleController : MonoBehaviour
         }
 
         UIController.instance.SetPlayerManaText(playerMana);
+        GameEvents.RaisePlayerManaChanged(playerMana, currentPlayerMaxMana);
     }
 
     //플레이어의 마나를 최대치까지 채움
@@ -333,6 +335,7 @@ public class BattleController : MonoBehaviour
         playerMana = GameEvents.ApplyPlayerManaModifiers(playerMana);
 
         UIController.instance.SetPlayerManaText(playerMana);
+        GameEvents.RaisePlayerManaChanged(playerMana, currentPlayerMaxMana);
     }
 
     // 적의 마나를 소모 *필요한가? 음수도 조정*
