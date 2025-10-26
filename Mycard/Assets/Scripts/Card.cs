@@ -90,6 +90,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
     private CardPlacePoint _currentHoveredSlot;
+    private CardSortingBinder _sortingBinder;
 
     void Awake()
     {
@@ -119,6 +120,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (_visualProfile == null)
             _visualProfile = ResolveVisualProfile();
 
+        _sortingBinder = GetComponentInChildren<CardSortingBinder>(true);
         ApplyReadabilityStyling();
     }
 
@@ -709,6 +711,14 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             MoveToPoint(theHC.cardPositions[handPosition] + _pressPositionOffset, transform.rotation);
         }
+        // 레이아웃을 잠그어 자동 재정렬로 인한 오더/위치 되돌림 방지
+        if (theHC != null) theHC.SuspendLayoutFor(this);
+        // Press 순간에도 최상위로 올려 이웃 카드에 가리지 않도록 함
+        var hand = HandController.instance;
+        if (hand != null && _sortingBinder != null)
+        {
+            _sortingBinder.ElevateForDrag(hand.GetDragTopSortingOrder());
+        }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -731,6 +741,13 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         // 드래그 시작: 전장 집중을 위해 일부 UI 숨김(CanvasGroup 기반)
         UIController.instance?.SetDragModeUIVisibility(false);
+
+        // 정렬: 드래그 중 최상위로 승격
+        var hand = HandController.instance;
+        if (hand != null && _sortingBinder != null)
+        {
+            _sortingBinder.ElevateForDrag(hand.GetDragTopSortingOrder());
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -775,6 +792,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 {
                     UIController.instance?.ShowManaWarning();
                     if (theHC != null) theHC.ResumeLayoutFor(this);
+                    if (theHC != null) theHC.ResumeLayout();
                     UIController.instance?.SetDragModeUIVisibility(true);
                     ReturnToHand();
                     return;
@@ -809,7 +827,10 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                     SetInteractable(false);
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);
                     if (theHC != null) theHC.ResumeLayoutFor(this);
+                    if (theHC != null) theHC.ResumeLayout();
                     UIController.instance?.SetDragModeUIVisibility(true);
+                    if (_sortingBinder != null)
+                        _sortingBinder.RestoreAfterDrag();
                     BattleDeckRuntimeSync.UpdateCardState(this);
                     return;
                 }
@@ -819,6 +840,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 assignedPlace = null;
                 inHand = true;
                 if (theHC != null) theHC.ResumeLayoutFor(this);
+                if (theHC != null) theHC.ResumeLayout();
                 UIController.instance?.SetDragModeUIVisibility(true);
                 transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
                 ReturnToHand();
@@ -848,7 +870,10 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         // 3) 일반 미스: 핸드 복귀
         if (theHC != null) theHC.ResumeLayoutFor(this);
+        if (theHC != null) theHC.ResumeLayout();
         UIController.instance?.SetDragModeUIVisibility(true);
+        if (_sortingBinder != null)
+            _sortingBinder.RestoreAfterDrag();
         ReturnToHand();
     }
 
@@ -875,9 +900,16 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             return;
         }
 
+        if (theHC != null) theHC.ResumeLayout();
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
             MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
+        }
+        if (_sortingBinder != null)
+        {
+            var hand = HandController.instance;
+            if (hand != null)
+                _sortingBinder.RestoreAfterDrag();
         }
         BattleDeckRuntimeSync.UpdateCardState(this);
     }
