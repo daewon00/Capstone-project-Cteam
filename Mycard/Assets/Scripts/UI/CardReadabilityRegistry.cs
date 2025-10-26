@@ -1,26 +1,31 @@
 using UnityEngine;
 
-// Loads CardReadabilityProfile from Resources if present.
-// If missing, silently returns null (no warnings) so callers can use defaults.
+/// <summary>
+/// CardReadabilityProfile 전역 접근 레지스트리. Resources 에서 지연 로드합니다.
+/// </summary>
 public static class CardReadabilityRegistry
 {
     private static CardReadabilityProfile _profile;
-    private static bool _triedLoad;
 
     public static CardReadabilityProfile Profile
     {
         get
         {
-            if (_profile == null && !_triedLoad)
+            if (_profile == null)
             {
-                _triedLoad = true;
                 _profile = Resources.Load<CardReadabilityProfile>("Cards/CardReadabilityProfile");
-                // No logging if missing; keep console clean per project preference.
+                if (_profile == null)
+                {
+                    Debug.LogWarning("[CardReadabilityRegistry] Resources/Cards/CardReadabilityProfile.asset not found. Using code defaults.");
+                }
             }
             return _profile;
         }
     }
 
-    public static void SetProfile(CardReadabilityProfile profile) => _profile = profile;
+    public static void SetProfile(CardReadabilityProfile profile)
+    {
+        _profile = profile;
+    }
 }
 

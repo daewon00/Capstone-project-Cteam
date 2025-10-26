@@ -1,9 +1,10 @@
 using System;
 using UnityEngine;
 
-// Simple profile to allow artists to tweak text outlines/colors if desired.
-// If no asset exists under Resources/Cards/CardReadabilityProfile.asset,
-// systems should silently fall back to defaults without logging.
+/// <summary>
+/// 카드 숫자 가독성(외곽선/색상) 설정을 데이터로 관리하는 프로필입니다.
+/// Resources/Cards/CardReadabilityProfile.asset 로 배치해 런타임에 로드합니다.
+/// </summary>
 [CreateAssetMenu(fileName = "CardReadabilityProfile", menuName = "Cards/Readability Profile", order = 0)]
 public class CardReadabilityProfile : ScriptableObject
 {
