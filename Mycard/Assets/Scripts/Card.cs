@@ -87,6 +87,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private Vector3 _pressScaleMultiplier = new Vector3(1.06f, 1.06f, 1.06f);
     private float _pressAnimationTime = 0.1f;
     private Vector3 _originalScale;
+    [Header("Press Depth")]
+    [SerializeField, Tooltip("프레스 동안 카메라 방향으로 당길 거리(깊이 충돌 회피)")] private float pressFrontBoost = 2.5f;
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
     private CardPlacePoint _currentHoveredSlot;
@@ -505,29 +507,21 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public void UpdateCardDisplay()
     {
         var shownAtk = GetEffectiveAttack(); //추가+++
-        var profile = CardReadabilityRegistry.Profile;
         if (attackText != null)
         {
             attackText.text = shownAtk.ToString();//추가+++ 공격력증가
-            bool colorAtk = profile != null ? profile.colorizeAttackByModifier : true;
-            if (colorAtk)
+            // 기본 색 복귀(가독성 프로필 제거)
+            if (_hasAttackDefaultColor)
             {
-                var buff = profile != null ? profile.buffAttackColor : new Color(0.3f, 0.95f, 0.45f);
-                var debuff = profile != null ? profile.debuffAttackColor : new Color(1f, 0.4f, 0.4f);
-                if (shownAtk > attackPower) attackText.color = buff;
-                else if (shownAtk < attackPower) attackText.color = debuff;
-                else if (_hasAttackDefaultColor) attackText.color = _attackDefaultColor;
+                attackText.color = _attackDefaultColor;
             }
         }
         if (healthText != null)
         {
             healthText.text = currentHealth.ToString();
-            bool colorHealth = profile != null ? profile.colorizeHealthWhenDamaged : true;
-            if (colorHealth)
+            if (_hasHealthDefaultColor)
             {
-                var damaged = profile != null ? profile.damagedHealthColor : new Color(1f, 0.8f, 0.3f);
-                if (MaxHealth > 0 && currentHealth < MaxHealth) healthText.color = damaged;
-                else if (_hasHealthDefaultColor) healthText.color = _healthDefaultColor;
+                healthText.color = _healthDefaultColor;
             }
         }
         //attackText.text = attackPower.ToString(); //기존
@@ -535,17 +529,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             int effCost = GetEffectiveManaCost();
             costText.text = effCost.ToString();
-            bool colorCost = profile != null ? profile.colorizeCostByAffordability : true;
-            if (colorCost && isPlayer && inHand && BattleController.instance != null)
-            {
-                bool canAfford = BattleController.instance.playerMana >= effCost;
-                var unaffordable = profile != null ? profile.unaffordableCostColor : new Color(1f, 0.45f, 0.45f);
-                costText.color = canAfford ? (_hasCostDefaultColor ? _costDefaultColor : costText.color) : unaffordable;
-            }
-            else if (_hasCostDefaultColor)
-            {
-                costText.color = _costDefaultColor;
-            }
+            if (_hasCostDefaultColor) costText.color = _costDefaultColor;
         }
 
         if (nameText != null && cardSO != null)
@@ -665,21 +649,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     private void ApplyReadabilityStyling()
     {
-        var profile = CardReadabilityRegistry.Profile;
-        bool enabled = profile != null ? profile.enableOutline : true;
-        if (!enabled) return;
-        float width = profile != null ? profile.outlineWidth : 0.18f;
-        var color = profile != null ? profile.outlineColor : new Color(0f, 0f, 0f, 0.65f);
-        bool oAtk = profile != null ? profile.outlineAttack : true;
-        bool oHp = profile != null ? profile.outlineHealth : true;
-        bool oCost = profile != null ? profile.outlineCost : true;
-        bool oEff = profile != null ? profile.outlineEffectValue : true;
-        bool oName = profile != null ? profile.outlineName : false;
-        if (oAtk) CardReadabilityApplier.ApplyOutline(attackText, width, color);
-        if (oHp) CardReadabilityApplier.ApplyOutline(healthText, width, color);
-        if (oCost) CardReadabilityApplier.ApplyOutline(costText, width, color);
-        if (oEff) CardReadabilityApplier.ApplyOutline(skillEffectValueText, width, color);
-        if (oName) CardReadabilityApplier.ApplyOutline(nameText, width, color);
+        // Outline/가독성 프로필 사용 제거(원상 복귀)
+        // 필요 시 프리팹 머티리얼에 직접 설정하거나 아트팀에서 처리
+        return;
     }
 
     private void HandlePlayerManaChanged(int current, int max)
@@ -709,7 +681,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         transform.DOScale(_pressScaleMultiplier, _pressAnimationTime).SetEase(Ease.OutQuad);
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
-            MoveToPoint(theHC.cardPositions[handPosition] + _pressPositionOffset, transform.rotation);
+            var basePos = theHC.cardPositions[handPosition] + _pressPositionOffset;
+            var boosted = ApplyCameraForwardBoost(basePos, pressFrontBoost);
+            MoveToPoint(boosted, transform.rotation);
         }
         // 레이아웃을 잠그어 자동 재정렬로 인한 오더/위치 되돌림 방지
         if (theHC != null) theHC.SuspendLayoutFor(this);
@@ -758,6 +732,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, 100f, whatIsDesktop))
         {
+            // 드래그는 전장 평면 위로 이동(깊이 보정 해제)
             MoveToPoint(hit.point + new Vector3(0f, 2f, 0f), Quaternion.identity);
         }
 
@@ -984,4 +959,18 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             // 색상은 굳이 초기화 안 해도 됨
         }
     }*/
+
+    private Vector3 ApplyCameraForwardBoost(Vector3 basePos, float distance)
+    {
+        var cam = Camera.main;
+        if (cam == null || distance <= 0f) return basePos;
+        var target = basePos - cam.transform.forward * distance;
+        // 근평면보다 너무 가까우면 약간 띄워주기
+        var camPos = cam.transform.position;
+        var v = target - camPos;
+        var min = Mathf.Max(0.05f, cam.nearClipPlane + 0.05f);
+        var len = v.magnitude;
+        if (len < min && len > 1e-4f) target = camPos + v.normalized * min;
+        return target;
+    }
 }
