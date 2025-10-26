@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -120, y: 160}
+  m_AnchoredPosition: {x: -110, y: 150}
   m_SizeDelta: {x: 45, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6338394869217327480
@@ -802,6 +802,14 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   _battleInstanceId: 
+  _pressPositionOffset: {x: 0, y: 0.12, z: 0.4}
+  _pressScaleMultiplier: {x: 1.06, y: 1.06, z: 1.06}
+  _pressAnimationTime: 0.1
+  pressFrontBoost: 0.15
+  useMobilePressTuning: 1
+  mobilePressOffset: {x: 0, y: 0.06, z: 0.15}
+  mobilePressScale: {x: 1.02, y: 1.02, z: 1.02}
+  mobilePressFrontBoost: 0.3
 --- !u!65 &2183193030056329190
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1863,7 +1871,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -120, y: 160}
+  m_AnchoredPosition: {x: -110, y: 150}
   m_SizeDelta: {x: 65, y: 65}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7602493114662414112

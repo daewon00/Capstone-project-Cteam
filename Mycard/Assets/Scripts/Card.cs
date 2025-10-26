@@ -83,12 +83,14 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     // --- 카드 누르기(Press) 피드백 ---
     // 살짝 들어 올리고(위/앞) 스케일을 키워 입력 피드백 제공
-    private Vector3 _pressPositionOffset = new Vector3(0f, 0.12f, 0.4f);
-    private Vector3 _pressScaleMultiplier = new Vector3(1.06f, 1.06f, 1.06f);
-    private float _pressAnimationTime = 0.1f;
+    [Header("Press Visuals")]
+    [SerializeField] private Vector3 _pressPositionOffset = new Vector3(0f, 0.12f, 0.4f);
+    [SerializeField] private Vector3 _pressScaleMultiplier = new Vector3(1.06f, 1.06f, 1.06f);
+    [SerializeField] private float _pressAnimationTime = 0.1f;
     private Vector3 _originalScale;
     [Header("Press Depth")]
     [SerializeField, Tooltip("프레스 동안 카메라 방향으로 당길 거리(깊이 충돌 회피)")] private float pressFrontBoost = 2.5f;
+    private bool _isPressing; // 입력 장치에 무관한 프레스 상태 플래그
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
     private CardPlacePoint _currentHoveredSlot;
@@ -316,22 +318,6 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         _isInteractable = value;
         if (theCol != null) theCol.enabled = value;
     }
-
-    // 에디터에서만 호버 효과 유지(모바일 비활성)
-#if !(UNITY_ANDROID || UNITY_IOS)
-    private void OnMouseOver()
-    {
-        if (inHand && isPlayer && !BattleController.instance.battleEnded)
-            MoveToPoint(theHC.cardPositions[handPosition] + new Vector3(0f, .1f, .5f), transform.rotation);
-    }
-
-    private void OnMouseExit()
-    {
-        if (inHand && isPlayer && !BattleController.instance.battleEnded)
-            MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
-    }
-#endif
-
 
     //카드를 지정된 위치와 회전값으로 이동을 위해 변수 설정
     public void MoveToPoint(Vector3 pointToMoveTo, Quaternion rotToMatch)
@@ -675,8 +661,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (!_isInteractable || assignedPlace != null || BattleController.instance == null) return;
         _dragStartScreenPos = eventData.position;
         _dragStartTime = Time.time;
-
-        // Press 피드백: 스케일 업 + 살짝 들어 올리기
+        _isPressing = true;
+        // Press 피드백: 스케일 업 + 살짝 들어 올리기 (플랫폼 공통)
         transform.DOKill(false);
         transform.DOScale(_pressScaleMultiplier, _pressAnimationTime).SetEase(Ease.OutQuad);
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
@@ -744,6 +730,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (!_isDragging) return;
         _isDragging = false;
+        _isPressing = false;
 
         if (theCol != null) theCol.enabled = true;
 
@@ -855,6 +842,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public void OnPointerUp(PointerEventData eventData)
     {
         if (_isDragging) return; // 드래그 종료에서 처리됨
+        _isPressing = false;
         float duration = Time.time - _dragStartTime;
         float dist = Vector2.Distance(eventData.position, _dragStartScreenPos);
         if (duration < TapTimeThreshold && dist < TapDistanceThreshold)
