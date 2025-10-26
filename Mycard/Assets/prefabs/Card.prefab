@@ -733,6 +733,7 @@ GameObject:
   - component: {fileID: 5292392740324458045}
   - component: {fileID: 2177406694648586450}
   - component: {fileID: 2183193030056329190}
+  - component: {fileID: 4080451390825234387}
   m_Layer: 0
   m_Name: Card
   m_TagString: Untagged
@@ -822,6 +823,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.3, y: 1.8, z: 0.02}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &4080451390825234387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3229087315968336215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db64623135abc47f9bb898ce921a1145, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  overrideCanvasSorting: 1
 --- !u!1 &3447808511012463697
 GameObject:
   m_ObjectHideFlags: 0
@@ -1667,7 +1681,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -1769,7 +1783,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0

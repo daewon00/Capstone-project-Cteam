@@ -18,9 +18,16 @@ public class HandController : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Vector3 handScale = Vector3.one;
     [SerializeField] private Vector3 boardScale = Vector3.one;
+    [Header("Sorting")]
+    [Tooltip("손패 카드 정렬의 기준 오더. 오른쪽 카드로 갈수록 +index가 더해집니다.")]
+    [SerializeField] private int baseSortingOrder = 1000;
+    [Tooltip("드래그 중 최상위로 올릴 때 사용할 오더 값.")]
+    [SerializeField] private int dragTopSortingOrder = 20000;
     
     // 드래그 중 레이아웃에서 일시 제외할 카드 목록
     private readonly HashSet<Card> _layoutLocked = new HashSet<Card>();
+    // 프레스/드래그 동안 전체 레이아웃을 멈추기 위한 단일 잠금 카드
+    private Card _lockedCard = null;
 
     void Start()
     {
@@ -34,6 +41,14 @@ public class HandController : MonoBehaviour
 
     public void SetCardPositionsInHand()
     {
+        // 레이아웃 잠김 상태에서는 자동 정렬을 수행하지 않습니다.
+        if (_lockedCard != null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[HandController] Layout is globally locked; skipping SetCardPositionsInHand()");
+#endif
+            return;
+        }
         cardPositions.Clear();
 
         Vector3 distanceBetweenPoints = Vector3.zero;
@@ -48,6 +63,13 @@ public class HandController : MonoBehaviour
 
             var card = heldCards[i];
             if (card == null) continue;
+
+            // 카드 단위 정렬 오더 적용(오른쪽 카드가 항상 위로)
+            var binder = card.GetComponentInChildren<CardSortingBinder>(true);
+            if (binder != null)
+            {
+                binder.ApplyOrder(baseSortingOrder + i);
+            }
 
             // 잠긴 카드는 레이아웃에서 제외(위치/인덱스 변경 안 함)
             if (_layoutLocked.Contains(card))
@@ -81,6 +103,7 @@ public class HandController : MonoBehaviour
     {
         if (card == null) return;
         _layoutLocked.Add(card);
+        _lockedCard = card;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[HandController] SuspendLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
 #endif
@@ -94,6 +117,22 @@ public class HandController : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
 #endif
+    }
+
+    /// <summary>
+    /// 프레스/드래그로 인해 중단한 전체 레이아웃을 재개합니다.
+    /// </summary>
+    public void ResumeLayout()
+    {
+        if (_lockedCard != null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[HandController] ResumeLayout global; was locked by={_lockedCard.GetBattleInstanceId()}");
+#endif
+            _layoutLocked.Remove(_lockedCard);
+            _lockedCard = null;
+        }
+        SetCardPositionsInHand();
     }
 
     public bool IsLayoutLocked(Card card)
@@ -162,11 +201,15 @@ public class HandController : MonoBehaviour
     public Vector3 GetBoardScale() => boardScale;
     public Vector3 GetHandScale() => handScale;
 
+    public int GetBaseSortingOrder() => baseSortingOrder;
+    public int GetDragTopSortingOrder() => dragTopSortingOrder;
+
     /// <summary>
     /// 모든 레이아웃 잠금 상태를 즉시 해제합니다.
     /// </summary>
     public void ClearLayoutLocks()
     {
         _layoutLocked.Clear();
+        _lockedCard = null;
     }
 }
