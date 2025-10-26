@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 /// <summary>
 /// 튜토리얼 상태를 관리하고 씬간에 일관된 진행도를 전달하는 계약입니다.
@@ -6,11 +7,14 @@ using System;
 public interface ITutorialService
 {
     event Action<TutorialStep> OnStepChanged;
+    event Action<TutorialStepConfig, RectTransform> OnStepVisualChanged;
 
     bool IsActive { get; }
     bool IsTutorialRun { get; }
     string ActiveTutorialId { get; }
     TutorialStep CurrentStep { get; }
+    TutorialStepConfig CurrentConfig { get; }
+    RectTransform CurrentHighlight { get; }
 
     /// <summary>
     /// 현재 프로필의 진행도를 불러오고 캐시합니다.
@@ -43,6 +47,11 @@ public interface ITutorialService
     bool CanMoveToNode(int act, int floor, int nodeIndex);
 
     /// <summary>
+    /// 특정 행동이 수행되었음을 보고합니다.
+    /// </summary>
+    void ReportAction(TutorialRequiredActionType actionType, string context = null);
+
+    /// <summary>
     /// 튜토리얼이 완료되었을 때 호출합니다.
     /// </summary>
     void CompleteTutorial(string tutorialId);
@@ -56,4 +65,14 @@ public interface ITutorialService
     /// 런이 중단 또는 리셋되었을 때 튜토리얼 상태를 초기화합니다.
     /// </summary>
     void ResetActiveRun();
+
+    /// <summary>
+    /// 튜토리얼에서 사용할 하이라이트 타겟을 등록합니다.
+    /// </summary>
+    void RegisterTarget(TutorialTarget target);
+
+    /// <summary>
+    /// 하이라이트 타겟 등록을 해제합니다.
+    /// </summary>
+    void UnregisterTarget(TutorialTarget target);
 }

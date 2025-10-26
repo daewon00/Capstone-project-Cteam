@@ -76,6 +76,12 @@ public interface IDeckService
     /// </summary>
     void AddCardToDeckById(string cardId, bool isUpgraded = false);
 
+    /// <summary>
+    /// 특정 카드 인스턴스의 강화 상태를 변경합니다.
+    /// </summary>
+    /// <returns>강화 상태가 실제로 변경되면 true, 그렇지 않으면 false</returns>
+    bool SetCardUpgradeState(string instanceId, bool upgraded);
+
     IReadOnlyList<CardRuntimeState> GetCardsInLocation(CardLocation location);
     CardRuntimeState GetCardByInstanceId(string instanceId);
     void UpdateBattleCardState(BattleSnapshot.BattleCardState state, CardLocation location);

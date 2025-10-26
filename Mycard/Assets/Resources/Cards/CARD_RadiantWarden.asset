@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_RadiantWarden
   m_EditorClassIdentifier: 
-  cardName: "빛의 수호병"
+  cardName: "\uBE5B\uC758 \uC218\uD638\uBCD1"
   CardId: CARD_RADIANT_WARDEN
-  actionDescription: "전장에 나올 때 자신에게 보호막 1을 부여합니다."
+  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC790\uC2E0\uC5D0\uAC8C
+    \uBCF4\uD638\uB9C9 1\uC744 \uBD80\uC5EC\uD569\uB2C8\uB2E4."
   cardLore: 
-  currentHealth: 3
-  attackPower: 3
   manaCost: 3
+  attackPower: 3
+  currentHealth: 3
   characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   rarity: 1
@@ -31,4 +32,10 @@ MonoBehaviour:
     payloadId: 
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 1
+    manaCost: 3
+    attackPower: 3
+    health: 4
+    initialized: 1
   removeAfterCombat: 0

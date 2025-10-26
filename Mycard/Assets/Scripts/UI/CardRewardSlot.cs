@@ -14,6 +14,8 @@ public class CardRewardSlot : MonoBehaviour
     [SerializeField] private Button selectButton;
 
     private RewardCardOption _cardOption;
+    private Color _defaultNameColor = Color.white;
+    private bool _hasDefaultNameColor;
 
     public event Action<RewardCardOption> OnCardSelected;
 
@@ -25,11 +27,34 @@ public class CardRewardSlot : MonoBehaviour
         _cardOption = option;
         var catalog = ServiceRegistry.Get<ICardCatalog>();
         var data = catalog?.GetCardData(option.CardId);
+        bool upgraded = option != null && option.IsUpgraded;
+
+        if (cardName != null && !_hasDefaultNameColor)
+        {
+            _defaultNameColor = cardName.color;
+            _hasDefaultNameColor = true;
+        }
+
         if (data != null)
         {
-            if (cardName != null) cardName.text = data.cardName;
+            if (cardName != null)
+            {
+                cardName.text = data.GetDisplayName(upgraded);
+                cardName.color = upgraded && data.UpgradeEnabled ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
+            }
             if (cardDescription != null) cardDescription.text = data.actionDescription;
             if (cardArt != null) cardArt.sprite = data.characterSprite;
+        }
+        else
+        {
+            if (cardName != null)
+            {
+                string fallbackName = upgraded ? $"{option.CardId}+" : option.CardId;
+                cardName.text = fallbackName;
+                cardName.color = upgraded ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
+            }
+            if (cardDescription != null) cardDescription.text = string.Empty;
+            if (cardArt != null) cardArt.sprite = null;
         }
 
         if (selectButton != null)
@@ -39,4 +64,3 @@ public class CardRewardSlot : MonoBehaviour
         }
     }
 }
-

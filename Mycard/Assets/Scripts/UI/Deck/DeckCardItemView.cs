@@ -25,12 +25,19 @@ public class DeckCardItemView : MonoBehaviour
     public string BoundCardId { get; private set; }
 
     private EffectIconDatabase _iconDatabase;
+    private Color _defaultNameColor = Color.white;
+    private bool _hasDefaultNameColor;
 
     public void Clear()
     {
         BoundInstanceId = null;
         BoundCardId = null;
-        if (cardNameText != null) cardNameText.text = string.Empty;
+        if (cardNameText != null)
+        {
+            cardNameText.text = string.Empty;
+            if (_hasDefaultNameColor)
+                cardNameText.color = _defaultNameColor;
+        }
         if (costText != null) costText.text = string.Empty;
         if (descriptionText != null) descriptionText.text = string.Empty;
         if (attackText != null) attackText.text = string.Empty;
@@ -54,8 +61,16 @@ public class DeckCardItemView : MonoBehaviour
 
         if (cardSO != null)
         {
+            if (!_hasDefaultNameColor && cardNameText != null)
+            {
+                _defaultNameColor = cardNameText.color;
+                _hasDefaultNameColor = true;
+            }
             if (cardNameText != null)
-                cardNameText.text = cardSO.cardName;
+            {
+                cardNameText.text = cardSO.GetDisplayName(upgraded);
+                cardNameText.color = upgraded && cardSO.UpgradeEnabled ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
+            }
 
             if (costText != null)
                 costText.text = cardSO.GetManaCost(upgraded).ToString();
@@ -71,7 +86,17 @@ public class DeckCardItemView : MonoBehaviour
         }
         else
         {
-            if (cardNameText != null) cardNameText.text = BoundCardId;
+            if (cardNameText != null)
+            {
+                if (!_hasDefaultNameColor)
+                {
+                    _defaultNameColor = cardNameText.color;
+                    _hasDefaultNameColor = true;
+                }
+                string fallbackName = upgraded ? $"{BoundCardId}+" : BoundCardId;
+                cardNameText.text = fallbackName;
+                cardNameText.color = upgraded ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
+            }
             if (costText != null) costText.text = string.Empty;
             if (descriptionText != null) descriptionText.text = string.Empty;
             if (cardArtImage != null) cardArtImage.sprite = null;

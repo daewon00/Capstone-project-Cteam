@@ -92,6 +92,7 @@ public sealed class EventEffectDrawer : PropertyDrawer
             EventEffectType.TransformCard => false,
             EventEffectType.AddCard => false,
             EventEffectType.AddCurse => false,
+            EventEffectType.UpgradeRandomCard => false,
             _ => true
         };
 
@@ -99,7 +100,7 @@ public sealed class EventEffectDrawer : PropertyDrawer
         => type is EventEffectType.AddCard or EventEffectType.AddCurse or EventEffectType.TransformCard or EventEffectType.AddRelic;
 
     private static bool ShouldShowQuantity(EventEffectType type)
-        => type is EventEffectType.AddCard or EventEffectType.AddCurse or EventEffectType.TransformCard or EventEffectType.AddRelic;
+        => type is EventEffectType.AddCard or EventEffectType.AddCurse or EventEffectType.TransformCard or EventEffectType.AddRelic or EventEffectType.UpgradeRandomCard;
 
     private static bool ShouldShowUpgrade(EventEffectType type)
         => type is EventEffectType.AddCard or EventEffectType.AddCurse or EventEffectType.TransformCard;

@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_TempestWarmaster
   m_EditorClassIdentifier: 
-  cardName: "폭풍의 전마스터"
+  cardName: "\uD3ED\uD48D\uC758 \uC804\uB9C8\uC2A4\uD130"
   CardId: CARD_TEMPEST_WARMASTER
-  actionDescription: "공격이 적중하면 대상의 좌우 적에게도 같은 피해를 줍니다."
+  actionDescription: "\uACF5\uACA9\uC774 \uC801\uC911\uD558\uBA74 \uB300\uC0C1\uC758
+    \uC88C\uC6B0 \uC801\uC5D0\uAC8C\uB3C4 \uAC19\uC740 \uD53C\uD574\uB97C \uC90D\uB2C8\uB2E4."
   cardLore: 
-  currentHealth: 5
-  attackPower: 6
   manaCost: 5
+  attackPower: 6
+  currentHealth: 5
   characterSprite: {fileID: 21300000, guid: 9594c9e691dd77844a7bf2eb3a27e995, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   rarity: 3
@@ -31,4 +32,10 @@ MonoBehaviour:
     payloadId: 
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 1
+    manaCost: 5
+    attackPower: 6
+    health: 6
+    initialized: 1
   removeAfterCombat: 0

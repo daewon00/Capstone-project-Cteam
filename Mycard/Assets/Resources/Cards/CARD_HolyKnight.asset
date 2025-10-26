@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_HolyKnight
   m_EditorClassIdentifier: 
-  cardName: "신성 기사단원"
+  cardName: "\uC2E0\uC131 \uAE30\uC0AC\uB2E8\uC6D0"
   CardId: CARD_HOLY_KNIGHT
-  actionDescription: "전장에 나올 때 보호막 1"
+  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uBCF4\uD638\uB9C9 1"
   cardLore: 
-  currentHealth: 1
-  attackPower: 2
   manaCost: 2
+  attackPower: 2
+  currentHealth: 1
   characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
+  rarity: 0
   effects:
   - type: 1
     timing: 0
@@ -30,3 +31,10 @@ MonoBehaviour:
     payloadId: 
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 1
+    manaCost: 2
+    attackPower: 2
+    health: 2
+    initialized: 1
+  removeAfterCombat: 0
