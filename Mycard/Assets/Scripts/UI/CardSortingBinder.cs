@@ -25,6 +25,8 @@ public sealed class CardSortingBinder : MonoBehaviour
     public void ApplyOrder(int order)
     {
         _currentOrder = order;
+        int canvasCount = 0;
+        int spriteCount = 0;
         if (_canvases != null)
         {
             for (int i = 0; i < _canvases.Length; i++)
@@ -33,6 +35,7 @@ public sealed class CardSortingBinder : MonoBehaviour
                 if (c == null) continue;
                 if (overrideCanvasSorting) c.overrideSorting = true;
                 c.sortingOrder = order;
+                canvasCount++;
             }
         }
         if (_spriteRenderers != null)
@@ -42,12 +45,19 @@ public sealed class CardSortingBinder : MonoBehaviour
                 var sr = _spriteRenderers[i];
                 if (sr == null) continue;
                 sr.sortingOrder = order;
+                spriteCount++;
             }
         }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[CardSortingBinder] ApplyOrder order={order}, canvases={canvasCount}, sprites={spriteCount}, name={gameObject.name}", this);
+#endif
     }
 
     public void ElevateForDrag(int topOrder)
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[CardSortingBinder] ElevateForDrag topOrder={topOrder}, name={gameObject.name}", this);
+#endif
         if (!_hasSavedOrder)
         {
             _savedOrder = _currentOrder;
@@ -60,9 +70,11 @@ public sealed class CardSortingBinder : MonoBehaviour
     {
         if (_hasSavedOrder)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[CardSortingBinder] RestoreAfterDrag restoring={_savedOrder}, name={gameObject.name}", this);
+#endif
             ApplyOrder(_savedOrder);
             _hasSavedOrder = false;
         }
     }
 }
-

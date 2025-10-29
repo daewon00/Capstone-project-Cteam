@@ -4,7 +4,7 @@
     "com.gilzoide.sqlite-net": "https://github.com/gilzoide/unity-sqlite-net.git",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.collab-proxy": "2.8.2",
-    "com.unity.device-simulator.devices": "1.0.0",
+    "com.unity.device-simulator.devices": "1.0.1",
     "com.unity.feature.development": "1.0.1",
     "com.unity.postprocessing": "3.4.0",
     "com.unity.render-pipelines.universal": "14.0.12",

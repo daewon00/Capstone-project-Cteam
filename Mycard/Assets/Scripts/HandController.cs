@@ -19,6 +19,7 @@ public class HandController : MonoBehaviour
     [SerializeField] private Vector3 handScale = Vector3.one;
     [SerializeField] private Vector3 boardScale = Vector3.one;
     [SerializeField] private Vector3 pressScale = new Vector3(0.9f, 0.9f, 0.9f);
+    [SerializeField, Tooltip("프레스 시 카드를 카메라 방향으로 당길 거리")] private float pressForwardOffset = 0.6f;
     [Header("Sorting")]
     [Tooltip("손패 카드 정렬의 기준 오더. 오른쪽 카드로 갈수록 +index가 더해집니다.")]
     [SerializeField] private int baseSortingOrder = 1000;
@@ -116,8 +117,15 @@ public class HandController : MonoBehaviour
         if (card == null) return;
         _layoutLocked.Remove(card);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
+        Debug.Log($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}\n{new System.Diagnostics.StackTrace(true)}");
 #endif
+        if (_lockedCard == card)
+        {
+            _lockedCard = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[HandController] ResumeLayoutFor cleared global lock");
+#endif
+        }
     }
 
     /// <summary>
@@ -128,7 +136,7 @@ public class HandController : MonoBehaviour
         if (_lockedCard != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HandController] ResumeLayout global; was locked by={_lockedCard.GetBattleInstanceId()}");
+        Debug.Log($"[HandController] ResumeLayout global; was locked by={_lockedCard.GetBattleInstanceId()}\n{new System.Diagnostics.StackTrace(true)}");
 #endif
             _layoutLocked.Remove(_lockedCard);
             _lockedCard = null;
@@ -202,6 +210,7 @@ public class HandController : MonoBehaviour
     public Vector3 GetBoardScale() => boardScale;
     public Vector3 GetHandScale() => handScale;
     public Vector3 GetPressScale() => pressScale;
+    public float GetPressForwardOffset() => pressForwardOffset;
 
     public int GetBaseSortingOrder() => baseSortingOrder;
     public int GetDragTopSortingOrder() => dragTopSortingOrder;

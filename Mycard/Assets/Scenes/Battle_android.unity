@@ -8879,6 +8879,10 @@ PrefabInstance:
       value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
+      propertyPath: pressForwardOffset
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: dragTopSortingOrder
       value: 20000
       objectReference: {fileID: 0}

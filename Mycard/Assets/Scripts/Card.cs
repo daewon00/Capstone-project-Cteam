@@ -719,7 +719,28 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         transform.DOScale(pressTargetScale, _pressAnimationTime).SetEase(Ease.OutQuad);
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
-            MoveToPoint(theHC.cardPositions[handPosition] + _pressPositionOffset, transform.rotation);
+            var targetPos = theHC.cardPositions[handPosition] + _pressPositionOffset;
+            float forwardOffset = 0f;
+            if (handCtrl != null && inHand)
+            {
+                forwardOffset = Mathf.Max(0f, handCtrl.GetPressForwardOffset());
+                if (forwardOffset > 0f)
+                {
+                    var baseScale = handCtrl.GetHandScale();
+                    float baseMag = baseScale.magnitude;
+                    float pressMag = pressTargetScale.magnitude;
+                    if (baseMag > 1e-4f)
+                    {
+                        float scaleFactor = Mathf.Clamp(pressMag / baseMag, 0.4f, 2f);
+                        forwardOffset *= scaleFactor;
+                    }
+                }
+            }
+            if (forwardOffset > 0f)
+            {
+                targetPos = ApplyCameraForwardBoost(targetPos, forwardOffset);
+            }
+            MoveToPoint(targetPos, transform.rotation);
         }
         // 레이아웃을 잠그어 자동 재정렬로 인한 오더/위치 되돌림 방지
         if (theHC != null) theHC.SuspendLayoutFor(this);
@@ -910,7 +931,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             return;
         }
 
-        if (theHC != null) theHC.ResumeLayout();
+        if (theHC != null)
+        {
+            theHC.ResumeLayoutFor(this);
+            theHC.SetCardPositionsInHand();
+        }
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
             MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
@@ -970,6 +995,25 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             _currentHoveredSlot.SetHighlightState(CardPlacePoint.HighlightState.Off);
             _currentHoveredSlot = null;
         }
+    }
+
+    private Vector3 ApplyCameraForwardBoost(Vector3 basePos, float distance)
+    {
+        var cam = Camera.main;
+        if (cam == null || distance <= 0f) return basePos;
+
+        var camTransform = cam.transform;
+        var target = basePos - camTransform.forward * distance;
+
+        var camPos = camTransform.position;
+        var offset = target - camPos;
+        var minDistance = Mathf.Max(0.05f, cam.nearClipPlane + 0.05f);
+        var len = offset.magnitude;
+        if (len < minDistance && len > 1e-4f)
+        {
+            target = camPos + offset.normalized * minDistance;
+        }
+        return target;
     }
     /*public void ApplyAttackBuffOutline(bool on)
     {
