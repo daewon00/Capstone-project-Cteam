@@ -88,6 +88,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private float _pressAnimationTime = 0.1f;
     private Vector3 _currentBaseScale = Vector3.one;
     private float _activeForwardOffset = 0f;
+    private bool _dragScaleApplied;
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
     private CardPlacePoint _currentHoveredSlot;
@@ -345,6 +346,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         ClearHoverHighlight();
         theCol.enabled = true;
         _activeForwardOffset = 0f;
+        _dragScaleApplied = false;
         MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
         if (HandController.instance != null)
             SetCardScale(HandController.instance.GetHandScale());
@@ -720,6 +722,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         }
         transform.DOScale(pressTargetScale, _pressAnimationTime).SetEase(Ease.OutQuad);
         _activeForwardOffset = 0f;
+        _dragScaleApplied = false;
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
             var targetPos = theHC.cardPositions[handPosition] + _pressPositionOffset;
@@ -754,36 +757,6 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             _sortingBinder.ElevateForDrag(hand.GetDragTopSortingOrder());
         }
-
-        if (hand != null && inHand)
-        {
-            Vector3 targetScale = transform.localScale;
-            var dragScale = hand.GetPressDragScale();
-            if (dragScale != Vector3.zero)
-            {
-                targetScale = dragScale;
-                transform.DOScale(dragScale, _pressAnimationTime).SetEase(Ease.OutQuad);
-            }
-            float dragForward = Mathf.Max(0f, hand.GetPressDragForwardOffset());
-            if (dragForward > 0f)
-            {
-                var baseScale = hand.GetHandScale();
-                float baseMag = baseScale.magnitude;
-                float dragMag = targetScale.magnitude;
-                if (baseMag > 1e-4f)
-                {
-                    float scaleFactor = Mathf.Clamp(dragMag / baseMag, 0.4f, 2f);
-                    dragForward *= scaleFactor;
-                }
-                _activeForwardOffset = dragForward;
-                var boosted = ApplyCameraForwardBoost(transform.position, _activeForwardOffset);
-                MoveToPoint(boosted, transform.rotation);
-            }
-            else
-            {
-                _activeForwardOffset = 0f;
-            }
-        }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -804,6 +777,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         // 프레스 트윈 잔여 제거(드래그로 자연 전환)
         transform.DOKill(false);
 
+        ApplyDragScaleIfNeeded();
+
         // 드래그 시작: 전장 집중을 위해 일부 UI 숨김(CanvasGroup 기반)
         UIController.instance?.SetDragModeUIVisibility(false);
 
@@ -813,6 +788,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             _sortingBinder.ElevateForDrag(hand.GetDragTopSortingOrder());
         }
+        _dragScaleApplied = false;
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -838,6 +814,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (!_isDragging) return;
         _isDragging = false;
         _activeForwardOffset = 0f;
+        _dragScaleApplied = false;
 
         if (theCol != null) theCol.enabled = true;
 
@@ -950,6 +927,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (_isDragging) return; // 드래그 종료에서 처리됨
         _activeForwardOffset = 0f;
+        _dragScaleApplied = false;
         float duration = Time.time - _dragStartTime;
         float dist = Vector2.Distance(eventData.position, _dragStartScreenPos);
         if (duration < TapTimeThreshold && dist < TapDistanceThreshold)
@@ -1053,6 +1031,45 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             target = camPos + offset.normalized * minDistance;
         }
         return target;
+    }
+
+    private void ApplyDragScaleIfNeeded()
+    {
+        if (_dragScaleApplied) return;
+        var hand = HandController.instance;
+        if (hand == null || !inHand) return;
+
+        transform.DOKill(false);
+
+        Vector3 targetScale = transform.localScale;
+        var dragScale = hand.GetPressDragScale();
+        if (dragScale != Vector3.zero)
+        {
+            targetScale = dragScale;
+            transform.DOScale(dragScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+        }
+
+        float dragForward = Mathf.Max(0f, hand.GetPressDragForwardOffset());
+        if (dragForward > 0f)
+        {
+            var baseScale = hand.GetHandScale();
+            float baseMag = baseScale.magnitude;
+            float dragMag = targetScale.magnitude;
+            if (baseMag > 1e-4f)
+            {
+                float scaleFactor = Mathf.Clamp(dragMag / baseMag, 0.4f, 2f);
+                dragForward *= scaleFactor;
+            }
+            _activeForwardOffset = dragForward;
+            var boosted = ApplyCameraForwardBoost(transform.position, _activeForwardOffset);
+            MoveToPoint(boosted, transform.rotation);
+        }
+        else
+        {
+            _activeForwardOffset = 0f;
+        }
+
+        _dragScaleApplied = true;
     }
     /*public void ApplyAttackBuffOutline(bool on)
     {

@@ -24,7 +24,7 @@ public class HandController : MonoBehaviour
     [Header("Press - Drag")]
     [SerializeField, Tooltip("드래그(배치 준비) 상태에서 사용할 스케일")] private Vector3 pressDragScale = Vector3.one;
     [SerializeField, Tooltip("드래그 중 카드가 카메라 쪽으로 이동할 추가 거리")] private float pressDragForwardOffset = 0.6f;
-    [Header("Sorting")]
+[Header("Sorting")]
     [Tooltip("손패 카드 정렬의 기준 오더. 오른쪽 카드로 갈수록 +index가 더해집니다.")]
     [SerializeField] private int baseSortingOrder = 1000;
     [Tooltip("드래그 중 최상위로 올릴 때 사용할 오더 값.")]
