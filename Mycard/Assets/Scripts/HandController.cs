@@ -18,8 +18,12 @@ public class HandController : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Vector3 handScale = Vector3.one;
     [SerializeField] private Vector3 boardScale = Vector3.one;
-    [SerializeField] private Vector3 pressScale = new Vector3(0.9f, 0.9f, 0.9f);
-    [SerializeField, Tooltip("프레스 시 카드를 카메라 방향으로 당길 거리")] private float pressForwardOffset = 0.6f;
+    [Header("Press - Inspect")]
+    [SerializeField, Tooltip("손패에서 눌러 카드 내용을 볼 때 사용할 스케일")] private Vector3 pressInspectScale = new Vector3(0.9f, 0.9f, 0.9f);
+    [SerializeField, Tooltip("손패 확인용 확대 시 카드를 카메라 방향으로 당길 거리")] private float pressInspectForwardOffset = 0.3f;
+    [Header("Press - Drag")]
+    [SerializeField, Tooltip("드래그(배치 준비) 상태에서 사용할 스케일")] private Vector3 pressDragScale = Vector3.one;
+    [SerializeField, Tooltip("드래그 중 카드가 카메라 쪽으로 이동할 추가 거리")] private float pressDragForwardOffset = 0.6f;
     [Header("Sorting")]
     [Tooltip("손패 카드 정렬의 기준 오더. 오른쪽 카드로 갈수록 +index가 더해집니다.")]
     [SerializeField] private int baseSortingOrder = 1000;
@@ -117,7 +121,7 @@ public class HandController : MonoBehaviour
         if (card == null) return;
         _layoutLocked.Remove(card);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}\n{new System.Diagnostics.StackTrace(true)}");
+        Debug.Log($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
 #endif
         if (_lockedCard == card)
         {
@@ -136,7 +140,7 @@ public class HandController : MonoBehaviour
         if (_lockedCard != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandController] ResumeLayout global; was locked by={_lockedCard.GetBattleInstanceId()}\n{new System.Diagnostics.StackTrace(true)}");
+        Debug.Log($"[HandController] ResumeLayout global; was locked by={_lockedCard.GetBattleInstanceId()}");
 #endif
             _layoutLocked.Remove(_lockedCard);
             _lockedCard = null;
@@ -209,8 +213,10 @@ public class HandController : MonoBehaviour
 
     public Vector3 GetBoardScale() => boardScale;
     public Vector3 GetHandScale() => handScale;
-    public Vector3 GetPressScale() => pressScale;
-    public float GetPressForwardOffset() => pressForwardOffset;
+    public Vector3 GetPressInspectScale() => pressInspectScale;
+    public float GetPressInspectForwardOffset() => pressInspectForwardOffset;
+    public Vector3 GetPressDragScale() => pressDragScale;
+    public float GetPressDragForwardOffset() => pressDragForwardOffset;
 
     public int GetBaseSortingOrder() => baseSortingOrder;
     public int GetDragTopSortingOrder() => dragTopSortingOrder;
