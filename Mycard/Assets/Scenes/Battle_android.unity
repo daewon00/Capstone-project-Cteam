@@ -8918,6 +8918,10 @@ PrefabInstance:
       propertyPath: pressDragActivateDistance
       value: 12
       objectReference: {fileID: 0}
+    - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
+      propertyPath: dragCameraActivationDistance
+      value: 40
+      objectReference: {fileID: 0}
     - target: {fileID: 6062164497211943638, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.75

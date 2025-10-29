@@ -88,6 +88,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private float _pressAnimationTime = 0.1f;
     private Vector3 _currentBaseScale = Vector3.one;
     private float _activeForwardOffset = 0f;
+    private bool _pendingCameraMove;
     private bool _dragScaleApplied;
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
@@ -347,6 +348,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         theCol.enabled = true;
         _activeForwardOffset = 0f;
         _dragScaleApplied = false;
+        _pendingCameraMove = false;
         MoveToPoint(theHC.cardPositions[handPosition], theHC.minpos.rotation);
         if (HandController.instance != null)
             SetCardScale(HandController.instance.GetHandScale());
@@ -723,6 +725,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         transform.DOScale(pressTargetScale, _pressAnimationTime).SetEase(Ease.OutQuad);
         _activeForwardOffset = 0f;
         _dragScaleApplied = false;
+        _pendingCameraMove = false;
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
             var targetPos = theHC.cardPositions[handPosition] + _pressPositionOffset;
@@ -768,19 +771,18 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         if (theCol != null) theCol.enabled = false; // 자기 자신 레이캐스트 방지
 
-        if (CameraController.instance != null && CameraController.instance.battleTransform != null)
-            CameraController.instance.MoveTo(CameraController.instance.battleTransform);
+        _pendingCameraMove = CameraController.instance != null && CameraController.instance.battleTransform != null;
+        _dragScaleApplied = false;
 
         // 드래그 중에는 레이아웃 재정렬에서 제외
         if (theHC != null) theHC.SuspendLayoutFor(this);
 
         // 프레스 트윈 잔여 제거(드래그로 자연 전환)
         transform.DOKill(false);
-
-        ApplyDragScaleIfNeeded();
-
-        // 드래그 시작: 전장 집중을 위해 일부 UI 숨김(CanvasGroup 기반)
-        UIController.instance?.SetDragModeUIVisibility(false);
+        if (!_pendingCameraMove)
+        {
+            ApplyDragScaleIfNeeded();
+        }
 
         // 정렬: 드래그 중 최상위로 승격
         var hand = HandController.instance;
@@ -788,12 +790,20 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             _sortingBinder.ElevateForDrag(hand.GetDragTopSortingOrder());
         }
-        _dragScaleApplied = false;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (!_isDragging || BattleController.instance == null || BattleController.instance.battleEnded) return;
+
+        if (_pendingCameraMove)
+        {
+            TryActivateDragCamera(eventData);
+            if (_pendingCameraMove)
+            {
+                return;
+            }
+        }
 
         Ray ray = Camera.main.ScreenPointToRay(eventData.position);
         RaycastHit hit;
@@ -857,6 +867,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
                     if (assignedPlace.cameraFocusPoint != null)
                         CameraController.instance.MoveTo(assignedPlace.cameraFocusPoint);
+                    UIController.instance?.SetDragModeUIVisibility(false);
 
                     // 보드 컨테이너로 부모 변경(핸드 재정렬의 간섭 차단)
                     transform.SetParent(selectedPoint.transform, true);
@@ -920,6 +931,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         UIController.instance?.SetDragModeUIVisibility(true);
         if (_sortingBinder != null)
             _sortingBinder.RestoreAfterDrag();
+        UIController.instance?.SetDragModeUIVisibility(true);
         ReturnToHand();
     }
 
@@ -1070,6 +1082,40 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         }
 
         _dragScaleApplied = true;
+    }
+
+    private void TryActivateDragCamera(PointerEventData eventData)
+    {
+        var hand = HandController.instance;
+        if (hand == null)
+        {
+            _pendingCameraMove = false;
+            return;
+        }
+
+        float threshold = Mathf.Max(0f, hand.GetDragCameraActivationDistance());
+        if (threshold <= 0f)
+        {
+            ActivateDragCameraNow();
+            return;
+        }
+
+        float travelled = Vector2.Distance(_dragStartScreenPos, eventData.position);
+        if (travelled >= threshold)
+        {
+            ActivateDragCameraNow();
+        }
+    }
+
+    private void ActivateDragCameraNow()
+    {
+        _pendingCameraMove = false;
+        if (CameraController.instance != null && CameraController.instance.battleTransform != null)
+        {
+            CameraController.instance.MoveTo(CameraController.instance.battleTransform);
+        }
+        ApplyDragScaleIfNeeded();
+        UIController.instance?.SetDragModeUIVisibility(false);
     }
     /*public void ApplyAttackBuffOutline(bool on)
     {
