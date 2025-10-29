@@ -86,7 +86,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private Vector3 _pressPositionOffset = new Vector3(0f, 0.12f, 0.4f);
     private Vector3 _pressScaleMultiplier = new Vector3(1.06f, 1.06f, 1.06f);
     private float _pressAnimationTime = 0.1f;
-    private Vector3 _originalScale;
+    private Vector3 _currentBaseScale = Vector3.one;
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
     private CardPlacePoint _currentHoveredSlot;
@@ -94,7 +94,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     void Awake()
     {
-        _originalScale = transform.localScale;
+        _currentBaseScale = transform.localScale;
         if (nameText != null && !_hasDefaultNameColor)
         {
             _defaultNameColor = nameText.color;
@@ -498,7 +498,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     public void SetCardScale(Vector3 scale)
     {
         transform.localScale = scale;
-        _originalScale = scale;
+        _currentBaseScale = scale;
     }
 
     //카드 현 상태 UI 텍스트 설정
@@ -706,7 +706,17 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         // Press 피드백: 스케일 업 + 살짝 들어 올리기
         transform.DOKill(false);
-        transform.DOScale(_pressScaleMultiplier, _pressAnimationTime).SetEase(Ease.OutQuad);
+        var pressTargetScale = Vector3.Scale(_currentBaseScale, _pressScaleMultiplier);
+        var handCtrl = HandController.instance;
+        if (handCtrl != null && inHand)
+        {
+            var configuredScale = handCtrl.GetPressScale();
+            if (configuredScale != Vector3.zero)
+            {
+                pressTargetScale = configuredScale;
+            }
+        }
+        transform.DOScale(pressTargetScale, _pressAnimationTime).SetEase(Ease.OutQuad);
         if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
             MoveToPoint(theHC.cardPositions[handPosition] + _pressPositionOffset, transform.rotation);
@@ -842,7 +852,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 if (theHC != null) theHC.ResumeLayoutFor(this);
                 if (theHC != null) theHC.ResumeLayout();
                 UIController.instance?.SetDragModeUIVisibility(true);
-                transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+                transform.DOScale(_currentBaseScale, _pressAnimationTime).SetEase(Ease.OutQuad);
                 ReturnToHand();
                 return;
             }
@@ -862,7 +872,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             {
                 if (theHC != null) theHC.ResumeLayoutFor(this);
                 UIController.instance?.SetDragModeUIVisibility(true);
-                transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+                transform.DOScale(_currentBaseScale, _pressAnimationTime).SetEase(Ease.OutQuad);
                 ReturnToHand();
                 return;
             }
@@ -892,7 +902,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         // 탭/클릭 종료 시 비주얼 원복
         transform.DOKill(false);
-        transform.DOScale(_originalScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+        transform.DOScale(_currentBaseScale, _pressAnimationTime).SetEase(Ease.OutQuad);
 
         // 필드 위 카드나 inHand가 아닌 경우는 위치 복귀를 수행하지 않음
         if (!inHand || assignedPlace != null)

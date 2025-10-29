@@ -18,6 +18,7 @@ public class HandController : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Vector3 handScale = Vector3.one;
     [SerializeField] private Vector3 boardScale = Vector3.one;
+    [SerializeField] private Vector3 pressScale = new Vector3(0.9f, 0.9f, 0.9f);
     [Header("Sorting")]
     [Tooltip("손패 카드 정렬의 기준 오더. 오른쪽 카드로 갈수록 +index가 더해집니다.")]
     [SerializeField] private int baseSortingOrder = 1000;
@@ -200,6 +201,7 @@ public class HandController : MonoBehaviour
 
     public Vector3 GetBoardScale() => boardScale;
     public Vector3 GetHandScale() => handScale;
+    public Vector3 GetPressScale() => pressScale;
 
     public int GetBaseSortingOrder() => baseSortingOrder;
     public int GetDragTopSortingOrder() => dragTopSortingOrder;

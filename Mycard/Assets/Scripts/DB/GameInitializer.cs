@@ -20,6 +20,9 @@ public class GameInitializer : MonoBehaviour
         _bootstrapped = true;
         DontDestroyOnLoad(gameObject); // (선택) 씬이 바뀌어도 조립 담당자가 사라지지 않게 함
 
+        // 전체 게임에서 멀티 터치를 사용하지 않도록 전역 입력 설정을 비활성화합니다.
+        Input.multiTouchEnabled = false;
+
         // 새 게임을 시작하거나 씬을 다시 로드할 때를 대비해, 보관소를 항상 깨끗하게 비웁니다.
         ServiceRegistry.ClearAll();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
