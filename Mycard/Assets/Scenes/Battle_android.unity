@@ -8856,15 +8856,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: handScale.x
-      value: 0.6
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: handScale.y
-      value: 0.6
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: handScale.z
-      value: 0.6
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: boardScale.x
@@ -8879,8 +8879,20 @@ PrefabInstance:
       value: 1.1
       objectReference: {fileID: 0}
     - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
+      propertyPath: pressScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
+      propertyPath: pressScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
+      propertyPath: pressScale.z
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: pressForwardOffset
-      value: 0.6
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 3247817273769623575, guid: 8bcc64c88eec1494d953e68304db5d40, type: 3}
       propertyPath: dragTopSortingOrder
