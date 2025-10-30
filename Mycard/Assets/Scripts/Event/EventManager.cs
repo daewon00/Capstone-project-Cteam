@@ -15,6 +15,7 @@ public sealed class EventManager : IEventManager
 
     private static readonly Dictionary<string, EventScriptableObject> EventCache = new();
     private readonly HashSet<string> _seededRngDomains = new HashSet<string>(StringComparer.Ordinal);
+    private readonly Queue<string> _pendingUpgradeSelections = new Queue<string>();
 
     /// <summary>
     /// 런 ID와 DB 핸들을 받아 이벤트 매니저를 초기화합니다.
@@ -96,6 +97,14 @@ public sealed class EventManager : IEventManager
             _db.DeleteActiveEventSession(_run.RunId);
             return null;
         }
+    }
+
+    public void QueueUpgradeSelection(string instanceId)
+    {
+        if (string.IsNullOrEmpty(instanceId))
+            return;
+        Debug.Log($"[EventManager] QueueUpgradeSelection {instanceId}");
+        _pendingUpgradeSelections.Enqueue(instanceId);
     }
 
     /// <summary>
@@ -231,6 +240,7 @@ public sealed class EventManager : IEventManager
             else if (effect.type == EventEffectType.UpgradeRandomCard)
             {
                 handled = true;
+                Debug.Log("[EventManager] UpgradeRandomCard 효과 처리 시작");
                 if (!TryUpgradeRandomCards(effect, tokenReplacements))
                 {
                     Debug.LogWarning("[EventManager] UpgradeRandomCard 효과 적용 중 문제가 발생했습니다.");
@@ -328,6 +338,7 @@ public sealed class EventManager : IEventManager
 
     private bool TryUpgradeRandomCards(EventEffectDTO effect, Dictionary<string, string> tokenReplacements)
     {
+        Debug.Log($"[EventManager] TryUpgradeRandomCards 시작 - pendingQueue={_pendingUpgradeSelections.Count}");
         var deckService = ServiceRegistry.Get<IDeckService>();
         if (deckService == null)
         {
@@ -366,8 +377,7 @@ public sealed class EventManager : IEventManager
             foreach (var card in cards)
             {
                 if (card == null) continue;
-                if (card.IsUpgraded()) continue;
-                if (!catalog.TryGetCardData(card.CardId, out var cardData) || cardData == null || !cardData.UpgradeEnabled)
+                if (!CardUpgradeRules.IsUpgradeable(card, catalog))
                     continue;
                 candidates.Add(card);
             }
@@ -382,20 +392,50 @@ public sealed class EventManager : IEventManager
         int countToUpgrade = effect.quantity > 0 ? effect.quantity : 1;
         EnsureRngSeeded(rng, "event-card-upgrade");
 
-        var upgradedNames = new List<string>();
-        for (int i = 0; i < countToUpgrade && candidates.Count > 0; i++)
+        var toUpgrade = new List<CardRuntimeState>();
+
+        while (_pendingUpgradeSelections.Count > 0 && toUpgrade.Count < countToUpgrade)
+        {
+            var requestedId = _pendingUpgradeSelections.Dequeue();
+            if (string.IsNullOrEmpty(requestedId))
+                continue;
+
+            var match = candidates.FirstOrDefault(c => string.Equals(c.InstanceId, requestedId, StringComparison.Ordinal));
+            if (match != null)
+            {
+                Debug.Log($"[EventManager] 선택한 카드와 일치: {match.InstanceId}");
+                toUpgrade.Add(match);
+                candidates.Remove(match);
+            }
+            else
+            {
+                Debug.LogWarning($"[EventManager] 요청된 카드({requestedId})를 강화 후보에서 찾을 수 없어 무작위로 대체합니다.");
+            }
+        }
+
+        while (toUpgrade.Count < countToUpgrade && candidates.Count > 0)
         {
             int index = rng.NextInt("event-card-upgrade", 0, candidates.Count);
             var selected = candidates[index];
             candidates.RemoveAt(index);
+            toUpgrade.Add(selected);
+        }
+
+        var upgradedNames = new List<string>();
+        foreach (var selected in toUpgrade)
+        {
+            if (selected == null)
+                continue;
 
             if (!catalog.TryGetCardData(selected.CardId, out var cardData) || cardData == null)
             {
+                Debug.LogWarning($"[EventManager] 카드 데이터 없음: {selected.CardId}");
                 continue;
             }
 
             if (!deckService.SetCardUpgradeState(selected.InstanceId, true))
             {
+                Debug.LogWarning($"[EventManager] SetCardUpgradeState 실패: {selected.InstanceId}");
                 continue;
             }
 

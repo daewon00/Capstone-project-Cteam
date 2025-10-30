@@ -8,6 +8,7 @@ using Game.Save; // CardRuntimeState
 public class DeckCardItemView : MonoBehaviour
 {
     [Header("UI Elements")]
+    [SerializeField] private CardDisplay cardDisplay;
     [SerializeField] private TMP_Text cardNameText;
     [SerializeField] private TMP_Text costText;
     [SerializeField] private TMP_Text descriptionText;
@@ -32,6 +33,12 @@ public class DeckCardItemView : MonoBehaviour
     {
         BoundInstanceId = null;
         BoundCardId = null;
+        if (cardDisplay != null)
+        {
+            cardDisplay.Clear();
+            if (countBadge != null) countBadge.SetActive(false);
+            return;
+        }
         if (cardNameText != null)
         {
             cardNameText.text = string.Empty;
@@ -57,6 +64,12 @@ public class DeckCardItemView : MonoBehaviour
         BoundInstanceId = cardState?.InstanceId ?? string.Empty;
         BoundCardId = cardSO?.CardId ?? cardState?.CardId ?? string.Empty;
 
+        if (cardDisplay != null)
+        {
+            cardDisplay.Bind(cardSO, cardState);
+        }
+        else
+        {
         bool upgraded = cardState != null && cardState.IsUpgraded();
 
         if (cardSO != null)
@@ -105,6 +118,8 @@ public class DeckCardItemView : MonoBehaviour
 
         UpdateStatTexts(cardSO, upgraded);
         UpdateEffectIcon(cardSO);
+
+        }
 
         // (선택사항) 카드 매수 표시 로직
         if (countBadge != null)

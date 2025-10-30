@@ -344,6 +344,23 @@ public class DeckService : IDeckService
         Debug.Log($"[DeckService] Card '{cardId}' added to deck (DiscardPile). counts={GetPileCounts().Discard}");
     }
 
+    public IReadOnlyList<CardRuntimeState> GetAllCardsSnapshot()
+    {
+        EnsureInitialized();
+        if (_cardsById.Count == 0)
+        {
+            return Array.Empty<CardRuntimeState>();
+        }
+
+        var snapshot = new List<CardRuntimeState>(_cardsById.Count);
+        foreach (var state in _cardsById.Values)
+        {
+            if (state == null) continue;
+            snapshot.Add(CloneState(state));
+        }
+        return snapshot;
+    }
+
     public IReadOnlyList<CardRuntimeState> GetCardsInLocation(CardLocation location)
     {
         EnsureInitialized();
@@ -369,6 +386,20 @@ public class DeckService : IDeckService
         state.SetUpgraded(upgraded);
         PersistAndBroadcast();
         return true;
+    }
+
+    private static CardRuntimeState CloneState(CardRuntimeState source)
+    {
+        if (source == null) return null;
+        return new CardRuntimeState
+        {
+            InstanceId = source.InstanceId,
+            RunId = source.RunId,
+            CardId = source.CardId,
+            Location = source.Location,
+            OrderInPile = source.OrderInPile,
+            ModifiersJson = source.ModifiersJson
+        };
     }
 
     public void UpdateBattleCardState(BattleCardState state, CardLocation location)

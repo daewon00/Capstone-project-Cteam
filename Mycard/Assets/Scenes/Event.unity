@@ -155,6 +155,7 @@ MonoBehaviour:
   choicesParent: {fileID: 0}
   choiceButtonTemplate: {fileID: 1306656403}
   buttonSpacing: 16
+  upgradeSelectionPanel: {fileID: 8193812345678901238}
   mapSceneName: Map Scene
   fallbackEventId: GoldenIdolEvent
 --- !u!4 &469293042
@@ -384,6 +385,7 @@ RectTransform:
   - {fileID: 1306656402}
   - {fileID: 1790768780}
   - {fileID: 1992465031}
+  - {fileID: 8193812345678901235}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -492,6 +494,41 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 81171b61a204a8d4ba2827d4b123eedc, type: 3}
+--- !u!1001 &2050000000000000000
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 729964108}
+    m_Modifications:
+    - target: {fileID: 8193812345678901234, guid: 7d3a9c9dbdd94dfd8a7fd869d7f4bb5c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7d3a9c9dbdd94dfd8a7fd869d7f4bb5c, type: 3}
+--- !u!224 &8193812345678901235 stripped
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 8193812345678901235, guid: 7d3a9c9dbdd94dfd8a7fd869d7f4bb5c, type: 3}
+  m_PrefabInstance: {fileID: 2050000000000000000}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8193812345678901238 stripped
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 8193812345678901238, guid: 7d3a9c9dbdd94dfd8a7fd869d7f4bb5c, type: 3}
+  m_PrefabInstance: {fileID: 2050000000000000000}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ef3a2ad920a4ed9b5840b1b006ae1d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &770628659 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7200871943014649865, guid: 81171b61a204a8d4ba2827d4b123eedc, type: 3}

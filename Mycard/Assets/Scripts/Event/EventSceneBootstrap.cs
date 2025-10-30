@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -15,6 +16,9 @@ public class EventSceneBootstrap : MonoBehaviour
     [SerializeField] private RectTransform choicesParent; // 선택지 버튼이 배치될 부모
     [SerializeField] private Button choiceButtonTemplate;  // 동적 선택지 생성에 사용할 버튼 템플릿
     [SerializeField, Min(0f)] private float buttonSpacing = 16f;
+
+    [Header("캠프파이어 UI")]
+    [SerializeField] private DeckUpgradeSelectionPanel upgradeSelectionPanel;
 
     [Header("씬 이름/기본값")]
     [SerializeField] private string mapSceneName = "Map Scene"; // 하드코딩 제거
@@ -44,6 +48,11 @@ public class EventSceneBootstrap : MonoBehaviour
         }
 
         choiceButtonTemplate.gameObject.SetActive(false);
+
+        if (upgradeSelectionPanel != null)
+        {
+            upgradeSelectionPanel.HideImmediate();
+        }
     }
 
     void Start()
@@ -115,6 +124,7 @@ public class EventSceneBootstrap : MonoBehaviour
     /// </summary>
     private void OnChoicePicked(EventChoiceDTO choice)
     {
+        Debug.Log($"[EventScene] OnChoicePicked choiceId={choice?.id}", this);
         if (_isResolving) return; // 중복 클릭 방지
         _isResolving = true;
 
@@ -127,6 +137,7 @@ public class EventSceneBootstrap : MonoBehaviour
         }
 
         var shouldReturn = _eventManager.ApplyChoice(_currentSession, choice);
+        Debug.Log($"[EventScene] ApplyChoice result shouldReturn={shouldReturn}", this);
 
         if (shouldReturn)
         {
@@ -254,7 +265,14 @@ public class EventSceneBootstrap : MonoBehaviour
         var button = Instantiate(choiceButtonTemplate, parent);
         button.gameObject.SetActive(true);
         button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(() => OnChoicePicked(choice));
+        if (RequiresUpgradeSelection(choice))
+        {
+            button.onClick.AddListener(() => BeginUpgradeSelection(choice));
+        }
+        else
+        {
+            button.onClick.AddListener(() => OnChoicePicked(choice));
+        }
 
         var buttonRect = button.transform as RectTransform;
         var templateRect = choiceButtonTemplate.transform as RectTransform;
@@ -271,6 +289,69 @@ public class EventSceneBootstrap : MonoBehaviour
 
         button.gameObject.name = string.IsNullOrEmpty(choice.id) ? "Choice" : $"Choice_{choice.id}";
         return button;
+    }
+
+    private bool RequiresUpgradeSelection(EventChoiceDTO choice)
+    {
+        if (choice?.effects == null || choice.effects.Length == 0)
+            return false;
+
+        return choice.effects.Any(effect => effect != null && effect.type == EventEffectType.UpgradeRandomCard);
+    }
+
+    private void BeginUpgradeSelection(EventChoiceDTO choice)
+    {
+        if (upgradeSelectionPanel == null)
+        {
+            Debug.LogWarning("[EventScene] upgradeSelectionPanel이 없어 랜덤 강화로 대체합니다.");
+            OnChoicePicked(choice);
+            return;
+        }
+
+        if (_isResolving)
+            return;
+
+        SetChoiceButtonsInteractable(false);
+
+        bool opened = upgradeSelectionPanel.Show(
+            onConfirm: state =>
+            {
+                Debug.Log($"[EventScene] UpgradeConfirm instance={(state != null ? state.InstanceId : "null")}", this);
+                if (state != null)
+                {
+                    _eventManager?.QueueUpgradeSelection(state.InstanceId);
+                }
+                _isResolving = false;
+                SetChoiceButtonsInteractable(true);
+                OnChoicePicked(choice);
+            },
+            onCancel: () =>
+            {
+                Debug.Log("[EventScene] UpgradeCancel", this);
+                _isResolving = false;
+                SetChoiceButtonsInteractable(true);
+            });
+
+        if (!opened)
+        {
+            _isResolving = false;
+            SetChoiceButtonsInteractable(true);
+            OnChoicePicked(choice);
+        }
+        else
+        {
+            Debug.Log("[EventScene] UpgradeSelectionPanel opened", this);
+            _isResolving = true;
+        }
+    }
+
+    private void SetChoiceButtonsInteractable(bool interactable)
+    {
+        foreach (var button in _spawnedButtons)
+        {
+            if (button == null) continue;
+            button.interactable = interactable;
+        }
     }
 
     private void ApplyButtonTransform(RectTransform templateRect, RectTransform buttonRect, int index)

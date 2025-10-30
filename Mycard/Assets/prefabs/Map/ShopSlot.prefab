@@ -886,6 +886,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e091ccd84c4c2a458038946ea3ee9eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cardDisplay: {fileID: 0}
+  cardDisplayPrefab: {fileID: 545432109876543210, guid: 894bd6807efc64ea7bf93a59b7386be1, type: 3}
+  cardDisplayRoot: {fileID: 5076043299346234156}
   button: {fileID: 1841696116774566905}
   icon: {fileID: 1203175647961132621}
   titleText: {fileID: 5335863136377972586}

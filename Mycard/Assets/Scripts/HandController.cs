@@ -13,6 +13,8 @@ public class HandController : MonoBehaviour
 
     public List<Card> heldCards = new List<Card>();
 
+    private bool _layoutPending;
+
     public Transform minpos, maxpos;
     public List<Vector3> cardPositions = new List<Vector3>();
     [Header("Visual")]
@@ -51,22 +53,25 @@ public class HandController : MonoBehaviour
         // 레이아웃 잠김 상태에서는 자동 정렬을 수행하지 않습니다.
         if (_lockedCard != null)
         {
+            _layoutPending = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[HandController] Layout is globally locked; skipping SetCardPositionsInHand()");
 #endif
             return;
         }
+        _layoutPending = false;
         cardPositions.Clear();
 
-        Vector3 distanceBetweenPoints = Vector3.zero;
-        if (heldCards.Count > 1)
+        int count = heldCards.Count;
+        for (int i = 0; i < count; i++)
         {
-            distanceBetweenPoints = (maxpos.position - minpos.position) / (heldCards.Count - 1);
-        }
-
-        for (int i = 0; i < heldCards.Count; i++)
-        {
-            cardPositions.Add(minpos.position + (distanceBetweenPoints * i));
+            float t = 0.5f;
+            if (count > 1)
+            {
+                t = (i + 0.5f) / count;
+            }
+            Vector3 pos = Vector3.Lerp(minpos.position, maxpos.position, t);
+            cardPositions.Add(pos);
 
             var card = heldCards[i];
             if (card == null) continue;
@@ -131,6 +136,10 @@ public class HandController : MonoBehaviour
             Debug.Log("[HandController] ResumeLayoutFor cleared global lock");
 #endif
         }
+        if (_lockedCard == null && _layoutPending)
+        {
+            SetCardPositionsInHand();
+        }
     }
 
     /// <summary>
@@ -192,6 +201,13 @@ public class HandController : MonoBehaviour
     {
         heldCards.Add(cardToAdd);
         SetCardPositionsInHand();
+        if (_lockedCard != null)
+        {
+            int index = Mathf.Max(0, heldCards.Count - 1);
+            cardToAdd.inHand = true;
+            cardToAdd.handPosition = index;
+            cardToAdd.SetCardScale(handScale);
+        }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         string addCardName = cardToAdd != null ? cardToAdd.name : "<null>";
         string addInstanceId = cardToAdd != null ? cardToAdd.InstanceId : "<null>";

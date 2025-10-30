@@ -867,7 +867,6 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
                     if (assignedPlace.cameraFocusPoint != null)
                         CameraController.instance.MoveTo(assignedPlace.cameraFocusPoint);
-                    UIController.instance?.SetDragModeUIVisibility(false);
 
                     // 보드 컨테이너로 부모 변경(핸드 재정렬의 간섭 차단)
                     transform.SetParent(selectedPoint.transform, true);

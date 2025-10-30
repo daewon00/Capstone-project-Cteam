@@ -77,6 +77,12 @@ public interface IDeckService
     void AddCardToDeckById(string cardId, bool isUpgraded = false);
 
     /// <summary>
+    /// 현재 런의 카드 런타임 상태 전체를 복사본으로 반환합니다.
+    /// UI가 필터링하거나 정렬할 때 사용할 수 있습니다.
+    /// </summary>
+    IReadOnlyList<CardRuntimeState> GetAllCardsSnapshot();
+
+    /// <summary>
     /// 특정 카드 인스턴스의 강화 상태를 변경합니다.
     /// </summary>
     /// <returns>강화 상태가 실제로 변경되면 true, 그렇지 않으면 false</returns>

@@ -1,0 +1,74 @@
+using System;
+using Game.Save;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+[RequireComponent(typeof(CardDisplay))]
+public class CardDisplaySelectionItem : MonoBehaviour, IPointerClickHandler
+{
+    private CardDisplay _cardDisplay;
+    private Button _button;
+    private Vector3 _baseScale = Vector3.one;
+
+    public event Action<CardDisplaySelectionItem> Clicked;
+
+    public CardRuntimeState RuntimeState { get; private set; }
+    public CardScriptableObject CardData { get; private set; }
+
+    private void Awake()
+    {
+        _cardDisplay = GetComponent<CardDisplay>();
+        if (_cardDisplay == null)
+        {
+            Debug.LogError("[CardDisplaySelectionItem] CardDisplay 컴포넌트를 찾을 수 없습니다.", this);
+        }
+
+        _button = GetComponent<Button>();
+        if (_button == null)
+        {
+            _button = gameObject.AddComponent<Button>();
+            _button.transition = Selectable.Transition.None;
+        }
+
+        _button.onClick.AddListener(HandleClick);
+        _baseScale = transform.localScale == Vector3.zero ? Vector3.one : transform.localScale;
+        SetSelected(false, true);
+    }
+
+    private void OnDestroy()
+    {
+        if (_button != null)
+        {
+            _button.onClick.RemoveListener(HandleClick);
+        }
+    }
+
+    public void Bind(CardScriptableObject cardData, CardRuntimeState runtimeState)
+    {
+        CardData = cardData;
+        RuntimeState = runtimeState;
+        if (_cardDisplay != null)
+        {
+            _cardDisplay.Bind(cardData, runtimeState);
+        }
+        SetSelected(false, true);
+    }
+
+    public void SetSelected(bool selected, bool force = false)
+    {
+        float targetScale = selected ? 1.05f : 1f;
+        transform.localScale = _baseScale * targetScale;
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        HandleClick();
+    }
+
+    private void HandleClick()
+    {
+        Debug.Log($"[CardDisplaySelectionItem] Clicked instance={(RuntimeState != null ? RuntimeState.InstanceId : "null")}", this);
+        Clicked?.Invoke(this);
+    }
+}

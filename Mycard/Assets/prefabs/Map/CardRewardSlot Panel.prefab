@@ -435,6 +435,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a61c35b71f41124bb494311089a8a57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cardDisplay: {fileID: 0}
+  cardDisplayPrefab: {fileID: 545432109876543210, guid: 894bd6807efc64ea7bf93a59b7386be1, type: 3}
+  cardDisplayRoot: {fileID: 3676752058666030978}
   cardArt: {fileID: 6776654545573663567}
   cardName: {fileID: 3880582126314298730}
   cardDescription: {fileID: 5254459399254595320}

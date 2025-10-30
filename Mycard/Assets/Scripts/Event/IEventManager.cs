@@ -23,4 +23,9 @@ public interface IEventManager
     bool TryGetRunSnapshot(out EventRunSnapshot snapshot);
 
     void RebindRunCache(CurrentRun freshRun);
+
+    /// <summary>
+    /// 다음 이벤트 선택 처리 시 특정 카드 인스턴스를 우선적으로 강화하도록 요청합니다.
+    /// </summary>
+    void QueueUpgradeSelection(string instanceId);
 }
