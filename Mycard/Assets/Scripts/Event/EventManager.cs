@@ -360,25 +360,16 @@ public sealed class EventManager : IEventManager
             return false;
         }
 
+        // 후보 수집 기준을 "덱 전체 스냅샷"으로 확대하여, 오버레이(UI)와 동일한 집합에서 선택되도록 맞춥니다.
+        // (맵/휴식 맥락에서는 플레이어가 소유한 카드 전체를 대상으로 강화하는 것이 의도입니다.)
         var candidates = new List<CardRuntimeState>();
-        var locations = new[]
+        var allCards = deckService.GetAllCardsSnapshot();
+        if (allCards != null)
         {
-            CardLocation.Hand,
-            CardLocation.DrawPile,
-            CardLocation.DiscardPile,
-            CardLocation.ExhaustPile
-        };
-
-        foreach (var location in locations)
-        {
-            var cards = deckService.GetCardsInLocation(location);
-            if (cards == null) continue;
-
-            foreach (var card in cards)
+            foreach (var card in allCards)
             {
                 if (card == null) continue;
-                if (!CardUpgradeRules.IsUpgradeable(card, catalog))
-                    continue;
+                if (!CardUpgradeRules.IsUpgradeable(card, catalog)) continue;
                 candidates.Add(card);
             }
         }

@@ -158,6 +158,9 @@ MonoBehaviour:
   upgradeSelectionPanel: {fileID: 0}
   upgradeSelectionPanelPrefab: {fileID: 8193812345678901238, guid: 7d3a9c9dbdd94dfd8a7fd869d7f4bb5c, type: 3}
   upgradePanelParent: {fileID: 729964108}
+  upgradeOverlay: {fileID: 0}
+  upgradeOverlayPrefab: {fileID: 1180601451108176744, guid: b882feeaac94d449daab8fcf53f29305, type: 3}
+  overlayParent: {fileID: 729964108}
   mapSceneName: Map Scene
   fallbackEventId: GoldenIdolEvent
 --- !u!4 &469293042

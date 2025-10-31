@@ -33,6 +33,9 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     private Action<CardRuntimeState> _onConfirm;
     private Action _onCancel;
     private bool _isInitialized;
+    // 단일 확인 모드 지원
+    private bool _singleMode;
+    private CardRuntimeState _singleSelectedState;
 
     private void Awake()
     {
@@ -59,6 +62,8 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     public bool Show(Action<CardRuntimeState> onConfirm, Action onCancel = null)
     {
         AcquireServices();
+        _singleMode = false;
+        _singleSelectedState = null;
         _onConfirm = onConfirm;
         _onCancel = onCancel;
 
@@ -86,6 +91,46 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 외부에서 선택된 카드 1장을 전/후 프리뷰만으로 확인/취소하는 모드로 표시합니다.
+    /// </summary>
+    public bool ShowSingle(CardRuntimeState state, Action<CardRuntimeState> onConfirm, Action onCancel = null)
+    {
+        AcquireServices();
+        _onConfirm = onConfirm;
+        _onCancel = onCancel;
+
+        if (!EnsureBindings())
+        {
+            Debug.LogError("[DeckUpgradeSelection] ShowSingle EnsureBindings 실패", this);
+            HideImmediate();
+            return false;
+        }
+
+        if (scrollRect != null) scrollRect.gameObject.SetActive(false);
+        if (contentRoot != null) contentRoot.gameObject.SetActive(false);
+        if (emptyLabel != null) emptyLabel.gameObject.SetActive(false);
+
+        _spawnedItems.Clear();
+        _candidates.Clear();
+        _currentSelection = null;
+        previewPanel?.Clear();
+
+        CardScriptableObject so = null;
+        if (state != null && _cardCatalog != null)
+            _cardCatalog.TryGetCardData(state.CardId, out so);
+
+        if (so != null && state != null) previewPanel?.Show(so, state);
+        else previewPanel?.Clear();
+
+        _singleMode = true;
+        _singleSelectedState = state;
+        if (confirmButton != null) confirmButton.interactable = (state != null);
+
+        gameObject.SetActive(true);
+        return true;
+    }
+
     public void Hide()
     {
         gameObject.SetActive(false);
@@ -94,6 +139,10 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         _onCancel = null;
         _currentSelection = null;
         previewPanel?.Clear();
+        if (scrollRect != null) scrollRect.gameObject.SetActive(true);
+        if (contentRoot != null) contentRoot.gameObject.SetActive(true);
+        _singleMode = false;
+        _singleSelectedState = null;
     }
 
     public void HideImmediate()
@@ -104,6 +153,10 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         _currentSelection = null;
         _onConfirm = null;
         _onCancel = null;
+        if (scrollRect != null) scrollRect.gameObject.SetActive(true);
+        if (contentRoot != null) contentRoot.gameObject.SetActive(true);
+        _singleMode = false;
+        _singleSelectedState = null;
     }
 
     private void AcquireServices()
@@ -222,8 +275,14 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         }
     }
 
-    private void HandleConfirm()
+private void HandleConfirm()
     {
+        if (_singleMode) {
+            var selected = _singleSelectedState;
+            Debug.Log($"[DeckUpgradeSelection] Confirm(단일) 클릭 - selectedInstance={(selected != null ? selected.InstanceId : "null")}", this);
+            var h = _onConfirm; Hide(); h?.Invoke(selected);
+            return;
+        }
         if (_currentSelection == null)
             return;
 
