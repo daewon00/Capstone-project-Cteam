@@ -76,7 +76,9 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
             return false;
         }
 
+        Debug.Log($"[DeckUpgradeSelection] Show() -> 패널 활성화 (activeBefore={gameObject.activeSelf})", this);
         gameObject.SetActive(true);
+        Debug.Log($"[DeckUpgradeSelection] Show() -> 활성화 완료 (activeAfter={gameObject.activeSelf})", this);
         if (scrollRect != null)
         {
             scrollRect.normalizedPosition = new Vector2(0f, 1f);
@@ -200,6 +202,7 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         {
             emptyLabel.gameObject.SetActive(false);
         }
+        Debug.Log($"[DeckUpgradeSelection] BuildList 완료 - contentChildren={contentRoot.childCount}", this);
         return _spawnedItems.Count > 0;
     }
 

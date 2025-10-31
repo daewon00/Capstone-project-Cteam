@@ -1,0 +1,351 @@
+companion_select_scene:
+  meta:
+    version: 1
+    status: draft
+    description: Scene-wide UI layout spec for the refreshed companion selection flow.
+    unity_scene: Assets/Scenes/CompanionSelectScene.unity
+    owner: UI/UX
+    target_resolution: 1080x1920
+    reference_aspect: 9:16
+  theme:
+    palette:
+      primary: "#2F5DEB"        # CTA blue
+      primary_dark: "#1B2F7A"
+      secondary: "#E4575F"      # Accent red for warnings/prompts
+      surface: "#151822"
+      surface_alt: "#202536"
+      surface_glass: "#0D101A80"
+      text_main: "#F2F4FF"
+      text_muted: "#9BA2BE"
+      text_accent: "#F0F5FF"
+      danger: "#F45A68"
+    typography:
+      heading:
+        font: UI-Display
+        fallback: NotoSansKR-Bold
+        size: 48
+        tracking: 1
+      body:
+        font: UI-Body
+        fallback: NotoSansKR-Regular
+        size: 26
+        line_height: 1.35
+      caption:
+        font: UI-Caption
+        fallback: NotoSansKR-Medium
+        size: 20
+        line_height: 1.25
+    iconography:
+      source_atlas: Assets/Sprites/UI/IconAtlas.png
+      arrow_left: icon_arrow_left
+      arrow_right: icon_arrow_right
+      lightbulb: icon_hint
+      role_support: icon_role_support
+      difficulty: icon_difficulty
+      hp: icon_hp
+      gold: icon_gold
+      energy: icon_energy
+  layout:
+    canvas:
+      scaler_mode: ScaleWithScreenSize
+      reference_resolution: { width: 1080, height: 1920 }
+      match_width_or_height: 0.9
+      physical_unit: Points
+    safe_area:
+      horizontal_padding: 96
+      top_padding: 72
+      bottom_padding: 96
+    background:
+      gradient:
+        start: "#090C14"
+        end: "#1B1E2A"
+        angle: 120
+      overlays:
+        - type: vignette
+          opacity: 0.45
+        - type: texture
+          asset: Assets/Textures/UI/noise_soft.png
+          blend: overlay
+          opacity: 0.25
+    header:
+      height: 220
+      padding: { left: 96, right: 96, top: 72, bottom: 24 }
+      title:
+        text: "동료를 선택하세요"
+        style: heading
+      subtitle:
+        text: "각 동료마다 출발 덱과 패시브가 달라요. 비교 후 선택하세요."
+        style: body
+      actions:
+        back_button:
+          label: "뒤로"
+          icon: null
+          style: ghost
+          bind: CompanionSelectionController.BackToPreviousScene
+        options_button:
+          icon: icon_settings
+          style: outline
+          bind: Option.OptionOn
+    carousel_region:
+      anchor: stretch_middle
+      height: 1120
+      margin: { left: 96, right: 96 }
+      background:
+        color: "#0D101A99"
+        border_radius: 48
+        border_color: "#FFFFFF20"
+        border_width: 2
+        blur: 16
+      shadow:
+        distance: 0
+        softness: 48
+        color: "#00000088"
+    carousel:
+      viewport:
+        mask: rounded_rectangle
+        corner_radius: 48
+        glow:
+          color: "#3D7EEA55"
+          intensity: 0.5
+        peek_offset: 160
+      detail_card:
+        size: { width: 880, height: 1420 }
+        layout:
+          portrait:
+            anchor: top_center
+            size: { width: 620, height: 820 }
+            frame:
+              border_radius: 32
+              border_color: "#FFFFFF22"
+              background: "#0B0F18"
+              overlay: Assets/Textures/UI/card_marble.png
+          banner:
+            anchor: top_center
+            offset: { x: 0, y: 860 }
+            name:
+              binding: CompanionDisplayData.DisplayName
+              style: heading
+              text_align: center
+              shadow: { color: "#000000A0", blur: 6, offset: { x: 0, y: -2 } }
+            slugs:
+              layout: horizontal_centered
+              spacing: 12
+              chips:
+                - label_binding: CompanionDisplayData.Role
+                  icon: role_support
+                  background: "#FFFFFF20"
+                - label_binding: CompanionDisplayData.DifficultyLabel
+                  icon: difficulty
+                  background: "#FFFFFF15"
+          description:
+            anchor: center
+            offset: { x: 0, y: 120 }
+            width: 640
+            style: body
+            binding: CompanionDisplayData.LongDescription
+            alignment: middle_center
+          stat_strip:
+            anchor: bottom_center
+            offset: { x: 0, y: -260 }
+            spacing: 24
+            chip_style:
+              background: "#0E111C"
+              border_radius: 18
+              padding: { x: 24, y: 16 }
+              icon_tint: "#FEE8A4"
+              label_style: caption
+              value_style:
+                font: UI-Numeric
+                fallback: NotoSansKR-Bold
+                size: 32
+                color: "#FFFFFF"
+            entries:
+              - icon: hp
+                label: "HP"
+                value_binding: CompanionDisplayData.MaxHp
+              - icon: energy
+                label: "에너지"
+                value_binding: CompanionDisplayData.MaxEnergy
+              - icon: gold
+                label: "시작 골드"
+                value_binding: CompanionDisplayData.StartingGold
+          ability_highlights:
+            anchor: bottom_center
+            offset: { x: 0, y: -120 }
+            width: 720
+            layout: vertical
+            spacing: 12
+            items_binding: CompanionDisplayData.SignatureAbilities
+            item_template:
+              bullet_icon: lightbulb
+              text_style: body
+              background: "#FFFFFF0D"
+              border_radius: 16
+              padding: { x: 28, y: 18 }
+      navigation:
+        previous_button:
+          anchor: middle_left
+          offset: { x: 60, y: 0 }
+          size: 112
+          shape: circle
+          background: "#FFFFFF15"
+          hover_background: "#3D7EEA55"
+          icon: arrow_left
+          bind: CompanionCarousel.Previous
+        next_button:
+          anchor: middle_right
+          offset: { x: -60, y: 0 }
+          size: 112
+          shape: circle
+          background: "#FFFFFF15"
+          hover_background: "#3D7EEA55"
+          icon: arrow_right
+          bind: CompanionCarousel.Next
+        indicators:
+          anchor: bottom_center
+          offset: { x: 0, y: -48 }
+          spacing: 16
+          dot:
+            size: { width: 18, height: 18 }
+            inactive_color: "#FFFFFF33"
+            active_color: "#F3D06B"
+    footer:
+      anchor: bottom
+      height: 260
+      padding: { left: 96, right: 96, bottom: 96, top: 32 }
+      selected_label:
+        binding: CompanionSelectionController.SelectedCompanionName
+        fallback_text: "아직 동료가 선택되지 않았습니다."
+        icon: lightbulb
+        style: body
+      primary_button:
+        label: "동료와 출발"
+        width: 420
+        height: 128
+        style: primary
+        background: "#2F5DEB"
+        text_color: "#F0F5FF"
+        disabled_background: "#5E6374"
+        bind: CompanionSelectionController.ConfirmSelection
+      secondary_button:
+        label: "능력 상세 보기"
+        style: outline
+        bind: CompanionSelectionController.ShowCompanionDetails
+  states:
+    idle:
+      carousel_card_scale: 0.82
+      carousel_card_alpha: 0.45
+      primary_button_interactable: false
+      selected_label_visibility: hidden
+    card_focused:
+      carousel_card_scale: 1
+      carousel_card_alpha: 1
+      apply_outline:
+        color: "#3D7EEA"
+        width: 8
+      selected_label_visibility: visible
+      primary_button_interactable: true
+    transitioning:
+      disable_input: true
+      lock_primary_button: true
+  animations:
+    card_focus_tween:
+      duration: 0.24
+      easing: easeOutCubic
+      properties:
+        - scale: { from: 0.82, to: 1 }
+        - alpha: { from: 0.45, to: 1 }
+        - outline_width: { from: 0, to: 8 }
+    button_hover:
+      duration: 0.12
+      easing: easeOutSine
+      properties:
+        - scale: { from: 1, to: 1.05 }
+    selection_confirmed:
+      duration: 0.45
+      easing: easeInOutQuad
+      sequence:
+        - type: scale_pulse
+          target: StartButton
+          amplitude: 0.08
+        - type: canvasgroup_flash
+          target: Carousel_Viewport
+          min_alpha: 0.3
+        - type: scale_pulse
+          target: CompanionCarousel_Root
+          amplitude: 0.05
+  audio:
+    hover: ui_hover_soft
+    click: ui_click_heavy
+    slide: ui_carousel_swoosh
+    confirm: ui_confirm_bell
+    error: ui_error_buzz
+  audio_assets:
+    ui_confirm_bell: Assets/Audio/SFX/ui_confirm_bell.wav
+  accessibility:
+    minimum_contrast_ratio: 4.5
+    focus_indicators:
+      style: outline
+      color: "#F3D06B"
+      width: 6
+    narration_keys:
+      header_title: companion_select.header_title
+      confirm_button: companion_select.confirm_button
+    controller_navigation:
+      wrap_horizontal: false
+      order: [previous_button, carousel, next_button, primary_button, secondary_button, back_button]
+  localization:
+    table: CompanionSelect_UI
+    keys:
+      header_title: "동료를 선택하세요"
+      header_subtitle: "각 동료마다 출발 덱과 패시브가 달라요. 비교 후 선택하세요."
+      confirm_button: "동료와 출발"
+      secondary_button: "능력 상세 보기"
+      back_button: "뒤로"
+      no_selection_hint: "아직 동료가 선택되지 않았습니다."
+  implementation_notes:
+    prefabs:
+      detail_card_prefab: Assets/prefabs/Companion/CompanionDetailView_Prefab.prefab
+      arrow_button_prefab: Assets/prefabs/UI/RoundedArrowButton.prefab
+    scripts:
+      carousel_controller: Assets/Scripts/Companion/CompanionCarouselController.cs
+      scene_controller: Assets/Scripts/Companion/CompanionSelectionController.cs
+      fx_controller: Assets/Scripts/Companion/CompanionSelectFxController.cs
+      detail_binder: Assets/Scripts/Companion/CompanionDetailBinder.cs
+    required_bindings:
+      - target: CompanionCarousel
+        field: detailPrefab
+        value: detail_card_prefab
+      - target: CompanionCarousel
+        field: previousButton
+        value: PreviousButton.Button
+      - target: CompanionCarousel
+        field: nextButton
+        value: NextButton.Button
+      - target: CompanionSelectionController
+        field: carousel
+        value: CompanionCarousel
+      - target: CompanionSelectionController
+        field: startButton
+        value: PrimaryCTA.Button
+      - target: CompanionSelectionController
+        field: selectedLabel
+        value: SelectedLabel.Text
+      - target: CompanionSelectionController
+        field: backButton
+        value: Header.BackButton
+      - target: CompanionSelectionController
+        field: fxController
+        value: CompanionSelectFX.CompanionSelectFxController
+      - target: CompanionSelectFxController
+        field: cardHighlightCanvas
+        value: Carousel_Viewport.CanvasGroup
+    testing_checklist:
+      - Verify keyboard/controller focus wraps logically across nav buttons and CTA.
+      - Confirm selection label updates when carousel index changes.
+      - Ensure confirm button disabled while no companion selected.
+      - Validate safe-area padding on 19.5:9 and 16:10 devices.
+      - Run localization preview for ko/en to verify text fits within bounds.
+      - Confirm CTA FX plays once per click and finishes before scene transition.
+      - Verify ui_confirm_bell volume respects master/UI mixer and no clipping occurs.
+*** End Patch

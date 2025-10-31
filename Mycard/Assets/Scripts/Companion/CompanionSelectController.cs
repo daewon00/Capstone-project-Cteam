@@ -26,9 +26,13 @@ public class CompanionSelectController : MonoBehaviour
     [Header("UI")]
     [SerializeField] private CompanionCarouselPresenter carousel;
     [SerializeField] private Button startButton;
+    [SerializeField] private Button detailButton;
     [SerializeField] private TMP_Text selectedLabel;
     [SerializeField] private Button backButton;
     [SerializeField] private string previousScene = "Main Menu";
+
+    [Header("FX")]
+    [SerializeField] private CompanionSelectFxController fxController;
 
     private CompanionDefinition _selected;
     private CompanionDefinition[] _all;
@@ -77,6 +81,11 @@ public class CompanionSelectController : MonoBehaviour
             startButton.onClick.AddListener(OnClickStart);
         }
 
+        if (detailButton != null)
+        {
+            detailButton.onClick.AddListener(OnClickDetail);
+        }
+
         if (backButton != null)
         {
             backButton.onClick.AddListener(OnClickBack);
@@ -113,6 +122,14 @@ public class CompanionSelectController : MonoBehaviour
         {
             startButton.interactable = _selected != null;
         }
+        if (detailButton != null)
+        {
+            detailButton.interactable = _selected != null;
+        }
+        if (fxController != null)
+        {
+            fxController.enabled = _selected != null;
+        }
         if (selectedLabel) selectedLabel.text = _selected ? $"선택: {_selected.DisplayName}" : "동료를 선택하세요";
     }
 
@@ -122,8 +139,13 @@ public class CompanionSelectController : MonoBehaviour
     void OnClickStart()
     {
         if (_selected == null) return;
+        if (fxController == null)
+        {
+            BeginNewRun();
+            return;
+        }
 
-        BeginNewRun();
+        fxController.PlayConfirmFX(BeginNewRun);
     }
 
     void OnClickBack()
@@ -140,6 +162,10 @@ public class CompanionSelectController : MonoBehaviour
         {
             startButton.onClick.RemoveListener(OnClickStart);
         }
+        if (detailButton != null)
+        {
+            detailButton.onClick.RemoveListener(OnClickDetail);
+        }
         if (backButton != null)
         {
             backButton.onClick.RemoveListener(OnClickBack);
@@ -149,6 +175,22 @@ public class CompanionSelectController : MonoBehaviour
         {
             carousel.SelectionChanged -= OnSelect;
         }
+    }
+
+    void OnClickDetail()
+    {
+        if (_selected == null)
+        {
+            Debug.LogWarning("[CompanionSelect] Detail button pressed without an active selection.");
+            return;
+        }
+
+        var summary = $"{_selected.DisplayName} · HP +{_selected.MaxHpBonus} · Energy +{_selected.EnergyMaxBonus} · Gold +{_selected.GoldBonus}";
+        var description = string.IsNullOrWhiteSpace(_selected.Description)
+            ? "추가 설명이 아직 준비되지 않았습니다."
+            : _selected.Description;
+
+        Debug.Log($"[CompanionSelect] Detail\n{summary}\n{description}");
     }
 
     void BeginNewRun()

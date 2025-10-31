@@ -9,6 +9,7 @@ public class CardDisplaySelectionItem : MonoBehaviour, IPointerClickHandler
 {
     private CardDisplay _cardDisplay;
     private Button _button;
+    private Graphic _raycastGraphic;
     private Vector3 _baseScale = Vector3.one;
 
     public event Action<CardDisplaySelectionItem> Clicked;
@@ -31,9 +32,11 @@ public class CardDisplaySelectionItem : MonoBehaviour, IPointerClickHandler
             _button.transition = Selectable.Transition.None;
         }
 
+        EnsureRaycastGraphic();
         _button.onClick.AddListener(HandleClick);
         _baseScale = transform.localScale == Vector3.zero ? Vector3.one : transform.localScale;
         SetSelected(false, true);
+        Debug.Log($"[CardDisplaySelectionItem] Awake on {gameObject.name}", this);
     }
 
     private void OnDestroy()
@@ -70,5 +73,26 @@ public class CardDisplaySelectionItem : MonoBehaviour, IPointerClickHandler
     {
         Debug.Log($"[CardDisplaySelectionItem] Clicked instance={(RuntimeState != null ? RuntimeState.InstanceId : "null")}", this);
         Clicked?.Invoke(this);
+    }
+
+    private void EnsureRaycastGraphic()
+    {
+        _raycastGraphic = GetComponent<Graphic>();
+        if (_raycastGraphic == null)
+        {
+            var image = gameObject.AddComponent<Image>();
+            image.color = new Color(1f, 1f, 1f, 0f);
+            image.raycastTarget = true;
+            _raycastGraphic = image;
+        }
+        else
+        {
+            _raycastGraphic.raycastTarget = true;
+        }
+
+        if (_button != null && _button.targetGraphic == null)
+        {
+            _button.targetGraphic = _raycastGraphic;
+        }
     }
 }

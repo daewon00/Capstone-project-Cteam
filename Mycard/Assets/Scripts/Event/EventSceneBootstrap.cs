@@ -19,6 +19,8 @@ public class EventSceneBootstrap : MonoBehaviour
 
     [Header("캠프파이어 UI")]
     [SerializeField] private DeckUpgradeSelectionPanel upgradeSelectionPanel;
+    [SerializeField] private DeckUpgradeSelectionPanel upgradeSelectionPanelPrefab;
+    [SerializeField] private Transform upgradePanelParent;
 
     [Header("씬 이름/기본값")]
     [SerializeField] private string mapSceneName = "Map Scene"; // 하드코딩 제거
@@ -30,6 +32,31 @@ public class EventSceneBootstrap : MonoBehaviour
     private bool _isResolving; // 중복 입력을 막기 위한 '잠금 장치'
     private RunStagePayloads.Event _eventStageCache;
     private readonly List<Button> _spawnedButtons = new();
+    private DeckUpgradeSelectionPanel EnsureUpgradePanelInstance()
+    {
+        if (upgradeSelectionPanel != null && upgradeSelectionPanel.gameObject.scene.IsValid())
+        {
+            upgradeSelectionPanel.transform.SetAsLastSibling();
+            Debug.Log($"[EventScene] 기존 패널 사용 (active={upgradeSelectionPanel.gameObject.activeSelf})", upgradeSelectionPanel);
+            return upgradeSelectionPanel;
+        }
+
+        if (upgradeSelectionPanelPrefab == null)
+        {
+            Debug.LogError("[EventScene] upgradeSelectionPanelPrefab이 비어 있어 강화 선택 UI를 생성할 수 없습니다.");
+            return upgradeSelectionPanel;
+        }
+
+        var parent = upgradePanelParent != null
+            ? upgradePanelParent
+            : (choicesParent != null ? choicesParent.root : transform);
+
+        var instance = Instantiate(upgradeSelectionPanelPrefab, parent);
+        upgradeSelectionPanel = instance;
+        upgradeSelectionPanel.transform.SetAsLastSibling();
+        Debug.Log($"[EventScene] Upgrade panel instantiated under {parent.name} (active={upgradeSelectionPanel.gameObject.activeSelf})", upgradeSelectionPanel);
+        return upgradeSelectionPanel;
+    }
 
     /// <summary>
     /// 이벤트 매니저를 확보하고 세션을 불러와 UI를 채웁니다.
@@ -49,6 +76,7 @@ public class EventSceneBootstrap : MonoBehaviour
 
         choiceButtonTemplate.gameObject.SetActive(false);
 
+        upgradeSelectionPanel = EnsureUpgradePanelInstance();
         if (upgradeSelectionPanel != null)
         {
             upgradeSelectionPanel.HideImmediate();
@@ -249,6 +277,7 @@ public class EventSceneBootstrap : MonoBehaviour
 
     private Button CreateChoiceButton(EventChoiceDTO choice, int index)
     {
+        Debug.Log($"[EventScene] CreateChoiceButton {choice?.id} upgradeRequired={RequiresUpgradeSelection(choice)}", this);
         if (choiceButtonTemplate == null)
         {
             Debug.LogError("[EventScene] choiceButtonTemplate이 설정되어 있지 않아 선택지를 생성할 수 없습니다.");
@@ -267,6 +296,7 @@ public class EventSceneBootstrap : MonoBehaviour
         button.onClick.RemoveAllListeners();
         if (RequiresUpgradeSelection(choice))
         {
+            Debug.Log("[EventScene] Choice requires upgrade selection", button);
             button.onClick.AddListener(() => BeginUpgradeSelection(choice));
         }
         else
@@ -301,9 +331,11 @@ public class EventSceneBootstrap : MonoBehaviour
 
     private void BeginUpgradeSelection(EventChoiceDTO choice)
     {
-        if (upgradeSelectionPanel == null)
+        Debug.Log("[EventScene] BeginUpgradeSelection 시작", this);
+        var panel = EnsureUpgradePanelInstance();
+        if (panel == null)
         {
-            Debug.LogWarning("[EventScene] upgradeSelectionPanel이 없어 랜덤 강화로 대체합니다.");
+            Debug.LogWarning("[EventScene] 강화 선택 패널을 생성할 수 없어 기존 랜덤 강화로 대체합니다.");
             OnChoicePicked(choice);
             return;
         }
@@ -313,7 +345,7 @@ public class EventSceneBootstrap : MonoBehaviour
 
         SetChoiceButtonsInteractable(false);
 
-        bool opened = upgradeSelectionPanel.Show(
+        bool opened = panel.Show(
             onConfirm: state =>
             {
                 Debug.Log($"[EventScene] UpgradeConfirm instance={(state != null ? state.InstanceId : "null")}", this);
@@ -330,6 +362,7 @@ public class EventSceneBootstrap : MonoBehaviour
                 Debug.Log("[EventScene] UpgradeCancel", this);
                 _isResolving = false;
                 SetChoiceButtonsInteractable(true);
+                panel.HideImmediate();
             });
 
         if (!opened)
