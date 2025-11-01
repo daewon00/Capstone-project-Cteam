@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uC2E0\uC131 \uAE30\uC0AC\uB2E8\uC6D0"
   CardId: CARD_HOLY_KNIGHT
-  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uBCF4\uD638\uB9C9 1"
+  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC790\uC2E0\uC5D0\uAC8C
+    \uBCF4\uD638\uB9C9\uC744 +1 \uBD80\uC5EC\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 2
   attackPower: 2

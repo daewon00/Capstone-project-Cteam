@@ -19,11 +19,11 @@ MonoBehaviour:
   stages:
   - stageId: campfire_intro
     description: "\uD0C0\uC624\uB974\uB294 \uBAA8\uB2E5\uBD88\uC774 \uC9C0\uCE5C
-      \uBAB8\uC744 \uB178\uB824\uC90D\uB2C8\uB2E4. \uC7A0\uC2DC \uC228\uC744 \uB3CC\uB9AC\uBA70
-      \uBB34\uC5C7\uC744 \uD560\uC9C0 \uC120\uD0DD\uD558\uC138\uC694."
+      \uBAB8\uC744 \uAC10\uC2F8\uC90D\uB2C8\uB2E4. \uC7A0\uC2DC \uC228\uC744 \uB3CC\uB9AC\uBA70
+      \uBB34\uC5C7\uC744 \uD574\uC57C\uD560\uAE4C."
     choices:
     - id: rest_heal
-      label: "\uD734\uC2DD\uC744 \uCDE8\uD55C\uB2E4 (\uCCB4\uB825 30% \uD68C\uBCF5)"
+      label: "\uD734\uC2DD\uC744 \uCDE8\uD55C\uB2E4. (\uCCB4\uB825 30% \uD68C\uBCF5)"
       effects:
       - type: 6
         amount: 30
@@ -32,7 +32,7 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: rest_result
     - id: rest_upgrade
-      label: "\uCE74\uB4DC\uB97C \uB2E8\uB824\uD55C\uB2E4 (\uC900\uBE44 \uC911)"
+      label: "\uCE74\uB4DC\uB97C \uB2E8\uB828\uD55C\uB2E4. (\uC900\uBE44 \uC911)"
       effects:
       - type: 9
         amount: 0
@@ -42,8 +42,8 @@ MonoBehaviour:
       nextStageId: rest_upgrade_result
   - stageId: rest_result
     description: "\uD3B8\uC548\uD55C \uD734\uC2DD\uC73C\uB85C \uD65C\uB825\uC744
-      \uB418\uCC3E\uC558\uC2B5\uB2C8\uB2E4. \uCCB4\uB825\uC774 {HP_DELTA_ABS}\uB9CC\uD07C
-      \uD68C\uBCF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4. (\uD604\uC7AC \uCCB4\uB825: {HP_CURRENT}/{HP_MAX})"
+      \uB418\uCC3E\uC740\uAC70 \uAC19\uB2E4. \uCCB4\uB825\uC774 {HP_DELTA_ABS}\uB9CC\uD07C
+      \uD68C\uBCF5\uD588\uB2E4. (\uD604\uC7AC \uCCB4\uB825: {HP_CURRENT}/{HP_MAX})"
     choices:
     - id: rest_finish
       label: "\uC790\uB9AC\uB97C \uC815\uB9AC\uD558\uACE0 \uC5EC\uC815\uC744 \uACC4\uC18D\uD55C\uB2E4"
@@ -55,7 +55,7 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: 
   - stageId: rest_upgrade_result
-    description: "{UPGRADE_MESSAGE}"
+    description: '{UPGRADE_MESSAGE}'
     choices:
     - id: upgrade_back
       label: "\uC790\uB9AC\uB97C \uC815\uB9AC\uD558\uACE0 \uC5EC\uC815\uC744 \uACC4\uC18D\uD55C\uB2E4"

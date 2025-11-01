@@ -15,7 +15,7 @@ MonoBehaviour:
   cardName: "\uD608\uD22C\uC758 \uC6A9\uC0AC"
   CardId: CARD_BLOOD_CHAMPION
   actionDescription: "\uACF5\uACA9\uC774 \uC801\uC911\uD558\uBA74 \uC900 \uD53C\uD574\uB9CC\uD07C
-    \uB9AC\uB354\uB97C \uD68C\uBCF5\uD569\uB2C8\uB2E4."
+    \uC0AC\uC6A9\uC790\uC758 \uCCB4\uB825\uC744 \uD68C\uBCF5\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 3
   attackPower: 3

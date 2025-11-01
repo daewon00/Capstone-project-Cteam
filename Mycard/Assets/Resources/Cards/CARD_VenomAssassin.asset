@@ -14,14 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uB3C5\uCE68 \uC554\uC0B4\uC790"
   CardId: CARD_VENOM_ASSASSIN
-  actionDescription: "\uACF5\uACA9 \uC131\uACF5 \uC2DC \uB300\uC0C1 \uC989\uC2DC
-    \uCC98\uCE58"
+  actionDescription: "\uACF5\uACA9\uC774 \uC801\uC911\uD558\uBA74 \uB300\uC0C1 \uC801
+    \uCE74\uB4DC\uB97C \uC989\uC2DC \uCC98\uCE58\uD569\uB2C8\uB2E4."
   cardLore: 
-  currentHealth: 1
-  attackPower: 1
   manaCost: 2
+  attackPower: 1
+  currentHealth: 1
   characterSprite: {fileID: 21300000, guid: 913b6398cf3b1bf4986f496a0359ba9b, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
+  rarity: 0
   effects:
   - type: 2
     timing: 1
@@ -31,4 +32,10 @@ MonoBehaviour:
     payloadId: 
     stackable: 0
     maxStacks: 0
+  upgradeSettings:
+    enabled: 0
+    manaCost: 0
+    attackPower: 0
+    health: 0
+    initialized: 0
   removeAfterCombat: 0

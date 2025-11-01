@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uC9C0\uC2DD\uC758 \uD0D0\uAD6C\uC790"
   CardId: CARD_ARCANIST
-  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uCE74\uB4DC 1\uC7A5
-    \uB4DC\uB85C\uC6B0"
+  actionDescription: "\uD544\uB4DC\uC5D0 \uB098\uC62C \uB54C \uCE74\uB4DC 1\uC7A5
+    \uB4DC\uB85C\uC6B0 \uD569\uB2C8\uB2E4"
   cardLore: 
   manaCost: 2
   attackPower: 1

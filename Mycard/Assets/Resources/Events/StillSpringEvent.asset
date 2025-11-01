@@ -54,7 +54,7 @@ MonoBehaviour:
       nextStageId: spring_collect
   - stageId: spring_drink
     description: "\uC0D8\uBB3C\uC774 \uBAB8 \uAD6C\uC11D\uAD6C\uC11D \uC0DD\uAE30\uB97C
-      \uBD88\uC5B4\uB123\uC2B5\uB2C8\uB2E4."
+      \uBD88\uC5B4\uB123\uB294\uB2E4."
     choices:
     - id: spring_drink_continue
       label: "\uB5A0\uB09C\uB2E4."
@@ -67,7 +67,7 @@ MonoBehaviour:
       nextStageId: 
   - stageId: spring_touch
     description: "\uC0DD\uBA85\uC758 \uAE30\uC6B4\uC774 \uC218\uD608\uB418\uC5C8\uC9C0\uB9CC
-      \uCCB4\uB825\uC774 \uC870\uAE08 \uC904\uC5C8\uC2B5\uB2C8\uB2E4."
+      \uCCB4\uB825\uC774 \uC870\uAE08 \uC904\uC5C8\uB2E4."
     choices:
     - id: spring_touch_continue
       label: "\uB5A0\uB09C\uB2E4."
@@ -80,7 +80,7 @@ MonoBehaviour:
       nextStageId: 
   - stageId: spring_collect
     description: "\uC0D8\uBB3C\uC758 \uD798\uC744 \uB2F4\uC740 \uCE74\uB4DC\uB97C
-      \uC5BB\uC5C8\uC2B5\uB2C8\uB2E4."
+      \uC5BB\uC5C8\uB2E4."
     choices:
     - id: spring_collect_continue
       label: "\uB5A0\uB09C\uB2E4."

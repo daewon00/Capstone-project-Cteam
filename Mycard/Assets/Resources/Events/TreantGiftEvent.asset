@@ -18,7 +18,7 @@ MonoBehaviour:
   stages:
   - stageId: treant_main
     description: "\uB098\uBB34 \uC815\uB839\uC774 \uC791\uC740 \uC528\uC557\uC744
-      \uB0B4\uBBFC\uB2E4."
+      \uB0B4\uBBFC\uB2E4.\n\uC774 \uC528\uC557\uC744 \uC5B4\uB5BB\uAC8C \uD574\uC57C\uD560\uAE4C?"
     choices:
     - id: treant_seed_choice
       label: "\uC528\uC557\uC744 \uC2EC\uB294\uB2E4"
@@ -59,7 +59,7 @@ MonoBehaviour:
       nextStageId: treant_burn
   - stageId: treant_seed
     description: "\uC815\uB839\uC758 \uCD95\uBCF5\uC73C\uB85C \uC131\uC7A5 \uCE74\uB4DC\uAC00
-      \uB371\uC5D0 \uCD94\uAC00\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+      \uB371\uC5D0 \uCD94\uAC00\uB418\uC5C8\uB2E4."
     choices:
     - id: treant_seed_continue
       label: "\uB5A0\uB09C\uB2E4."
@@ -71,8 +71,8 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: 
   - stageId: treant_refuse
-    description: "\uC815\uB839\uC758 \uC2E4\uB9DD\uC5D0\uB3C4 \uBD88\uAD6C\uD558\uACE0
-      \uCCB4\uB825\uC774 \uC57D\uAC04 \uD68C\uBCF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    description: "\uC815\uB839\uC740 \uC2E4\uB9DD\uD588\uC9C0\uB9CC \uCCB4\uB825\uC774
+      \uC57D\uAC04 \uD68C\uBCF5\uB418\uC5C8\uB2E4."
     choices:
     - id: treant_refuse_continue
       label: "\uB5A0\uB09C\uB2E4."
@@ -85,7 +85,7 @@ MonoBehaviour:
       nextStageId: 
   - stageId: treant_burn
     description: "\uC528\uC557\uC744 \uD0DC\uC6CC \uAE08\uC744 \uC5BB\uC5C8\uC9C0\uB9CC
-      \uCCB4\uB825\uC744 \uC870\uAE08 \uC783\uC5C8\uC2B5\uB2C8\uB2E4."
+      \uCCB4\uB825\uC744 \uC870\uAE08 \uC783\uC5C8\uB2E4."
     choices:
     - id: treant_burn_continue
       label: "\uB5A0\uB09C\uB2E4."

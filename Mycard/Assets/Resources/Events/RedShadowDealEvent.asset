@@ -17,11 +17,11 @@ MonoBehaviour:
   legacyChoices: []
   stages:
   - stageId: shadow_main
-    description: "\uBD89\uC740 \uADF8\uB9BC\uC790\uAC00 \uC720\uBB3C \uD558\uB098\uB97C
-      \uB0B4\uBBFC\uB2E4."
+    description: "\uBD89\uC740 \uADF8\uB9BC\uC790\uAC00 \uB2F9\uC2E0\uC5D0\uAC8C
+      \uC720\uBB3C \uD558\uB098\uB97C \uB0B4\uBBFC\uB2E4."
     choices:
     - id: shadow_relic_choice
-      label: "\uC720\uBB3C\uC744 \uBC1B\uB294\uB2E4"
+      label: "\uC720\uBB3C\uC744 \uBC1B\uB294\uB2E4."
       effects:
       - type: 5
         amount: 0
@@ -54,7 +54,7 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: shadow_purchase
     - id: shadow_decline_choice
-      label: "\uAC70\uC808\uD55C\uB2E4"
+      label: "\uAC70\uC808\uD55C\uB2E4."
       effects:
       - type: 4
         amount: 0

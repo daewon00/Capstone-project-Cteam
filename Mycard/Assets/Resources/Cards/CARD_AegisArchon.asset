@@ -15,7 +15,7 @@ MonoBehaviour:
   cardName: "\uC218\uD638\uC758 \uB300\uCC9C\uC0AC"
   CardId: CARD_AEGIS_ARCHON
   actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC790\uC2E0\uC5D0\uAC8C
-    \uBCF4\uD638\uB9C9 2\uB97C \uBD80\uC5EC\uD569\uB2C8\uB2E4."
+    \uBCF4\uD638\uB9C9\uC744 +2 \uBD80\uC5EC\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 4
   attackPower: 5

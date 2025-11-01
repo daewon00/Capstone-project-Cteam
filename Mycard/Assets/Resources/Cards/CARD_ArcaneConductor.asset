@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uBE44\uC804\uC758 \uC9C0\uD718\uC790"
   CardId: CARD_ARCANE_CONDUCTOR
-  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uCE74\uB4DC 2\uC7A5\uC744
+  actionDescription: "\uD544\uB4DC\uC5D0 \uB098\uC62C \uB54C \uCE74\uB4DC 2\uC7A5\uC744
     \uB4DC\uB85C\uC6B0\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 1

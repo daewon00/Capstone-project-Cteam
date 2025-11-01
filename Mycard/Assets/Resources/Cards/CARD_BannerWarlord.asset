@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uC804\uC7A5\uC758 \uAD70\uB2E8\uC7A5"
   CardId: CARD_BANNER_WARLORD
-  actionDescription: "\uC0DD\uC874\uD558\uB294 \uB3D9\uC548 \uC544\uAD70 \uC804\uC5F4
-    \uCE74\uB4DC\uC758 \uACF5\uACA9\uB825\uC774 1 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  actionDescription: "\uD544\uB4DC\uC5D0 \uC0DD\uC874\uD574\uC788\uB294 \uB3D9\uC548
+    \uC544\uAD70\uC758 \uACF5\uACA9\uB825\uC774 +1 \uC99D\uAC00\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 4
   attackPower: 4

@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uACF5\uC131 \uB3CC\uACA9\uBCD1"
   CardId: CARD_SIEGE_RAIDER
-  actionDescription: "\uC804\uD22C \uC2DC \uD56D\uC0C1 \uB9AC\uB354\uB97C \uACF5\uACA9"
+  actionDescription: "\uACF5\uACA9 \uC2DC \uCE74\uB4DC\uAC00 \uC788\uC5B4\uB3C4 \uC0C1\uB300\uC5D0\uAC8C\uB3C4
+    \uD53C\uD574\uB97C \uC90D\uB2C8\uB2E4."
   cardLore: 
   manaCost: 2
   attackPower: 2
