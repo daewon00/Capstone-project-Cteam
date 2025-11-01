@@ -1,5 +1,6 @@
 using Game.Save;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
@@ -21,9 +22,26 @@ public class CardUpgradePreviewPanel : MonoBehaviour
     private CardRuntimeState _beforeState;
     private CardRuntimeState _afterState;
 
+    [Header("Sizing")]
+    [SerializeField] private bool useFixedSize = true;
+    [SerializeField] private Vector2 cardSize = new Vector2(380f, 420f);
+    [SerializeField, Min(0f)] private float uniformScale = 1f;
+    [SerializeField] private bool applyInEditor = true;
+    [SerializeField] private bool useLayoutElement = false;
+
     private void Awake()
     {
         TrySpawnDisplays();
+        ApplySizing(beforeDisplay);
+        ApplySizing(afterDisplay);
+    }
+
+    private void OnValidate()
+    {
+        if (!applyInEditor) return;
+        // Attempt to size any already present displays in editor
+        ApplySizing(beforeDisplay);
+        ApplySizing(afterDisplay);
     }
 
     public void Clear()
@@ -39,6 +57,9 @@ public class CardUpgradePreviewPanel : MonoBehaviour
     public void Show(CardScriptableObject cardData, CardRuntimeState runtimeState)
     {
         TrySpawnDisplays();
+        // Ensure sizing is applied after (re)spawn
+        ApplySizing(beforeDisplay);
+        ApplySizing(afterDisplay);
 
         if (cardData == null || runtimeState == null)
         {
@@ -107,12 +128,14 @@ public class CardUpgradePreviewPanel : MonoBehaviour
         {
             beforeDisplay = Instantiate(displayPrefab, beforeAnchor);
             ResetRect(beforeDisplay.transform as RectTransform);
+            ApplySizing(beforeDisplay);
         }
 
         if (afterDisplay == null && afterAnchor != null)
         {
             afterDisplay = Instantiate(displayPrefab, afterAnchor);
             ResetRect(afterDisplay.transform as RectTransform);
+            ApplySizing(afterDisplay);
         }
     }
 
@@ -123,5 +146,38 @@ public class CardUpgradePreviewPanel : MonoBehaviour
         rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
         rect.localScale = Vector3.one;
+    }
+
+    private void ApplySizing(CardDisplay display)
+    {
+        if (display == null) return;
+
+        var rect = display.transform as RectTransform;
+        if (rect != null)
+        {
+            if (useFixedSize)
+            {
+                rect.sizeDelta = cardSize;
+            }
+            rect.localScale = Vector3.one * Mathf.Max(0f, uniformScale);
+        }
+
+        if (useLayoutElement)
+        {
+            var le = display.GetComponent<LayoutElement>();
+            if (le == null) le = display.gameObject.AddComponent<LayoutElement>();
+            le.preferredWidth = cardSize.x;
+            le.preferredHeight = cardSize.y;
+        }
+        else
+        {
+            var le = display.GetComponent<LayoutElement>();
+            if (le != null)
+            {
+                // Do not destroy in editor; just neutralize to avoid layout override
+                le.preferredWidth = -1;
+                le.preferredHeight = -1;
+            }
+        }
     }
 }

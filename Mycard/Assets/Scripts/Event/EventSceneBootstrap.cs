@@ -22,6 +22,11 @@ public class EventSceneBootstrap : MonoBehaviour
     [SerializeField] private DeckUpgradeSelectionPanel upgradeSelectionPanelPrefab;
     [SerializeField] private Transform upgradePanelParent;
 
+    [Header("강화 오버레이(1단계 목록)")]
+    [SerializeField] private UpgradeCardOverlayController upgradeOverlay;
+    [SerializeField] private UpgradeCardOverlayController upgradeOverlayPrefab;
+    [SerializeField] private Transform overlayParent;
+
     [Header("씬 이름/기본값")]
     [SerializeField] private string mapSceneName = "Map Scene"; // 하드코딩 제거
     [SerializeField] private string fallbackEventId = "GoldenIdolEvent";
@@ -58,6 +63,32 @@ public class EventSceneBootstrap : MonoBehaviour
         return upgradeSelectionPanel;
     }
 
+    private UpgradeCardOverlayController EnsureUpgradeOverlay()
+    {
+        if (upgradeOverlay != null && upgradeOverlay.gameObject.scene.IsValid())
+        {
+            upgradeOverlay.transform.SetAsLastSibling();
+            Debug.Log($"[EventScene] 기존 오버레이 사용 (active={upgradeOverlay.gameObject.activeSelf})", upgradeOverlay);
+            return upgradeOverlay;
+        }
+
+        if (upgradeOverlayPrefab == null)
+        {
+            Debug.LogWarning("[EventScene] upgradeOverlayPrefab이 비어 있어 오버레이를 생성할 수 없습니다.");
+            return upgradeOverlay;
+        }
+
+        var parent = overlayParent != null
+            ? overlayParent
+            : (choicesParent != null ? choicesParent.root : transform);
+
+        var instance = Instantiate(upgradeOverlayPrefab, parent);
+        upgradeOverlay = instance;
+        upgradeOverlay.transform.SetAsLastSibling();
+        Debug.Log($"[EventScene] Upgrade overlay instantiated under {parent.name} (active={upgradeOverlay.gameObject.activeSelf})", upgradeOverlay);
+        return upgradeOverlay;
+    }
+
     /// <summary>
     /// 이벤트 매니저를 확보하고 세션을 불러와 UI를 채웁니다.
     /// </summary>
@@ -77,10 +108,8 @@ public class EventSceneBootstrap : MonoBehaviour
         choiceButtonTemplate.gameObject.SetActive(false);
 
         upgradeSelectionPanel = EnsureUpgradePanelInstance();
-        if (upgradeSelectionPanel != null)
-        {
-            upgradeSelectionPanel.HideImmediate();
-        }
+        if (upgradeSelectionPanel != null) upgradeSelectionPanel.HideImmediate();
+        // 오버레이는 요청 시 생성
     }
 
     void Start()
@@ -332,50 +361,62 @@ public class EventSceneBootstrap : MonoBehaviour
     private void BeginUpgradeSelection(EventChoiceDTO choice)
     {
         Debug.Log("[EventScene] BeginUpgradeSelection 시작", this);
-        var panel = EnsureUpgradePanelInstance();
-        if (panel == null)
+        // 1단계: 오버레이 표시 → 카드 클릭 시 2단계(확인)로 UpgradeSelectionPanel을 프리뷰 전용으로 띄움
+        var overlay = EnsureUpgradeOverlay();
+        if (overlay == null)
         {
-            Debug.LogWarning("[EventScene] 강화 선택 패널을 생성할 수 없어 기존 랜덤 강화로 대체합니다.");
-            OnChoicePicked(choice);
-            return;
-        }
-
-        if (_isResolving)
-            return;
-
-        SetChoiceButtonsInteractable(false);
-
-        bool opened = panel.Show(
-            onConfirm: state =>
-            {
-                Debug.Log($"[EventScene] UpgradeConfirm instance={(state != null ? state.InstanceId : "null")}", this);
-                if (state != null)
+            Debug.LogWarning("[EventScene] 오버레이 생성 실패. 패널 단독 경로로 폴백합니다.");
+            var panel = EnsureUpgradePanelInstance();
+            if (panel == null) { OnChoicePicked(choice); return; }
+            if (_isResolving) return;
+            SetChoiceButtonsInteractable(false);
+            bool opened = panel.Show(
+                onConfirm: state =>
                 {
-                    _eventManager?.QueueUpgradeSelection(state.InstanceId);
-                }
-                _isResolving = false;
-                SetChoiceButtonsInteractable(true);
-                OnChoicePicked(choice);
-            },
-            onCancel: () =>
-            {
-                Debug.Log("[EventScene] UpgradeCancel", this);
-                _isResolving = false;
-                SetChoiceButtonsInteractable(true);
-                panel.HideImmediate();
-            });
+                    if (state != null) _eventManager?.QueueUpgradeSelection(state.InstanceId);
+                    _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
+                },
+                onCancel: () => { _isResolving = false; SetChoiceButtonsInteractable(true); panel.HideImmediate(); });
+            if (!opened) { _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice); }
+            else { _isResolving = true; }
+            return;
+        }
 
-        if (!opened)
-        {
-            _isResolving = false;
-            SetChoiceButtonsInteractable(true);
-            OnChoicePicked(choice);
-        }
-        else
-        {
-            Debug.Log("[EventScene] UpgradeSelectionPanel opened", this);
-            _isResolving = true;
-        }
+        if (_isResolving) return;
+        SetChoiceButtonsInteractable(false);
+        overlay.SetTitle("강화 가능한 카드");
+        overlay.Show(
+            onCardClicked: (state, so) =>
+            {
+                var panel = EnsureUpgradePanelInstance();
+                if (panel == null)
+                {
+                    if (state != null) _eventManager?.QueueUpgradeSelection(state.InstanceId);
+                    try { overlay.Hide(); } catch { }
+                    _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
+                    return;
+                }
+                try { overlay.Hide(); } catch { }
+                panel.ShowSingle(
+                    state,
+                    onConfirm: s =>
+                    {
+                        if (s != null) _eventManager?.QueueUpgradeSelection(s.InstanceId);
+                        panel.HideImmediate();
+                        _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
+                    },
+                    onCancel: () =>
+                    {
+                        panel.HideImmediate();
+                        _isResolving = false;
+                        // 동일 흐름으로 다시 오버레이를 열어 다른 카드를 선택할 수 있게 함
+                        BeginUpgradeSelection(choice);
+                    }
+                );
+            },
+            onClosed: () => { _isResolving = false; SetChoiceButtonsInteractable(true); }
+        );
+        _isResolving = true;
     }
 
     private void SetChoiceButtonsInteractable(bool interactable)

@@ -33,10 +33,13 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     private Action<CardRuntimeState> _onConfirm;
     private Action _onCancel;
     private bool _isInitialized;
+    // 단일 확인 모드 지원
+    private bool _singleMode;
+    private CardRuntimeState _singleSelectedState;
 
     private void Awake()
     {
-        EnsureBindings();
+        // 리스트 UI는 더 이상 필수가 아니므로 초기 바인딩을 강제하지 않습니다.
         if (confirmButton != null)
             confirmButton.onClick.AddListener(HandleConfirm);
         if (cancelButton != null)
@@ -58,31 +61,54 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     /// <returns>강화 가능한 카드가 하나 이상이면 true, 아니면 false</returns>
     public bool Show(Action<CardRuntimeState> onConfirm, Action onCancel = null)
     {
+        // 목록 모드는 현재 프리팹에서 제거되었습니다. 사용을 방지하고 조용히 폴백하도록 false 반환합니다.
+        _singleMode = false;
+        _singleSelectedState = null;
+        _onConfirm = onConfirm;
+        _onCancel = onCancel;
+        Debug.LogWarning("[DeckUpgradeSelection] 목록 모드는 더 이상 사용되지 않습니다. Show()는 false를 반환합니다.", this);
+        HideImmediate();
+        return false;
+    }
+
+    /// <summary>
+    /// 외부에서 선택된 카드 1장을 전/후 프리뷰만으로 확인/취소하는 모드로 표시합니다.
+    /// </summary>
+    public bool ShowSingle(CardRuntimeState state, Action<CardRuntimeState> onConfirm, Action onCancel = null)
+    {
         AcquireServices();
         _onConfirm = onConfirm;
         _onCancel = onCancel;
 
+        // 단일 모드 활성화: 목록 관련 바인딩 없이 프리뷰만 사용
+        _singleMode = true;
+        _singleSelectedState = state;
+
         if (!EnsureBindings())
         {
-            Debug.LogError($"[DeckUpgradeSelection] 초기 바인딩 실패 - contentRoot={(contentRoot ? contentRoot.name : "null")}, cardItemPrefab={(cardItemPrefab ? cardItemPrefab.name : "null")}, scrollRect={(scrollRect ? scrollRect.name : "null")}", this);
+            Debug.LogError("[DeckUpgradeSelection] ShowSingle EnsureBindings 실패", this);
             HideImmediate();
             return false;
         }
 
-        if (!RefreshCandidates())
-        {
-            Debug.LogWarning("[DeckUpgradeSelection] RefreshCandidates() 실패", this);
-            HideImmediate();
-            return false;
-        }
+        if (scrollRect != null) scrollRect.gameObject.SetActive(false);
+        if (contentRoot != null) contentRoot.gameObject.SetActive(false);
+        if (emptyLabel != null) emptyLabel.gameObject.SetActive(false);
 
-        Debug.Log($"[DeckUpgradeSelection] Show() -> 패널 활성화 (activeBefore={gameObject.activeSelf})", this);
+        _spawnedItems.Clear();
+        _candidates.Clear();
+        _currentSelection = null;
+        previewPanel?.Clear();
+
+        CardScriptableObject so = null;
+        if (state != null && _cardCatalog != null)
+            _cardCatalog.TryGetCardData(state.CardId, out so);
+
+        if (so != null && state != null) previewPanel?.Show(so, state);
+        else previewPanel?.Clear();
+        if (confirmButton != null) confirmButton.interactable = (state != null);
+
         gameObject.SetActive(true);
-        Debug.Log($"[DeckUpgradeSelection] Show() -> 활성화 완료 (activeAfter={gameObject.activeSelf})", this);
-        if (scrollRect != null)
-        {
-            scrollRect.normalizedPosition = new Vector2(0f, 1f);
-        }
         return true;
     }
 
@@ -94,6 +120,10 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         _onCancel = null;
         _currentSelection = null;
         previewPanel?.Clear();
+        if (scrollRect != null) scrollRect.gameObject.SetActive(true);
+        if (contentRoot != null) contentRoot.gameObject.SetActive(true);
+        _singleMode = false;
+        _singleSelectedState = null;
     }
 
     public void HideImmediate()
@@ -104,6 +134,10 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         _currentSelection = null;
         _onConfirm = null;
         _onCancel = null;
+        if (scrollRect != null) scrollRect.gameObject.SetActive(true);
+        if (contentRoot != null) contentRoot.gameObject.SetActive(true);
+        _singleMode = false;
+        _singleSelectedState = null;
     }
 
     private void AcquireServices()
@@ -222,8 +256,14 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         }
     }
 
-    private void HandleConfirm()
+private void HandleConfirm()
     {
+        if (_singleMode) {
+            var selected = _singleSelectedState;
+            Debug.Log($"[DeckUpgradeSelection] Confirm(단일) 클릭 - selectedInstance={(selected != null ? selected.InstanceId : "null")}", this);
+            var h = _onConfirm; Hide(); h?.Invoke(selected);
+            return;
+        }
         if (_currentSelection == null)
             return;
 
@@ -302,43 +342,19 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
 
     private bool EnsureBindings()
     {
+        // 단일 프리뷰 모드만 사용하므로 리스트 관련 바인딩은 필수가 아닙니다.
         if (scrollRect == null)
         {
             scrollRect = GetComponentInChildren<ScrollRect>(true);
-            if (scrollRect != null)
-            {
-                Debug.Log($"[DeckUpgradeSelection] scrollRect 자동 바인딩: {scrollRect.name}", this);
-            }
         }
-
         if (scrollRect != null && contentRoot == null)
         {
             contentRoot = scrollRect.content;
-            if (contentRoot != null)
-            {
-                Debug.Log($"[DeckUpgradeSelection] contentRoot 자동 바인딩: {contentRoot.name}", this);
-            }
         }
-
-        bool valid = true;
-        if (contentRoot == null)
-        {
-            Debug.LogError("[DeckUpgradeSelection] contentRoot가 비어있습니다. 패널 Prefab 설정을 확인하세요.", this);
-            valid = false;
-        }
-
-        if (cardItemPrefab == null)
-        {
-            Debug.LogError("[DeckUpgradeSelection] cardItemPrefab이 비어있습니다. CardDisplay 기반 프리팹을 연결해주세요.", this);
-            valid = false;
-        }
-
-        if (valid)
-        {
-            Debug.Log($"[DeckUpgradeSelection] EnsureBindings 성공 - contentRoot={contentRoot.name}, cardItemPrefab={cardItemPrefab.name}", this);
-        }
-
-        return valid;
+        var cr = contentRoot != null ? contentRoot.name : "<none>";
+        var pf = cardItemPrefab != null ? cardItemPrefab.name : "<none>";
+        Debug.Log($"[DeckUpgradeSelection] EnsureBindings 성공 - contentRoot={cr}, cardItemPrefab={pf}, singleMode={_singleMode}", this);
+        return true;
     }
 
     private static string GetSortKey(CardScriptableObject card)
