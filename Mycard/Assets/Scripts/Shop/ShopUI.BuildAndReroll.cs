@@ -68,15 +68,13 @@ public partial class ShopUI : MonoBehaviour
     private void BuildDummySlots() // '진열대'에 임시 상품(마네킹)을 채우고 기본 가격을 설정합니다.
     {
         // _dummy는 상점에 진열될 상품 정보를 담는 '진열대' 역할을 합니다.
-        // _dummy 리스트를 6칸짜리 새 리스트로 초기화합니다.
-        _dummy = new List<ShopSlotVM>(6)
+        // _dummy 리스트를 4칸짜리 새 리스트로 초기화합니다.
+        _dummy = new List<ShopSlotVM>(4)
         {
             new ShopSlotVM{ title="Strike",       detail="Card",       rarity = CardRarity.Common },
             new ShopSlotVM{ title="Defend",       detail="Card",       rarity = CardRarity.Common },
             new ShopSlotVM{ title="Fireball",     detail="Card",       rarity = CardRarity.Common },
             new ShopSlotVM{ title="Happy Flower", detail="Relic",      rarity = CardRarity.Common },
-            new ShopSlotVM{ title="Anchor",       detail="Relic",      rarity = CardRarity.Common },
-            new ShopSlotVM{ title="Block Potion", detail="Consumable", rarity = CardRarity.Common },
         };
 
         // 방금 진열한 모든 아이템('마네킹' 포함)을 하나씩 돌면서 가격을 계산하고 설정합니다.

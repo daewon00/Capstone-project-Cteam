@@ -1235,7 +1235,7 @@ MonoBehaviour:
   statusText: {fileID: 3848506632743644795}
   clearOnHide: 1
   _filter: 0
-  _sort: 0
+  _sort: 1
 --- !u!1 &7961227108427153779
 GameObject:
   m_ObjectHideFlags: 0
