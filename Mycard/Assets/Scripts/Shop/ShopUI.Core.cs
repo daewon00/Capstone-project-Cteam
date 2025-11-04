@@ -51,10 +51,7 @@ public partial class ShopUI : MonoBehaviour
 
     // (유물/소모품 풀 – 계속 쓰면 유지)
     private static readonly string[] RelicsPool = {
-        "Happy Flower","Anchor","Bronze Idol","Bag of Prep","Kunai","Incense Burner"
-    };
-    private static readonly string[] ConsumablesPool = {
-        "Block Potion","Strength Potion","Dex Potion","Energy Tonic","Small Potion"
+        "cardhp","cardattackup","extradraw","Gold","manadis","drawManaDiscount","finalattack","HPup","MANAup"
     };
 
     // ==========================================================
@@ -74,7 +71,6 @@ public partial class ShopUI : MonoBehaviour
 
     // 식별용 해시셋 (이름으로 유물/소모품인지 빠르게 판단)
     private static readonly HashSet<string> _relicsSet = new HashSet<string>(RelicsPool);
-    private static readonly HashSet<string> _consumablesSet = new HashSet<string>(ConsumablesPool);
 
 
     [SerializeField] private bool verboseLogs = false; //디버그 활성화
@@ -211,9 +207,7 @@ public partial class ShopUI : MonoBehaviour
             else
             {
                 // DTO에 타입 정보가 있으면 그걸 쓰고, 없으면 추론합니다.
-                string detail = !string.IsNullOrEmpty(slotData.detail) ? slotData.detail 
-                            : _consumablesSet.Contains(id) ? "Consumable" 
-                            : "Relic";
+                string detail = !string.IsNullOrEmpty(slotData.detail) ? slotData.detail : "Relic";
                 var rarity = slotData.rarity;
                 vm = new ShopSlotVM { title = id, detail = detail, rarity = rarity };
             }
