@@ -81,7 +81,9 @@ public partial class ShopUI : MonoBehaviour
             var view = Instantiate(slotPrefab, gridParent);
             view.SetDealDiscount(dealDiscount);
 
-            bool canBuy = !_dummy[slotIndex].soldOut && (Gold >= FinalPrice(_dummy[slotIndex]));
+            bool canBuy = !_dummy[slotIndex].soldOut &&
+                          (Gold >= FinalPrice(_dummy[slotIndex])) &&
+                          CanPurchaseSlot(_dummy[slotIndex]);
             view.Bind(_dummy[slotIndex], () => TryBuy(slotIndex), canBuy);
 
             _views.Add(view);
@@ -95,7 +97,9 @@ public partial class ShopUI : MonoBehaviour
         {
             int slotIndex = i;
             _views[i].SetDealDiscount(dealDiscount);
-            bool canBuy = !_dummy[slotIndex].soldOut && (Gold >= FinalPrice(_dummy[slotIndex]));
+            bool canBuy = !_dummy[slotIndex].soldOut &&
+                          (Gold >= FinalPrice(_dummy[slotIndex])) &&
+                          CanPurchaseSlot(_dummy[slotIndex]);
             _views[i].Bind(_dummy[slotIndex], () => TryBuy(slotIndex), canBuy);
         }
     }
@@ -141,11 +145,38 @@ public partial class ShopUI : MonoBehaviour
         if (Gold < cost) return;
 
         bool isCardSlot = vm.cardData != null || string.Equals(vm.detail, "Card", StringComparison.OrdinalIgnoreCase);
+        bool isRelicSlot = !isCardSlot && string.Equals(vm.detail, "Relic", StringComparison.OrdinalIgnoreCase);
         string cardId = null;
         if (isCardSlot && !TryResolveCardId(in vm, out cardId))
         {
             Debug.LogWarning($"[ShopUI] 카드 ID 확인 실패: slot={index}, title={vm.title}", this);
             return;
+        }
+
+        if (isRelicSlot)
+        {
+            if (string.IsNullOrEmpty(vm.itemId))
+            {
+                Debug.LogError($"[ShopUI] 유물 ID가 비어 있어 구매를 취소합니다. slot={index}", this);
+                RefreshViews();
+                return;
+            }
+
+            if (RelicSystem.Instance == null)
+            {
+                Debug.LogError("[ShopUI] RelicSystem 인스턴스를 찾을 수 없어 유물 구매를 취소합니다.", this);
+                RefreshViews();
+                RefreshTopbar();
+                return;
+            }
+
+            if (RelicSystem.Instance.HasRelic(vm.itemId))
+            {
+                Debug.LogWarning($"[ShopUI] 이미 보유 중인 유물입니다: relicId={vm.itemId}. 구매를 차단합니다.", this);
+                RefreshViews();
+                RefreshTopbar();
+                return;
+            }
         }
 
         if (!TrySpendGold(cost))
@@ -154,6 +185,8 @@ public partial class ShopUI : MonoBehaviour
             RefreshTopbar();
             return;
         }
+
+        bool purchaseSucceeded = false;
 
         if (isCardSlot)
         {
@@ -172,6 +205,30 @@ public partial class ShopUI : MonoBehaviour
                 RefreshTopbar();
                 return;
             }
+
+            purchaseSucceeded = true;
+        }
+        else if (isRelicSlot)
+        {
+            if (!RelicSystem.Instance.AddRelicById(vm.itemId))
+            {
+                Debug.LogError($"[ShopUI] 유물 추가 실패: relicId={vm.itemId}, slot={index}", this);
+                RefundGold(cost);
+                RefreshTopbar();
+                return;
+            }
+
+            purchaseSucceeded = true;
+        }
+        else
+        {
+            purchaseSucceeded = true;
+        }
+
+        if (!purchaseSucceeded)
+        {
+            RefreshTopbar();
+            return;
         }
 
         vm.soldOut = true;
@@ -183,5 +240,21 @@ public partial class ShopUI : MonoBehaviour
         
     }
 
+    private bool CanPurchaseSlot(in ShopSlotVM vm)
+    {
+        if (string.Equals(vm.detail, "Relic", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrEmpty(vm.itemId))
+                return false;
+
+            if (RelicSystem.Instance == null)
+                return false;
+
+            if (RelicSystem.Instance.HasRelic(vm.itemId))
+                return false;
+        }
+
+        return true;
+    }
 
 }

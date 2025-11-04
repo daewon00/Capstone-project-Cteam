@@ -168,6 +168,12 @@ public class RelicSystem : MonoBehaviour
         var existing = relics.Find(r => r.Data.relicId == relicId);
         if (existing != null)
         {
+            if (!existing.Data.stackable)
+            {
+                Debug.LogWarning($"[RelicSystem] Relic already owned and not stackable: {relicId}");
+                return false;
+            }
+
             for (int k = 0; k < Mathf.Max(0, stacks); k++)
                 existing.AddStack();
 
@@ -192,6 +198,29 @@ public class RelicSystem : MonoBehaviour
         FireRelicsChanged();
         if (save) TryPersistToDbOrPrefs();
         return true;
+    }
+
+    public RelicData GetRelicData(string relicId)
+    {
+        if (string.IsNullOrEmpty(relicId)) return null;
+        dbById.TryGetValue(relicId, out var data);
+        return data;
+    }
+
+    public bool HasRelic(string relicId)
+    {
+        if (string.IsNullOrEmpty(relicId)) return false;
+        return relics.Exists(r => r != null && r.Data != null && r.Data.relicId == relicId);
+    }
+
+    public IEnumerable<string> EnumerateOwnedRelicIds()
+    {
+        for (int i = 0; i < relics.Count; i++)
+        {
+            var data = relics[i]?.Data;
+            if (data == null || string.IsNullOrEmpty(data.relicId)) continue;
+            yield return data.relicId;
+        }
     }
     public void RemoveRelic(string relicId, bool save = true)
     {
