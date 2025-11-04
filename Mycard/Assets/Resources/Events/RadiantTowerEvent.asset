@@ -17,7 +17,7 @@ MonoBehaviour:
   legacyChoices: []
   stages:
   - stageId: tower_main
-    description: "\uD0D1 \uAF2D\uB300\uAE30\uC5D0  \uC720\uBB3C\uC774 \uBE5B\uB098\uACE0
+    description: "\uD0D1 \uAF2D\uB300\uAE30\uC5D0 \uC720\uBB3C\uC774 \n\uBE5B\uB098\uACE0
       \uC788\uB2E4.\n\uBB34\uC5C7\uC744\uD574\uC57C\uD560\uAE4C?"
     choices:
     - id: tower_peak_choice

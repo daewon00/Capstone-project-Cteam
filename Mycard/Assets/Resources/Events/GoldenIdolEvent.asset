@@ -19,7 +19,7 @@ MonoBehaviour:
   stages:
   - stageId: stage_1
     description: "\uBC18\uC9DD\uC774\uB294 \uD669\uAE08 \uC6B0\uC0C1\uC744 \uBC1C\uACAC\uD588\uB2E4.
-      \uC5B4\uB5A4 \uC120\uD0DD\uC744 \uD574\uC57C\uD560\uAE4C?"
+      \n\uC5B4\uB5A4 \uC120\uD0DD\uC744 \uD574\uC57C\uD560\uAE4C?"
     choices:
     - id: take_gold
       label: "\uD669\uAE08 \uC6B0\uC0C1\uC744 \uD6D4\uCE5C\uB2E4."
@@ -55,8 +55,8 @@ MonoBehaviour:
       nextStageId: 
   - stageId: stage_2
     description: "\uD669\uAE08 \uC6B0\uC0C1\uC740 \uC5BB\uC5C8\uC9C0\uB9CC \uD568\uC815\uC744
-      \uD53C\uD558\uB2E4 \uBD80\uC0C1\uC744 \uC785\uC5C8\uC2B5\uB2C8\uB2E4. (\uACE8\uB4DC
-      +100, \uCCB4\uB825 -5)"
+      \uD53C\uD558\uB2E4 \uBD80\uC0C1\uC744 \uC785\uC5C8\uB2E4. (\uACE8\uB4DC +100,
+      \uCCB4\uB825 -5)"
     choices:
     - id: take_Map
       label: "\uC7A5\uC18C\uB97C \uB5A0\uB09C\uB2E4"

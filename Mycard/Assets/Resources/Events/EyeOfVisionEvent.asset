@@ -17,8 +17,8 @@ MonoBehaviour:
   legacyChoices: []
   stages:
   - stageId: eye_main
-    description: "\uBE44\uC804\uC758 \uB208\uC774 \uB371\uC744 \uD6D1\uC5B4\uBCF8\uB2E4
-      \uBB34\uC5C7\uC744 \uD574\uC57C\uD560\uAE4C."
+    description: "\uBE44\uC804\uC758 \uB208\uC774 \uB371\uC744 \uD6D1\uC5B4\uBCF8\uB2E4.
+      \n\uBB34\uC5C7\uC744 \uD574\uC57C\uD560\uAE4C."
     choices:
     - id: eye_stare_choice
       label: "\uB208\uC744 \uB9C8\uC8FC\uBCF8\uB2E4"

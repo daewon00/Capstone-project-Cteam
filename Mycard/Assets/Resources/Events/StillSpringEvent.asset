@@ -17,7 +17,7 @@ MonoBehaviour:
   legacyChoices: []
   stages:
   - stageId: spring_main
-    description: "\uC2DC\uAC04\uC774 \uBA48\uCD98 \uB4EF \uB9D1\uC740 \uC0D8\uBB3C\uC774
+    description: "\uC2DC\uAC04\uC774 \uBA48\uCD98 \uB4EF \uB9D1\uC740 \n\uC0D8\uBB3C\uC774
       \uACE0\uC5EC \uC788\uB2E4."
     choices:
     - id: spring_drink_choice
