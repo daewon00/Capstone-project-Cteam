@@ -50,10 +50,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b1b45855cf524f146a308f5210e8b0d9, type: 2}
   - {fileID: 11400000, guid: b3aa3bd7afd7aa44a909c48d436bf20f, type: 2}
   - {fileID: 11400000, guid: 9b246abeba557c344afa5f3ef431d121, type: 2}
-  cardToSpawn: {fileID: 2882844158408613034, guid: 305d5615695ab864f8fd9d4002a06bf5, type: 3}
+  cardToSpawn: {fileID: 2177406694648586450, guid: 626432201ee894ed09263955f89765b8, type: 3}
   cardSpawnPoint: {fileID: 4155004360661590943}
   enemyAIType: 3
   startHandSize: 3
+  _cardsPerTurn: 2
 --- !u!1 &2263712466193456996
 GameObject:
   m_ObjectHideFlags: 0

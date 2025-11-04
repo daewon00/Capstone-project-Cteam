@@ -207,6 +207,7 @@ public struct ShopSlotVM
 {
     public CardScriptableObject cardData;   // 카드 원본(설계도)을 담아둘 공간
     public string title;                    // 예: "Strike"
+    public string itemId;                   // 실제 ID (카드ID/유물ID 등)
     public string detail;                   // 예: "Card" / "Relic" / "Consumable"
     public Sprite icon;                     // (선택) 아이콘 없으면 null
     public bool soldOut;                    // 판매 완료 여부

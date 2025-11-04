@@ -96,6 +96,8 @@ public class DeckOverlayController : MonoBehaviour
             return;
         }
 
+        // 기본 정렬 우선순위는 코스트→이름
+        _sort = SortMode.CostThenName;
         RebuildList();
     }
 
@@ -232,4 +234,3 @@ public class DeckOverlayController : MonoBehaviour
         statusText.gameObject.SetActive(!string.IsNullOrEmpty(message));
     }
 }
-

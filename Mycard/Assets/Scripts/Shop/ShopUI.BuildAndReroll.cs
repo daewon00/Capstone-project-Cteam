@@ -68,22 +68,22 @@ public partial class ShopUI : MonoBehaviour
     private void BuildDummySlots() // '진열대'에 임시 상품(마네킹)을 채우고 기본 가격을 설정합니다.
     {
         // _dummy는 상점에 진열될 상품 정보를 담는 '진열대' 역할을 합니다.
-        // _dummy 리스트를 6칸짜리 새 리스트로 초기화합니다.
-        _dummy = new List<ShopSlotVM>(6)
+        // _dummy 리스트를 4칸짜리 새 리스트로 초기화합니다.
+        _dummy = new List<ShopSlotVM>(4)
         {
-            new ShopSlotVM{ title="Strike",       detail="Card",       rarity = CardRarity.Common },
-            new ShopSlotVM{ title="Defend",       detail="Card",       rarity = CardRarity.Common },
-            new ShopSlotVM{ title="Fireball",     detail="Card",       rarity = CardRarity.Common },
-            new ShopSlotVM{ title="Happy Flower", detail="Relic",      rarity = CardRarity.Common },
-            new ShopSlotVM{ title="Anchor",       detail="Relic",      rarity = CardRarity.Common },
-            new ShopSlotVM{ title="Block Potion", detail="Consumable", rarity = CardRarity.Common },
+            new ShopSlotVM{ detail="Card",  rarity = CardRarity.Common },
+            new ShopSlotVM{ detail="Card",  rarity = CardRarity.Common },
+            new ShopSlotVM{ detail="Card",  rarity = CardRarity.Common },
+            new ShopSlotVM{ detail="Relic", rarity = CardRarity.Common },
         };
 
         // 방금 진열한 모든 아이템('마네킹' 포함)을 하나씩 돌면서 가격을 계산하고 설정합니다.
         for (int i = 0; i < _dummy.Count; i++)
         {
             var vm = _dummy[i];
-            vm.price = BasePriceOf(vm.detail, vm.title, vm.rarity);
+            vm.price = vm.detail == "Relic"
+                ? 200
+                : BasePriceOf(vm.detail, vm.title, vm.rarity);
             _dummy[i] = vm;
         }
     }
@@ -95,6 +95,7 @@ public partial class ShopUI : MonoBehaviour
         return new ShopSlotVM
         {
             cardData = so,
+            itemId  = so.CardId,
             title   = so.cardName,
             detail  = "Card",
             icon    = icon,
@@ -130,6 +131,8 @@ public partial class ShopUI : MonoBehaviour
             // 진열대(_dummy)의 i번째 칸에 있던 '마네킹'을 방금 뽑은 진짜 카드(pick) 정보로 교체합니다.
             _dummy[i] = ToVM(pick);
         }
+
+        PopulateRelicSlotsInitial();
     }
 
     // ==========================================================
@@ -181,6 +184,54 @@ public partial class ShopUI : MonoBehaviour
         return new WeightedCardPicker(cardPool, card => card != null && !card.removeAfterCombat);
     }
 
+    private void PopulateRelicSlotsInitial()
+    {
+        var exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < _dummy.Count; i++)
+        {
+            var id = _dummy[i].cardData != null ? _dummy[i].cardData.CardId : _dummy[i].itemId;
+            if (!string.IsNullOrEmpty(id)) exclude.Add(id);
+        }
+
+        if (RelicSystem.Instance != null)
+        {
+            foreach (var ownedId in RelicSystem.Instance.EnumerateOwnedRelicIds())
+            {
+                if (!string.IsNullOrEmpty(ownedId))
+                    exclude.Add(ownedId);
+            }
+        }
+
+        for (int slot = 3; slot < _dummy.Count; slot++)
+        {
+            TryAssignRelicToSlot(slot, exclude);
+        }
+    }
+
+    private bool TryAssignRelicToSlot(int index, HashSet<string> exclude)
+    {
+        if (index < 0 || index >= _dummy.Count) return false;
+
+        var vm = _dummy[index];
+        if (!string.Equals(vm.detail, "Relic", StringComparison.OrdinalIgnoreCase)) return false;
+        if (vm.soldOut) return false;
+
+        string relicId = DrawUnique(RelicsPool, exclude ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+        if (string.IsNullOrEmpty(relicId)) return false;
+        exclude?.Add(relicId);
+
+        var data = RelicSystem.Instance != null ? RelicSystem.Instance.GetRelicData(relicId) : null;
+
+        vm.itemId = relicId;
+        vm.title = data != null && !string.IsNullOrEmpty(data.displayName) ? data.displayName : relicId;
+        vm.icon = data != null ? data.icon : null;
+        vm.price = 200;
+        vm.cardData = null;
+        vm.detail = "Relic";
+        _dummy[index] = vm;
+        return true;
+    }
+
     // 유물/소모품 목록에서 중복되지 않는 아이템 이름을 하나 뽑아옵니다.
     private string DrawUnique(string[] pool, HashSet<string> exclude)
     {
@@ -219,24 +270,29 @@ public partial class ShopUI : MonoBehaviour
         RerollCardSlots(); // 카드 3칸 교체
 
         // (유물/소모품 교체 로직)
-        var exclude = new HashSet<string>();
+        var exclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < _dummy.Count; i++)
-            if (!string.IsNullOrEmpty(_dummy[i].title))
-                exclude.Add(_dummy[i].title);
+        {
+            var id = _dummy[i].cardData != null ? _dummy[i].cardData.CardId : _dummy[i].itemId;
+            if (!string.IsNullOrEmpty(id))
+                exclude.Add(id);
+        }
+
+        if (RelicSystem.Instance != null)
+        {
+            foreach (var ownedId in RelicSystem.Instance.EnumerateOwnedRelicIds())
+            {
+                if (!string.IsNullOrEmpty(ownedId))
+                    exclude.Add(ownedId);
+            }
+        }
 
         for (int i = 3; i < _dummy.Count; i++)
         {
             if (_dummy[i].soldOut) continue;
-            string[] pool = _dummy[i].detail == "Relic" ? RelicsPool : ConsumablesPool;
-            string newId = DrawUnique(pool, exclude);
-            if (string.IsNullOrEmpty(newId)) continue;
+            if (_dummy[i].detail != "Relic") continue;
 
-            exclude.Add(newId);
-            var vm = _dummy[i];
-            vm.title = newId;
-            vm.icon = null;
-            vm.price = BasePriceOf(vm.detail, vm.title, vm.rarity);
-            _dummy[i] = vm;
+            TryAssignRelicToSlot(i, exclude);
         }
 
 
