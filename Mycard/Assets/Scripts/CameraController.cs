@@ -21,6 +21,8 @@ public class CameraController : MonoBehaviour
     [Tooltip("이징 곡선 설정(DOTween Ease)")]
     public Ease easeType = Ease.InOutSine;
 
+    private Transform _currentTarget;
+
     private void Awake()
     {
         // 싱글톤 인스턴스 할당
@@ -31,6 +33,11 @@ public class CameraController : MonoBehaviour
 
         if (mainCamera == null)
             mainCamera = Camera.main;
+
+        if (_currentTarget == null && homeTransform != null)
+        {
+            _currentTarget = homeTransform;
+        }
     }
 
     /// <summary>
@@ -47,8 +54,18 @@ public class CameraController : MonoBehaviour
         cam.DOMove(target.position, moveDuration).SetEase(easeType);
         // 회전
         cam.DORotateQuaternion(target.rotation, moveDuration).SetEase(easeType);
+
+        _currentTarget = target;
     }
 
-  
- 
+    public Transform CurrentTarget => _currentTarget;
+
+    public bool IsAtHomeView => _currentTarget == homeTransform;
+    public bool IsAtBattleView => _currentTarget == battleTransform;
+    public bool IsAtHandView => _currentTarget == handTransform;
+
+    public void ForceSetCurrentTarget(Transform target)
+    {
+        _currentTarget = target;
+    }
 }

@@ -28,4 +28,9 @@ public interface IEventManager
     /// 다음 이벤트 선택 처리 시 특정 카드 인스턴스를 우선적으로 강화하도록 요청합니다.
     /// </summary>
     void QueueUpgradeSelection(string instanceId);
+
+    /// <summary>
+    /// 다음 이벤트 선택 처리 시 특정 카드 인스턴스를 제거 대상으로 예약합니다.
+    /// </summary>
+    void QueueRemovalSelection(string instanceId);
 }

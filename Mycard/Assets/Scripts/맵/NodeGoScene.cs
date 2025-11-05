@@ -18,7 +18,7 @@ public class NodeGoScene : MonoBehaviour
     [SerializeField] private string eventSceneName = "EventScene";       // 이벤트
     [SerializeField] private string shopSceneName = "ShopScene";         // 상점
     [SerializeField] private string restSceneName = "Rest";              // 휴식
-    [SerializeField] private string cardRemoveSceneName = "CardRemove";  // 카드 제거
+    [SerializeField] private string cardRemoveSceneName = "Event";  // 카드 제거
     [SerializeField] private string mapSceneName = "Map Scene";          // 맵으로 돌아가기
 
     // (옵션) 이동 가능 하이라이트 오브젝트

@@ -71,6 +71,11 @@ public interface IDatabase
     List<CardRuntimeState> LoadCardRuntimeStates(string runId);
 
     /// <summary>
+    /// 특정 카드 런타임 상태를 제거합니다.
+    /// </summary>
+    void DeleteCardRuntimeState(string runId, string instanceId);
+
+    /// <summary>
     /// 특정 런의 특정 위치에 있는 카드들만 효율적으로 불러옵니다. OrderInPile 내림차순으로 정렬됩니다.
     /// </summary>
     List<CardRuntimeState> LoadCardRuntimeStates(string runId, CardLocation location);

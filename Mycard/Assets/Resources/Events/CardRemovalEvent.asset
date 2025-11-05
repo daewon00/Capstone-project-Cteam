@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8df1984a43c6f49ba30daf3865c9fa, type: 3}
+  m_Name: CardRemovalEvent
+  m_EditorClassIdentifier: 
+  eventId: CardRemovalEvent
+  legacyDescription: 
+  legacyChoices: []
+  stages:
+  - stageId: removal_intro
+    description: "불필요한 카드를 정리할 기회입니다.\n제거할 카드를 선택하면 해당 카드는 덱에서 영구적으로 사라집니다."
+    choices:
+    - id: removal_execute
+      label: "카드를 제거한다"
+      effects:
+      - type: 10
+        amount: 0
+        refId: 
+        quantity: 1
+        upgrade: 0
+      nextStageId: removal_result
+  - stageId: removal_result
+    description: "{REMOVAL_MESSAGE}"
+    choices:
+    - id: removal_finish
+      label: "맵으로 돌아간다"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 

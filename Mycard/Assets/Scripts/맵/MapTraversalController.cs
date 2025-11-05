@@ -278,7 +278,7 @@ public class MapTraversalController : MonoBehaviour
             return;
         }
 
-        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest)
+        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest || target.nodeType == NodeType.CardRemove)
         {
             try
             {
@@ -417,7 +417,7 @@ public class MapTraversalController : MonoBehaviour
             return;
         }
 
-        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest)
+        if (target.nodeType == NodeType.Event || target.nodeType == NodeType.Rest || target.nodeType == NodeType.CardRemove)
         {
             var session = PrepareEventSession(target);
             if (session != null)
@@ -472,6 +472,10 @@ public class MapTraversalController : MonoBehaviour
         {
             var em = ServiceRegistry.GetRequired<IEventManager>();
             string eventId = !string.IsNullOrEmpty(target.eventIdOverride) ? target.eventIdOverride : defaultEventId;
+            if (target.nodeType == NodeType.CardRemove && string.IsNullOrEmpty(target.eventIdOverride))
+            {
+                eventId = EventIds.CardRemoval;
+            }
             var session = em.LoadActiveOrCreate(eventId);
             if (session == null)
             {

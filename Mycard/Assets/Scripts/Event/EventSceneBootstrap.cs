@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -37,6 +38,9 @@ public class EventSceneBootstrap : MonoBehaviour
     private bool _isResolving; // 중복 입력을 막기 위한 '잠금 장치'
     private RunStagePayloads.Event _eventStageCache;
     private readonly List<Button> _spawnedButtons = new();
+    private enum CardSelectionMode { None, Upgrade, Removal }
+    private string _lastAutoSelectionStageId;
+    private bool _autoSelectionOpenedForStage;
     private DeckUpgradeSelectionPanel EnsureUpgradePanelInstance()
     {
         if (upgradeSelectionPanel != null && upgradeSelectionPanel.gameObject.scene.IsValid())
@@ -157,6 +161,12 @@ public class EventSceneBootstrap : MonoBehaviour
         Debug.Log($"[EventScene] Stage '{_currentSession.stageId}' 로딩 (choices={_currentSession.choices?.Length ?? 0})");
         ClearChoiceButtons();
 
+        if (!string.Equals(_lastAutoSelectionStageId, _currentSession.stageId, StringComparison.Ordinal))
+        {
+            _lastAutoSelectionStageId = _currentSession.stageId;
+            _autoSelectionOpenedForStage = false;
+        }
+
         var choices = _currentSession.choices;
         if (choices == null || choices.Length == 0)
         {
@@ -174,6 +184,24 @@ public class EventSceneBootstrap : MonoBehaviour
                 _spawnedButtons.Add(button);
             }
         }
+
+        TryAutoOpenSelection(choices);
+    }
+
+    private void TryAutoOpenSelection(EventChoiceDTO[] choices)
+    {
+        if (_autoSelectionOpenedForStage)
+            return;
+        if (choices == null || choices.Length != 1)
+            return;
+
+        var choice = choices[0];
+        var mode = GetSelectionMode(choice);
+        if (mode != CardSelectionMode.Removal)
+            return;
+
+        _autoSelectionOpenedForStage = true;
+        BeginCardSelection(choice, mode);
     }
 
     /// <summary>
@@ -306,7 +334,8 @@ public class EventSceneBootstrap : MonoBehaviour
 
     private Button CreateChoiceButton(EventChoiceDTO choice, int index)
     {
-        Debug.Log($"[EventScene] CreateChoiceButton {choice?.id} upgradeRequired={RequiresUpgradeSelection(choice)}", this);
+        var mode = GetSelectionMode(choice);
+        Debug.Log($"[EventScene] CreateChoiceButton {choice?.id} mode={mode}", this);
         if (choiceButtonTemplate == null)
         {
             Debug.LogError("[EventScene] choiceButtonTemplate이 설정되어 있지 않아 선택지를 생성할 수 없습니다.");
@@ -323,10 +352,10 @@ public class EventSceneBootstrap : MonoBehaviour
         var button = Instantiate(choiceButtonTemplate, parent);
         button.gameObject.SetActive(true);
         button.onClick.RemoveAllListeners();
-        if (RequiresUpgradeSelection(choice))
+        if (mode != CardSelectionMode.None)
         {
-            Debug.Log("[EventScene] Choice requires upgrade selection", button);
-            button.onClick.AddListener(() => BeginUpgradeSelection(choice));
+            Debug.Log($"[EventScene] Choice requires card selection (mode={mode})", button);
+            button.onClick.AddListener(() => BeginCardSelection(choice, mode));
         }
         else
         {
@@ -350,73 +379,157 @@ public class EventSceneBootstrap : MonoBehaviour
         return button;
     }
 
-    private bool RequiresUpgradeSelection(EventChoiceDTO choice)
+    private CardSelectionMode GetSelectionMode(EventChoiceDTO choice)
     {
         if (choice?.effects == null || choice.effects.Length == 0)
-            return false;
+            return CardSelectionMode.None;
 
-        return choice.effects.Any(effect => effect != null && effect.type == EventEffectType.UpgradeRandomCard);
+        foreach (var effect in choice.effects)
+        {
+            if (effect == null) continue;
+            if (effect.type == EventEffectType.UpgradeRandomCard)
+                return CardSelectionMode.Upgrade;
+            if (effect.type == EventEffectType.RemoveCard)
+                return CardSelectionMode.Removal;
+        }
+
+        return CardSelectionMode.None;
     }
 
-    private void BeginUpgradeSelection(EventChoiceDTO choice)
+    private void BeginCardSelection(EventChoiceDTO choice, CardSelectionMode mode)
     {
-        Debug.Log("[EventScene] BeginUpgradeSelection 시작", this);
-        // 1단계: 오버레이 표시 → 카드 클릭 시 2단계(확인)로 UpgradeSelectionPanel을 프리뷰 전용으로 띄움
+        Debug.Log($"[EventScene] BeginCardSelection 시작 mode={mode}", this);
+        if (mode == CardSelectionMode.None)
+        {
+            OnChoicePicked(choice);
+            return;
+        }
+
         var overlay = EnsureUpgradeOverlay();
+        var confirmContext = BuildConfirmContext(mode);
+
         if (overlay == null)
         {
-            Debug.LogWarning("[EventScene] 오버레이 생성 실패. 패널 단독 경로로 폴백합니다.");
-            var panel = EnsureUpgradePanelInstance();
-            if (panel == null) { OnChoicePicked(choice); return; }
-            if (_isResolving) return;
-            SetChoiceButtonsInteractable(false);
-            bool opened = panel.Show(
-                onConfirm: state =>
-                {
-                    if (state != null) _eventManager?.QueueUpgradeSelection(state.InstanceId);
-                    _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
-                },
-                onCancel: () => { _isResolving = false; SetChoiceButtonsInteractable(true); panel.HideImmediate(); });
-            if (!opened) { _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice); }
-            else { _isResolving = true; }
+            Debug.LogWarning("[EventScene] 오버레이 생성 실패. 선택 UI를 건너뛰고 선택 결과를 즉시 적용합니다.");
+            OnChoicePicked(choice);
             return;
         }
 
         if (_isResolving) return;
         SetChoiceButtonsInteractable(false);
-        overlay.SetTitle("강화 가능한 카드");
+
+        var overlayConfig = new UpgradeCardOverlayController.CardSelectionOverlayConfig
+        {
+            Title = mode == CardSelectionMode.Removal ? "제거할 카드 선택" : "강화 가능한 카드",
+            EmptyLabel = mode == CardSelectionMode.Removal ? "제거할 카드가 없습니다." : "강화 가능한 카드가 없습니다.",
+            Selector = mode == CardSelectionMode.Removal ? CardRemovalRules.TryGetRemovable : CardUpgradeRules.TryGetUpgradeable
+        };
+
         overlay.Show(
             onCardClicked: (state, so) =>
             {
                 var panel = EnsureUpgradePanelInstance();
                 if (panel == null)
                 {
-                    if (state != null) _eventManager?.QueueUpgradeSelection(state.InstanceId);
-                    try { overlay.Hide(); } catch { }
-                    _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
+                    if (QueueSelectionForMode(mode, state))
+                    {
+                        try { overlay.Hide(); } catch { }
+                        _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
+                    }
+                    else
+                    {
+                        try { overlay.Hide(); } catch { }
+                        _isResolving = false; SetChoiceButtonsInteractable(true);
+                    }
                     return;
                 }
+
                 try { overlay.Hide(); } catch { }
-                panel.ShowSingle(
+                bool opened = panel.ShowSingle(
                     state,
                     onConfirm: s =>
                     {
-                        if (s != null) _eventManager?.QueueUpgradeSelection(s.InstanceId);
-                        panel.HideImmediate();
-                        _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
+                        if (QueueSelectionForMode(mode, s))
+                        {
+                            panel.HideImmediate();
+                            _isResolving = false; SetChoiceButtonsInteractable(true); OnChoicePicked(choice);
+                        }
+                        else
+                        {
+                            panel.HideImmediate();
+                            _isResolving = false; SetChoiceButtonsInteractable(true);
+                        }
                     },
                     onCancel: () =>
                     {
                         panel.HideImmediate();
                         _isResolving = false;
-                        // 동일 흐름으로 다시 오버레이를 열어 다른 카드를 선택할 수 있게 함
-                        BeginUpgradeSelection(choice);
-                    }
-                );
+                        SetChoiceButtonsInteractable(true);
+                        BeginCardSelection(choice, mode);
+                    },
+                    context: confirmContext);
+
+                if (!opened)
+                {
+                    _isResolving = false;
+                    SetChoiceButtonsInteractable(true);
+                    OnChoicePicked(choice);
+                }
+                else
+                {
+                    _isResolving = true;
+                }
             },
-            onClosed: () => { _isResolving = false; SetChoiceButtonsInteractable(true); }
-        );
+            onClosed: () => { _isResolving = false; SetChoiceButtonsInteractable(true); },
+            overlayConfig);
         _isResolving = true;
+    }
+
+    private bool QueueSelectionForMode(CardSelectionMode mode, CardRuntimeState state)
+    {
+        if (state == null)
+        {
+            Debug.LogWarning("[EventScene] QueueSelectionForMode 호출 시 state가 null입니다.");
+            return false;
+        }
+
+        if (_eventManager == null)
+            return false;
+
+        switch (mode)
+        {
+            case CardSelectionMode.Upgrade:
+                _eventManager.QueueUpgradeSelection(state.InstanceId);
+                return true;
+            case CardSelectionMode.Removal:
+                _eventManager.QueueRemovalSelection(state.InstanceId);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private DeckUpgradeSelectionPanel.CardSelectionConfirmContext BuildConfirmContext(CardSelectionMode mode)
+    {
+        if (mode == CardSelectionMode.Removal)
+        {
+            return new DeckUpgradeSelectionPanel.CardSelectionConfirmContext
+            {
+                Title = "삭제할 카드를 선택하세요",
+                Guidance = "선택한 카드는 덱에서 영구적으로 제거됩니다.",
+                ConfirmLabel = "제거",
+                CancelLabel = "취소",
+                ShowUpgradePreview = false,
+                BeforePreviewTitle = "제거할 카드",
+                AfterPreviewTitle = string.Empty,
+                CenterPreviewTitle = null,
+                ShowCenterPreview = true,
+                CenterPreviewAlignment = TextAlignmentOptions.Center,
+                UseCenterSlot = true
+            };
+        }
+
+        return null;
     }
 
     private void SetChoiceButtonsInteractable(bool interactable)

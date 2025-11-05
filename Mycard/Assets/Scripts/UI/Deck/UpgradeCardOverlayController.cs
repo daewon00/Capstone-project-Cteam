@@ -14,6 +14,22 @@ using Game.Save;
 [DisallowMultipleComponent]
 public class UpgradeCardOverlayController : MonoBehaviour
 {
+    public delegate bool CandidateSelector(CardRuntimeState state, ICardCatalog catalog, out CardScriptableObject cardData);
+
+    public sealed class CardSelectionOverlayConfig
+    {
+        public string Title;
+        public string EmptyLabel;
+        public CandidateSelector Selector;
+    }
+
+    private static readonly CardSelectionOverlayConfig DefaultUpgradeConfig = new CardSelectionOverlayConfig
+    {
+        Title = "강화 가능한 카드",
+        EmptyLabel = "강화 가능한 카드가 없습니다.",
+        Selector = CardUpgradeRules.TryGetUpgradeable
+    };
+
     [Header("UI References")]
     [SerializeField] private GameObject panelRoot;            // 전체 오버레이 루트(켜기/끄기)
     [SerializeField] private TMP_Text titleText;              // 상단 타이틀(기본: "강화 가능한 카드")
@@ -28,6 +44,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
     private readonly List<DeckCardItemView> _spawned = new List<DeckCardItemView>();
     private Action<CardRuntimeState, CardScriptableObject> _onCardClicked;
     private Action _onClosed;
+    private CardSelectionOverlayConfig _activeConfig;
 
     private void Awake()
     {
@@ -55,10 +72,15 @@ public class UpgradeCardOverlayController : MonoBehaviour
     /// <summary>
     /// 오버레이를 표시하고, 카드 클릭 시 호출될 콜백을 등록합니다.
     /// </summary>
-    public void Show(Action<CardRuntimeState, CardScriptableObject> onCardClicked, Action onClosed = null)
+    public void Show(Action<CardRuntimeState, CardScriptableObject> onCardClicked, Action onClosed = null, CardSelectionOverlayConfig config = null)
     {
         _onCardClicked = onCardClicked;
         _onClosed = onClosed;
+        _activeConfig = config ?? DefaultUpgradeConfig;
+        if (_activeConfig.Selector == null)
+        {
+            _activeConfig.Selector = DefaultUpgradeConfig.Selector;
+        }
 
         AcquireServices();
 
@@ -68,19 +90,20 @@ public class UpgradeCardOverlayController : MonoBehaviour
             return;
         }
 
-        if (titleText != null && string.IsNullOrEmpty(titleText.text))
+        if (titleText != null)
         {
-            titleText.text = "강화 가능한 카드";
+            var title = string.IsNullOrEmpty(_activeConfig.Title) ? DefaultUpgradeConfig.Title : _activeConfig.Title;
+            titleText.text = title;
         }
 
-        var candidates = CollectUpgradeableCandidates();
+        var candidates = CollectCandidates(_activeConfig.Selector);
         BuildList(candidates);
 
         if (panelRoot != null)
         {
             bool before = panelRoot.activeSelf;
             panelRoot.SetActive(true);
-            Debug.Log($"[UpgradeOverlay] Show -> panel active: {before} → {panelRoot.activeSelf} (candidates={candidates.Count})", this);
+            Debug.Log($"[UpgradeOverlay] Show -> panel active: {before} → {panelRoot.activeSelf} (candidates={candidates.Count}) mode={(_activeConfig == null ? "unknown" : _activeConfig.Title)}", this);
         }
 
         // 스크롤 위치 초기화(상단)
@@ -102,16 +125,8 @@ public class UpgradeCardOverlayController : MonoBehaviour
         }
         _onCardClicked = null;
         var closed = _onClosed; _onClosed = null; // 재진입 방지
+        _activeConfig = null;
         try { closed?.Invoke(); } catch { }
-    }
-
-    /// <summary>
-    /// 타이틀 텍스트를 동적으로 설정합니다.
-    /// </summary>
-    public void SetTitle(string title)
-    {
-        if (titleText != null)
-            titleText.text = title ?? string.Empty;
     }
 
     private void HandleCloseClicked()
@@ -162,7 +177,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
         return valid;
     }
 
-    private List<(CardRuntimeState state, CardScriptableObject so)> CollectUpgradeableCandidates()
+    private List<(CardRuntimeState state, CardScriptableObject so)> CollectCandidates(CandidateSelector selector)
     {
         var result = new List<(CardRuntimeState, CardScriptableObject)>();
 
@@ -181,7 +196,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
 
         foreach (var state in snapshot)
         {
-            if (CardUpgradeRules.TryGetUpgradeable(state, _cardCatalog, out var so))
+            if (selector != null && selector(state, _cardCatalog, out var so))
             {
                 result.Add((state, so));
             }
@@ -203,7 +218,10 @@ public class UpgradeCardOverlayController : MonoBehaviour
         {
             if (emptyLabel != null)
             {
-                emptyLabel.text = "강화 가능한 카드가 없습니다.";
+                string label = _activeConfig != null && !string.IsNullOrEmpty(_activeConfig.EmptyLabel)
+                    ? _activeConfig.EmptyLabel
+                    : "표시할 카드가 없습니다.";
+                emptyLabel.text = label;
                 emptyLabel.gameObject.SetActive(true);
             }
             Debug.LogWarning("[UpgradeOverlay] 후보가 없습니다.", this);
@@ -338,4 +356,3 @@ public class UpgradeCardOverlayController : MonoBehaviour
         return so.GetManaCost(false);
     }
 }
-

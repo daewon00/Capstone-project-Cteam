@@ -94,6 +94,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
     private CardPlacePoint _currentHoveredSlot;
     private CardSortingBinder _sortingBinder;
+    [Header("Press Viewport Clamp")]
+    [SerializeField, Tooltip("카드 확대 시 좌우 클리핑을 방지하기 위한 뷰포트 패딩")]
+    private float _pressViewportPaddingX = 0.08f;
+    [SerializeField, Tooltip("카드 확대 시 상하 클리핑을 방지하기 위한 뷰포트 패딩")]
+    private float _pressViewportPaddingY = 0.12f;
 
     void Awake()
     {
@@ -750,6 +755,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             {
                 targetPos = ApplyCameraForwardBoost(targetPos, forwardOffset);
             }
+            targetPos = ClampPressInspectPosition(targetPos);
             MoveToPoint(targetPos, transform.rotation);
         }
         // 레이아웃을 잠그어 자동 재정렬로 인한 오더/위치 되돌림 방지
@@ -975,6 +981,40 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 _sortingBinder.RestoreAfterDrag();
         }
         BattleDeckRuntimeSync.UpdateCardState(this);
+    }
+
+    private Vector3 ClampPressInspectPosition(Vector3 candidateWorldPos)
+    {
+        var camController = CameraController.instance;
+        Camera cam = null;
+        if (camController != null && camController.mainCamera != null)
+            cam = camController.mainCamera;
+        if (cam == null)
+            cam = Camera.main;
+        if (cam == null)
+            return candidateWorldPos;
+
+        Vector3 viewportPoint = cam.WorldToViewportPoint(candidateWorldPos);
+        if (viewportPoint.z <= 0f)
+            return candidateWorldPos;
+
+        float minX = Mathf.Clamp01(_pressViewportPaddingX);
+        float maxX = Mathf.Clamp01(1f - _pressViewportPaddingX);
+        float minY = Mathf.Clamp01(_pressViewportPaddingY);
+        float maxY = Mathf.Clamp01(1f - _pressViewportPaddingY);
+
+        if (viewportPoint.x >= minX && viewportPoint.x <= maxX &&
+            viewportPoint.y >= minY && viewportPoint.y <= maxY)
+        {
+            return candidateWorldPos;
+        }
+
+        Vector3 clampedViewport = viewportPoint;
+        clampedViewport.x = Mathf.Clamp(clampedViewport.x, minX, maxX);
+        clampedViewport.y = Mathf.Clamp(clampedViewport.y, minY, maxY);
+
+        Vector3 clampedWorld = cam.ViewportToWorldPoint(new Vector3(clampedViewport.x, clampedViewport.y, viewportPoint.z));
+        return clampedWorld;
     }
 
     private void UpdateHoverHighlight(Ray pointerRay)

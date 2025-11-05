@@ -344,6 +344,37 @@ public class DeckService : IDeckService
         Debug.Log($"[DeckService] Card '{cardId}' added to deck (DiscardPile). counts={GetPileCounts().Discard}");
     }
 
+    public bool RemoveCardFromRun(string instanceId)
+    {
+        EnsureInitialized();
+        if (string.IsNullOrEmpty(instanceId))
+            return false;
+
+        if (!_cardsById.TryGetValue(instanceId, out var state) || state == null)
+            return false;
+
+        // 1) 모든 더미에서 제거
+        _drawPileIds.Remove(instanceId);
+        _handIds.Remove(instanceId);
+        _discardPileIds.Remove(instanceId);
+        _exhaustPileIds.Remove(instanceId);
+        _playerFieldIds.Remove(instanceId);
+        _enemyFieldIds.Remove(instanceId);
+
+        // 2) 내부 캐시 정리
+        _cardsById.Remove(instanceId);
+        _runtimeDeck.RemoveAll(c => c != null && c.InstanceId == instanceId);
+
+        // 3) DB에서 삭제(레거시 CardInDeck 포함) 후 상태 재계산
+        _db.DeleteCardRuntimeState(_currentRunId, instanceId);
+        RecomputeNextOrderInPiles();
+
+        // 4) 변경 사항 저장 및 방송
+        PersistAndBroadcast();
+        Debug.Log($"[DeckService] RemoveCardFromRun: instance={instanceId} removed from run deck.");
+        return true;
+    }
+
     public IReadOnlyList<CardRuntimeState> GetAllCardsSnapshot()
     {
         EnsureInitialized();
