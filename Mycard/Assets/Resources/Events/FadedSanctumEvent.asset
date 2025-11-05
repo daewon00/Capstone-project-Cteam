@@ -17,7 +17,7 @@ MonoBehaviour:
   legacyChoices: []
   stages:
   - stageId: sanctum_main
-    description: "\uBE5B\uBC14\uB79C \uC131\uC18C\uC5D0\uC11C \uC0C8\uACA8\uC9C4
+    description: "\uBE5B\uBC14\uB79C \uC131\uC18C\uC5D0\uC11C \n\uC0C8\uACA8\uC9C4
       \uBB38\uAD6C\uAC00 \n\uD76C\uBBF8\uD558\uAC8C \uBE5B\uB09C\uB2E4."
     choices:
     - id: sanctum_pray_choice

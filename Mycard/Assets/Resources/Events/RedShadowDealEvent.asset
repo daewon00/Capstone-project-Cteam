@@ -18,7 +18,7 @@ MonoBehaviour:
   stages:
   - stageId: shadow_main
     description: "\uBD89\uC740 \uADF8\uB9BC\uC790\uAC00 \uB2F9\uC2E0\uC5D0\uAC8C
-      \uC720\uBB3C \uD558\uB098\uB97C \uB0B4\uBBFC\uB2E4."
+      \n\uC720\uBB3C \uD558\uB098\uB97C \uB0B4\uBBFC\uB2E4."
     choices:
     - id: shadow_relic_choice
       label: "\uC720\uBB3C\uC744 \uBC1B\uB294\uB2E4."

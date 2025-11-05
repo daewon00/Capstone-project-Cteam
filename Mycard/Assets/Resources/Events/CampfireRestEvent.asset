@@ -18,9 +18,9 @@ MonoBehaviour:
   legacyChoices: []
   stages:
   - stageId: campfire_intro
-    description: "\uD0C0\uC624\uB974\uB294 \uBAA8\uB2E5\uBD88\uC774 \uC9C0\uCE5C
+    description: "\uD0C0\uC624\uB974\uB294 \uBAA8\uB2E5\uBD88\uC774 \n\uC9C0\uCE5C
       \uBAB8\uC744 \uAC10\uC2F8\uC90D\uB2C8\uB2E4. \n\uC7A0\uC2DC \uC228\uC744 \uB3CC\uB9AC\uBA70
-      \uBB34\uC5C7\uC744 \uD574\uC57C\uD560\uAE4C."
+      \n\uBB34\uC5C7\uC744 \uD574\uC57C\uD560\uAE4C."
     choices:
     - id: rest_heal
       label: "\uD734\uC2DD\uC744 \uCDE8\uD55C\uB2E4. (\uCCB4\uB825 30% \uD68C\uBCF5)"
