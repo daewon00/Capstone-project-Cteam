@@ -100,7 +100,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     [SerializeField, Tooltip("카드 확대 시 상하 클리핑을 방지하기 위한 뷰포트 패딩")]
     private float _pressViewportPaddingY = 0.12f;
     [SerializeField, Tooltip("끝 카드 확대 시 좌우 클리핑을 방지하기 위한 추가 패딩")]
-    private float _pressViewportEdgePaddingX = 0.2f;
+    private float _pressViewportEdgePaddingX = 0.28f;
     [SerializeField, Tooltip("끝 카드 확대 시 상하 클리핑을 방지하기 위한 추가 패딩")]
     private float _pressViewportEdgePaddingY = 0.12f;
 
