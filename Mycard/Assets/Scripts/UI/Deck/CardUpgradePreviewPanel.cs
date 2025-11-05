@@ -28,6 +28,8 @@ public class CardUpgradePreviewPanel : MonoBehaviour
 
     private CardRuntimeState _beforeState;
     private CardRuntimeState _afterState;
+    private CardScriptableObject _activeCardData;
+    private CardRuntimeState _activeRuntimeState;
     private string _defaultBeforeTitle;
     private string _defaultAfterTitle;
     private string _defaultCenterTitle;
@@ -79,6 +81,8 @@ public class CardUpgradePreviewPanel : MonoBehaviour
         CacheSlotDefaults();
         RestoreDefaultSlotLayout();
         _usingCenterSlot = false;
+        _activeCardData = null;
+        _activeRuntimeState = null;
         _beforeState = null;
         _afterState = null;
         beforeDisplay?.Clear();
@@ -109,6 +113,8 @@ public class CardUpgradePreviewPanel : MonoBehaviour
         EnsureStates(runtimeState);
         beforeDisplay?.Bind(cardData, _beforeState);
         afterDisplay?.Bind(cardData, _afterState);
+        _activeCardData = cardData;
+        _activeRuntimeState = runtimeState;
         if (afterDisplay != null)
         {
             afterDisplay.gameObject.SetActive(showAfterState);
@@ -273,6 +279,11 @@ public class CardUpgradePreviewPanel : MonoBehaviour
         }
 
         UpdateSlotLayout(useCenterSlot, beforeTitle, ref centerTitle, ref showCenter);
+
+        if (useCenterSlot && beforeDisplay != null && _activeCardData != null && _activeRuntimeState != null)
+        {
+            beforeDisplay.Bind(_activeCardData, _activeRuntimeState);
+        }
 
         ApplySizing(beforeDisplay);
         if (showAfterState && afterDisplay != null)

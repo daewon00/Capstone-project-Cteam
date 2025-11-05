@@ -99,6 +99,10 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private float _pressViewportPaddingX = 0.08f;
     [SerializeField, Tooltip("카드 확대 시 상하 클리핑을 방지하기 위한 뷰포트 패딩")]
     private float _pressViewportPaddingY = 0.12f;
+    [SerializeField, Tooltip("끝 카드 확대 시 좌우 클리핑을 방지하기 위한 추가 패딩")]
+    private float _pressViewportEdgePaddingX = 0.2f;
+    [SerializeField, Tooltip("끝 카드 확대 시 상하 클리핑을 방지하기 위한 추가 패딩")]
+    private float _pressViewportEdgePaddingY = 0.12f;
 
     void Awake()
     {
@@ -755,7 +759,16 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             {
                 targetPos = ApplyCameraForwardBoost(targetPos, forwardOffset);
             }
-            targetPos = ClampPressInspectPosition(targetPos);
+            bool isEdgeCard = false;
+            if (handCtrl != null && inHand)
+            {
+                int count = handCtrl.heldCards != null ? handCtrl.heldCards.Count : 0;
+                if (count > 0 && handPosition >= 0 && handPosition < count)
+                {
+                    isEdgeCard = handPosition == 0 || handPosition == count - 1;
+                }
+            }
+            targetPos = ClampPressInspectPosition(targetPos, isEdgeCard);
             MoveToPoint(targetPos, transform.rotation);
         }
         // 레이아웃을 잠그어 자동 재정렬로 인한 오더/위치 되돌림 방지
@@ -983,7 +996,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         BattleDeckRuntimeSync.UpdateCardState(this);
     }
 
-    private Vector3 ClampPressInspectPosition(Vector3 candidateWorldPos)
+    private Vector3 ClampPressInspectPosition(Vector3 candidateWorldPos, bool isEdgeCard)
     {
         var camController = CameraController.instance;
         Camera cam = null;
@@ -998,10 +1011,13 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (viewportPoint.z <= 0f)
             return candidateWorldPos;
 
-        float minX = Mathf.Clamp01(_pressViewportPaddingX);
-        float maxX = Mathf.Clamp01(1f - _pressViewportPaddingX);
-        float minY = Mathf.Clamp01(_pressViewportPaddingY);
-        float maxY = Mathf.Clamp01(1f - _pressViewportPaddingY);
+        float paddingX = isEdgeCard ? _pressViewportEdgePaddingX : _pressViewportPaddingX;
+        float paddingY = isEdgeCard ? _pressViewportEdgePaddingY : _pressViewportPaddingY;
+
+        float minX = Mathf.Clamp01(paddingX);
+        float maxX = Mathf.Clamp01(1f - paddingX);
+        float minY = Mathf.Clamp01(paddingY);
+        float maxY = Mathf.Clamp01(1f - paddingY);
 
         if (viewportPoint.x >= minX && viewportPoint.x <= maxX &&
             viewportPoint.y >= minY && viewportPoint.y <= maxY)
