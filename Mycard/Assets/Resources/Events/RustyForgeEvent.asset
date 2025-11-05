@@ -18,10 +18,12 @@ MonoBehaviour:
   stages:
   - stageId: forge_main
     description: "\uC81C\uB828\uB85C\uAC00 \uB2E4\uC2DC \uD0C0\uC624\uB97C \uC900\uBE44\uB97C
-      \uD558\uACE0 \uC788\uB2E4."
+      \uD558\uACE0 \uC788\uB2E4.\n\uC81C\uB828\uB85C\uC758 \uBD88\uAF43\uC73C\uB85C
+      \uCE74\uB4DC\uB97C \uBC14\uAFC0\uC218 \uC788\uC744\uAC70 \uAC19\uB2E4."
     choices:
     - id: forge_transform_choice
-      label: "\uCE74\uB4DC\uB97C \uB179\uC5EC \uC0C8\uB85C\uC6B4 \uCE74\uB4DC\uB85C"
+      label: "\uCE74\uB4DC\uB97C \uB179\uC5EC \uC0C8\uB85C\uC6B4 \uCE74\uB4DC\uB85C
+        \uB9CC\uB4E0\uB2E4."
       effects:
       - type: 7
         amount: 0
@@ -30,7 +32,7 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: forge_transform
     - id: forge_ignore_choice
-      label: "\uADF8\uB0E5 \uB5A0\uB09C\uB2E4"
+      label: "\uADF8\uB0E5 \uB5A0\uB09C\uB2E4."
       effects:
       - type: 4
         amount: 0

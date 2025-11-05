@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uAD11\uC804\uC0AC"
   CardId: CARD_BERSERKER
-  actionDescription: "\uACF5\uACA9 \uC131\uACF5 \uC2DC \uC591\uC606 \uC801\uC5D0\uAC8C\uB3C4
-    \uD53C\uD574"
+  actionDescription: "\uACF5\uACA9\uC774 \uC801\uC911\uD558\uBA74 \uB300\uC0C1\uC758
+    \uC88C\uC6B0 \uC801\uC5D0\uAC8C\uB3C4 \uAC19\uC740 \uD53C\uD574\uB97C \uC90D\uB2C8\uB2E4."
   cardLore: 
   manaCost: 3
   attackPower: 3

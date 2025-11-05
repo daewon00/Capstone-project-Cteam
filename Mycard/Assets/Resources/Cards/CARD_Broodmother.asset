@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uBB34\uB9AC \uC5B4\uBBF8"
   CardId: CARD_BROODMOTHER
-  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC591\uC606\uC5D0 1/1
-    \uD1A0\uD070 \uC18C\uD658"
+  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC88C\uC6B0 \uBE48
+    \uCE78\uC5D0 1/1 \uBB34\uB9AC\uB97C \uC18C\uD658\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 4
   attackPower: 2

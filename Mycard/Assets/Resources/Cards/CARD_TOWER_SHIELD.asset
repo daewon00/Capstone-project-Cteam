@@ -12,12 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_TOWER_SHIELD
   m_EditorClassIdentifier: 
-  cardName: 방패병
+  cardName: "\uBC29\uD328\uBCD1"
   CardId: CARD_TOWER_SHIELD
-  actionDescription: 튼튼한 방패로 진지를 지키는 방어병.
+  actionDescription: "\uD2BC\uD2BC\uD55C \uBC29\uD328\uB85C \uC9C4\uC9C0\uB97C \uC9C0\uD0A4\uB294
+    \uBC29\uD328\uBCD1."
   cardLore: 
-  currentHealth: 2
-  attackPower: 1
   manaCost: 1
+  attackPower: 1
+  currentHealth: 2
   characterSprite: {fileID: 21300000, guid: 19389f997bd5d89478b48f14f089f785, type: 3}
   bgSprite: {fileID: 21300000, guid: 91f263c4e2d827c4fa3cb47b7369c9bf, type: 3}
+  rarity: 0
+  effects: []
+  upgradeSettings:
+    enabled: 0
+    manaCost: 0
+    attackPower: 0
+    health: 0
+    initialized: 0
+  removeAfterCombat: 0

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cardName: "\uBE44\uC804 \uC2E0\uB3D9"
   CardId: CARD_ARCANE_PRODIGY
-  actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uCE74\uB4DC 1\uC7A5\uC744
+  actionDescription: "\uD544\uB4DC\uC5D0 \uB098\uC62C \uB54C \uCE74\uB4DC 1\uC7A5\uC744
     \uB4DC\uB85C\uC6B0\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 0
