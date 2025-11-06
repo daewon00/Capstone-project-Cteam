@@ -424,7 +424,8 @@ public class BattleController : MonoBehaviour
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
-                    UIController.instance.FieldShowButton.SetActive(true);
+                    if (UIController.instance.UseFieldToggleButtons && UIController.instance.FieldShowButton != null)
+                        UIController.instance.FieldShowButton.SetActive(true);
                     
                     DOVirtual.DelayedCall(0.35f, () =>
                     {
@@ -486,8 +487,13 @@ public class BattleController : MonoBehaviour
     {
         UIController.instance.endTurnButton.SetActive(false);
         UIController.instance.drawCardButton.SetActive(false);
-        UIController.instance.FieldBackButton.SetActive(false);
-        UIController.instance.FieldShowButton.SetActive(false);
+        if (UIController.instance.UseFieldToggleButtons)
+        {
+            if (UIController.instance.FieldBackButton != null)
+                UIController.instance.FieldBackButton.SetActive(false);
+            if (UIController.instance.FieldShowButton != null)
+                UIController.instance.FieldShowButton.SetActive(false);
+        }
         UIController.instance.EnemyUI.SetActive(false);
         RequestSnapshot("BeforePlayerEndTurn");
         GameEvents.RaiseTurnEnd(true);   // 추가 +++ 플레이어 턴 종료

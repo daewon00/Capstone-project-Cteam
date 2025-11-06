@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Game.Save;
@@ -140,6 +141,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         if (stageService != null)
         {
             stageService.RebindRun(runId);
+            var previousStage = stageService.Current != null ? stageService.Current.Stage : RunStageType.Unknown;
             RunStagePayloads.Battle payload;
             if (!stageService.TryGetPayload(out payload) || payload == null)
             {
@@ -159,16 +161,27 @@ public class BattleSceneBootstrap : MonoBehaviour
                     act = runData?.Run?.Act ?? 0,
                     floor = runData?.Run?.Floor ?? 0,
                     nodeIndex = runData?.Run?.NodeIndex ?? 0,
-                    battleKind = (int)(GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal)
+                    battleKind = (int)(GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal),
+                    prevAct = runData?.Run?.Act ?? 0,
+                    prevFloor = runData?.Run?.Floor ?? 0,
+                    prevNodeIndex = runData?.Run?.NodeIndex ?? 0,
+                    prevBattleKind = (int)(GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal),
+                    hasPrevLocation = false,
+                    isPending = false
                 };
             }
 
             payload.sceneName = SceneManager.GetActiveScene().name;
             if (_activeEncounter != null && string.IsNullOrEmpty(payload.enemyId))
             {
-                payload.enemyId = _activeEncounter.EncounterId;
+                    payload.enemyId = _activeEncounter.EncounterId;
             }
+            payload.isPending = false;
             stageService.SetStage(RunStageType.Battle, payload.sceneName, RunStageService.ToJson(payload));
+            if (previousStage == RunStageType.BattlePending && !string.IsNullOrEmpty(runId))
+            {
+                CommitBattleEntry(runId, payload);
+            }
         }
 
         var tutorialService = ServiceRegistry.Get<ITutorialService>();
@@ -289,6 +302,61 @@ public class BattleSceneBootstrap : MonoBehaviour
             return encounter;
 
         return BuildRuntimeFallback(kind);
+    }
+
+    private void CommitBattleEntry(string runId, RunStagePayloads.Battle payload)
+    {
+        var db = ServiceRegistry.Get<IDatabase>();
+        if (db == null) return;
+        try
+        {
+            db.UpdateRunPosition(runId, payload.act, payload.floor, payload.nodeIndex);
+
+            MapNodeState nodeState = null;
+            try
+            {
+                var runData = db.LoadCurrentRun(runId);
+                nodeState = runData?.Nodes?.FirstOrDefault(n =>
+                    n.RunId == runId && n.Act == payload.act && n.Floor == payload.floor && n.NodeIndex == payload.nodeIndex);
+            }
+            catch { }
+
+            if (nodeState == null)
+            {
+                nodeState = new MapNodeState
+                {
+                    RunId = runId,
+                    Act = payload.act,
+                    Floor = payload.floor,
+                    NodeIndex = payload.nodeIndex,
+                    Type = ResolveNodeType(payload.battleKind)
+                };
+            }
+            else
+            {
+                nodeState.Type = ResolveNodeType(payload.battleKind);
+            }
+
+            nodeState.Visited = true;
+            db.UpsertNodeState(nodeState);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[BattleSceneBootstrap] Failed to commit battle entry: {e.Message}");
+        }
+    }
+
+    private static NodeType ResolveNodeType(int battleKind)
+    {
+        switch ((GameContext.BattleKind)Mathf.Clamp(battleKind, 0, (int)GameContext.BattleKind.Boss))
+        {
+            case GameContext.BattleKind.Elite:
+                return NodeType.Elite;
+            case GameContext.BattleKind.Boss:
+                return NodeType.Boss;
+            default:
+                return NodeType.Battle;
+        }
     }
 
     private EnemyEncounterConfig GetEncounterForKind(GameContext.BattleKind kind)

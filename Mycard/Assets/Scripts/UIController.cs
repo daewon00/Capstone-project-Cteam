@@ -30,6 +30,12 @@ public class UIController : MonoBehaviour
 
     public GameObject EnemyUI;
 
+    [Header("Field View Toggle Buttons")]
+    [SerializeField, Tooltip("필드/손패 전환 버튼을 사용하지 않을 경우 비활성화합니다.")]
+    private bool _useFieldToggleButtons = true;
+
+    public bool UseFieldToggleButtons => _useFieldToggleButtons;
+
     // 드래그 중 임시로 숨길 UI 그룹들(CanvasGroup 사용 권장)
     [Header("Drag Hide UI Groups (CanvasGroup)")]
     [SerializeField] private CanvasGroup _enemyUIGroup;       // EnemyUI 루트에 CanvasGroup 부착 권장
@@ -40,7 +46,7 @@ public class UIController : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-
+        InitializeFieldToggleButtons();
     }
 
     // Update is called once per frame
@@ -60,6 +66,23 @@ public class UIController : MonoBehaviour
         {
             PauseUnPause();
         }
+    }
+
+    private void InitializeFieldToggleButtons()
+    {
+        if (_useFieldToggleButtons)
+        {
+            if (FieldBackButton != null)
+                FieldBackButton.SetActive(false);
+            if (FieldShowButton != null)
+                FieldShowButton.SetActive(true);
+            return;
+        }
+
+        if (FieldBackButton != null)
+            FieldBackButton.SetActive(false);
+        if (FieldShowButton != null)
+            FieldShowButton.SetActive(false);
     }
 
     public void SetPlayerManaText(int manaAmount)
@@ -123,28 +146,39 @@ public class UIController : MonoBehaviour
 
     public void FieldButton()
     {
-        if (FieldBackButton.activeSelf == false)
-        {
-            CameraController.instance.MoveTo(CameraController.instance.battleTransform);
-            endTurnButton.SetActive(false);
-            FieldShowButton.SetActive(false);
-            FieldBackButton.SetActive(true);
-            EnemyUI.SetActive(false);
+        bool canActivate = FieldBackButton == null || !FieldBackButton.activeSelf;
+        if (!canActivate)
+            return;
 
+        CameraController.instance.MoveTo(CameraController.instance.battleTransform);
+        endTurnButton.SetActive(false);
+        if (_useFieldToggleButtons)
+        {
+            if (FieldShowButton != null)
+                FieldShowButton.SetActive(false);
+            if (FieldBackButton != null)
+                FieldBackButton.SetActive(true);
         }
+        EnemyUI.SetActive(false);
     }
 
     public void FieldBack()
     {
-        if (FieldShowButton.activeSelf == false)
-        {
-            CameraController.instance.MoveTo(CameraController.instance.homeTransform);
-            endTurnButton.SetActive(true);
-            FieldBackButton.SetActive(false);
-            FieldShowButton.SetActive(true);
+        bool canActivate = FieldShowButton == null || !FieldShowButton.activeSelf;
+        if (!canActivate)
+            return;
 
-            Invoke("EnableEnemyUI", .4f);
+        CameraController.instance.MoveTo(CameraController.instance.homeTransform);
+        endTurnButton.SetActive(true);
+        if (_useFieldToggleButtons)
+        {
+            if (FieldBackButton != null)
+                FieldBackButton.SetActive(false);
+            if (FieldShowButton != null)
+                FieldShowButton.SetActive(true);
         }
+
+        Invoke("EnableEnemyUI", .4f);
     }
 
     void EnableEnemyUI()

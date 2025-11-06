@@ -156,6 +156,18 @@ public class MainMenu : MonoBehaviour
             Debug.LogWarning($"[MainMenu] Failed to load RunStageState: {e.Message}");
         }
 
+        if (stageState != null)
+        {
+            var payloadPreview = string.IsNullOrEmpty(stageState.PayloadJson)
+                ? "(empty)"
+                : (stageState.PayloadJson.Length > 128 ? stageState.PayloadJson.Substring(0, 128) + "..." : stageState.PayloadJson);
+            Debug.Log($"[MainMenu] Continue stage={stageState.Stage}, sceneHint='{stageState.SceneHint}', payload={payloadPreview}");
+        }
+        else
+        {
+            Debug.Log("[MainMenu] Continue stageState is null; defaulting to Map.");
+        }
+
         var targetScene = mapScene;
         var stage = stageState != null ? stageState.Stage : RunStageType.Map;
 
@@ -166,6 +178,9 @@ public class MainMenu : MonoBehaviour
                 break;
             case RunStageType.Battle:
                 if (!string.IsNullOrEmpty(stageState?.SceneHint)) targetScene = stageState.SceneHint;
+                break;
+            case RunStageType.BattlePending:
+                targetScene = mapScene;
                 break;
             case RunStageType.ShopOverlay:
             case RunStageType.Reward:

@@ -299,7 +299,13 @@ public class CompanionSelectController : MonoBehaviour
                         floor = run.Floor,
                         nodeIndex = run.NodeIndex,
                         battleKind = (int)GameContext.BattleKind.Normal,
-                        sceneName = tutorialBattleScene
+                        sceneName = tutorialBattleScene,
+                        prevAct = run.Act,
+                        prevFloor = run.Floor,
+                        prevNodeIndex = run.NodeIndex,
+                        prevBattleKind = (int)GameContext.BattleKind.Normal,
+                        hasPrevLocation = false,
+                        isPending = false
                     };
                     stageService.SetStage(RunStageType.Battle, tutorialBattleScene, RunStageService.ToJson(battlePayload));
                 }

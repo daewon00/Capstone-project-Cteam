@@ -41,6 +41,24 @@ public class MapBootstrap : MonoBehaviour
             return;
         }
 
+        var stageService = ServiceRegistry.Get<IRunStageService>();
+        if (stageService != null)
+        {
+            try
+            {
+                stageService.RebindRun(runId);
+                var stage = stageService.Current;
+                var payloadPreview = stage != null && !string.IsNullOrEmpty(stage.PayloadJson)
+                    ? (stage.PayloadJson.Length > 128 ? stage.PayloadJson.Substring(0, 128) + "..." : stage.PayloadJson)
+                    : "(empty)";
+                Debug.Log($"[MapBootstrap] Stage snapshot at Start: {(stage != null ? stage.Stage.ToString() : "(null)")}, sceneHint='{stage?.SceneHint}', payload={payloadPreview}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[MapBootstrap] Stage snapshot failed: {e.Message}");
+            }
+        }
+
         // 덱을 복원합니다.
         if (deck != null)
         {

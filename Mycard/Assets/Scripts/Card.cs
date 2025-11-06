@@ -72,7 +72,15 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private bool _hasHealthDefaultColor;
     private Color _costDefaultColor = Color.white;
     private bool _hasCostDefaultColor;
+    private Color _frontDefaultColor = Color.white;
+    private bool _hasFrontDefaultColor;
+    private Color _bgDefaultColor = Color.white;
+    private bool _hasBgDefaultColor;
     private CardVisualProfile _visualProfile;
+    private bool _isBoardPreview;
+    private bool _isPreviewPlacementValid;
+    private static readonly Color PreviewAllowedTint = new Color(0.72f, 0.95f, 1f, 1f);
+    private static readonly Color PreviewBlockedTint = new Color(1f, 0.78f, 0.78f, 1f);
 
     // 이벤트 기반 입력 상태(탭/드래그 구분)
     private bool _isDragging;
@@ -127,6 +135,16 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             _costDefaultColor = costText.color;
             _hasCostDefaultColor = true;
         }
+        if (frontArt != null && !_hasFrontDefaultColor)
+        {
+            _frontDefaultColor = frontArt.color;
+            _hasFrontDefaultColor = true;
+        }
+        if (bgArt != null && !_hasBgDefaultColor)
+        {
+            _bgDefaultColor = bgArt.color;
+            _hasBgDefaultColor = true;
+        }
         if (_iconDatabase == null && iconDatabaseOverride != null)
             _iconDatabase = iconDatabaseOverride;
         if (_visualProfile == null)
@@ -134,6 +152,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         _sortingBinder = GetComponentInChildren<CardSortingBinder>(true);
         ApplyReadabilityStyling();
+        ApplyPreviewVisuals();
     }
 
     private CardVisualProfile ResolveVisualProfile()
@@ -367,6 +386,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[Card] ReturnToHand: instance={InstanceId}, handPos={handPosition}");
 #endif
+        SetBoardPreviewState(false, false);
     }
 
     //다른 카드로 부터 데미지를 받을때
@@ -519,7 +539,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     //카드 현 상태 UI 텍스트 설정
     public void UpdateCardDisplay()
     {
-        var shownAtk = GetEffectiveAttack(); //추가+++
+        var shownAtk = GetDisplayAttackValue();
         var profile = CardReadabilityRegistry.Profile;
         if (attackText != null)
         {
@@ -594,6 +614,66 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         //bool buffed = isPlayer && shownAtk > attackPower;
         //attackText.color = buffed ? new Color(0.2f, 1f, 0.2f) : Color.white;
         UpdateSkillIcon();
+    }
+
+    private int GetDisplayAttackValue()
+    {
+        int value = attackPower;
+        bool includeAuraPenalty = assignedPlace != null;
+        if (BattleController.instance != null)
+        {
+            value = GameEvents.ApplyCardAttackModifiers(this, value);
+            bool includeGlobal = assignedPlace != null || _isBoardPreview;
+            if (includeGlobal)
+            {
+                value = isPlayer
+                    ? GameEvents.ApplyPlayerAttackModifiers(value)
+                    : GameEvents.ApplyEnemyAttackModifiers(value);
+            }
+        }
+
+        if (includeAuraPenalty)
+        {
+            var effectService = ServiceRegistry.Get<ICardEffectService>();
+            if (effectService != null)
+            {
+                var snapshot = effectService.CaptureCardState(this);
+                if (snapshot != null && snapshot.auraBonus > 0)
+                    value = Mathf.Max(0, value - snapshot.auraBonus);
+            }
+        }
+
+        return value;
+    }
+
+    private void SetBoardPreviewState(bool active, bool placementValid)
+    {
+        bool resolvedValid = active && placementValid;
+        if (_isBoardPreview == active && _isPreviewPlacementValid == resolvedValid)
+            return;
+
+        _isBoardPreview = active;
+        _isPreviewPlacementValid = resolvedValid;
+        ApplyPreviewVisuals();
+        UpdateCardDisplay();
+    }
+
+    private void ApplyPreviewVisuals()
+    {
+        if (!_isBoardPreview)
+        {
+            if (frontArt != null && _hasFrontDefaultColor)
+                frontArt.color = _frontDefaultColor;
+            if (bgArt != null && _hasBgDefaultColor)
+                bgArt.color = _bgDefaultColor;
+            return;
+        }
+
+        var tint = _isPreviewPlacementValid ? PreviewAllowedTint : PreviewBlockedTint;
+        if (frontArt != null && _hasFrontDefaultColor)
+            frontArt.color = Color.Lerp(_frontDefaultColor, tint, 0.45f);
+        if (bgArt != null && _hasBgDefaultColor)
+            bgArt.color = Color.Lerp(_bgDefaultColor, tint, 0.55f);
     }
 
     /// <summary>
@@ -786,6 +866,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (!_isInteractable || !inHand || assignedPlace != null) return;
         if (BattleController.instance == null || BattleController.instance.battleEnded) return;
 
+        SetBoardPreviewState(false, false);
         _isDragging = true;
 
         if (theCol != null) theCol.enabled = false; // 자기 자신 레이캐스트 방지
@@ -896,6 +977,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                         transform.DOKill(false);
                         transform.localScale = HandController.instance.GetBoardScale();
                     }
+                    UpdateCardDisplay();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"[Card] Placed: instance={InstanceId}, parent={(transform.parent != null ? transform.parent.name : "<none>")}, pos={transform.position}");
 #endif
@@ -1043,32 +1125,34 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                    ?? slotHit.collider.GetComponentInParent<CardPlacePoint>();
         }
 
-        if (next == _currentHoveredSlot)
-        {
-            // 같은 슬롯이면 추가 판정 불필요(깜빡임 방지)
-            return;
-        }
-
-        // 이전 슬롯 하이라이트 해제
-        if (_currentHoveredSlot != null)
-        {
-            _currentHoveredSlot.SetHighlightState(CardPlacePoint.HighlightState.Off);
-            _currentHoveredSlot = null;
-        }
-
-        // 신규 슬롯 반영
+        bool allowed = false;
         if (next != null)
         {
-            var allowed = false;
             if (next.activeCard == null && next.isPlayerPoint)
             {
                 var playable = BattleController.instance.EvaluatePlayability(this);
                 allowed = (playable == BattleController.Playability.Ok);
             }
+        }
 
+        if (next != _currentHoveredSlot)
+        {
+            if (_currentHoveredSlot != null)
+            {
+                _currentHoveredSlot.SetHighlightState(CardPlacePoint.HighlightState.Off);
+            }
             _currentHoveredSlot = next;
+        }
+
+        if (_currentHoveredSlot != null)
+        {
             _currentHoveredSlot.SetHighlightState(
                 allowed ? CardPlacePoint.HighlightState.Allowed : CardPlacePoint.HighlightState.Blocked);
+            SetBoardPreviewState(true, allowed);
+        }
+        else
+        {
+            SetBoardPreviewState(false, false);
         }
     }
 
@@ -1079,6 +1163,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             _currentHoveredSlot.SetHighlightState(CardPlacePoint.HighlightState.Off);
             _currentHoveredSlot = null;
         }
+        SetBoardPreviewState(false, false);
     }
 
     private Vector3 ApplyCameraForwardBoost(Vector3 basePos, float distance)

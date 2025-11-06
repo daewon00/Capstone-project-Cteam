@@ -52,6 +52,7 @@ public sealed class RunStageService : IRunStageService
     {
         if (string.IsNullOrEmpty(_runId)) return;
 
+        var previousStage = _current != null ? _current.Stage : RunStageType.Unknown;
         var row = new RunStageState
         {
             RunId = _runId,
@@ -64,7 +65,14 @@ public sealed class RunStageService : IRunStageService
         _db.UpsertRunStageState(row);
         _current = row;
 
-        if (stage != RunStageType.Battle)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        var payloadSnippet = string.IsNullOrEmpty(row.PayloadJson)
+            ? "(empty)"
+            : (row.PayloadJson.Length > 128 ? row.PayloadJson.Substring(0, 128) + "..." : row.PayloadJson);
+        Debug.Log($"{LogTag} SetStage runId={_runId}, {previousStage} -> {stage}, sceneHint='{row.SceneHint}', payload={payloadSnippet}");
+#endif
+
+        if (stage != RunStageType.Battle && stage != RunStageType.BattlePending)
         {
             _db.DeleteActiveBattleState(_runId);
         }
@@ -171,6 +179,12 @@ public static class RunStagePayloads
         public int battleKind;
         public string sceneName;
         public string enemyId;
+        public int prevAct;
+        public int prevFloor;
+        public int prevNodeIndex;
+        public int prevBattleKind;
+        public bool hasPrevLocation;
+        public bool isPending;
     }
 
     [Serializable]

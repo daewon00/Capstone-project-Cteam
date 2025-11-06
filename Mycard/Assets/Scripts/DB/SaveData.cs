@@ -124,7 +124,8 @@ namespace Game.Save
         Event = 2,
         Battle = 3,
         ShopOverlay = 4,
-        Reward = 5
+        Reward = 5,
+        BattlePending = 6
     }
 
     /// <summary>

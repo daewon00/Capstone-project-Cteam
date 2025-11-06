@@ -123,13 +123,29 @@ public class BattleSnapshotScheduler : MonoBehaviour
     private void MaintainStage(string runId, BattleSnapshotDTO snapshot)
     {
         if (_stageService == null) return;
+        var sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (string.IsNullOrEmpty(sceneName) ||
+            sceneName.IndexOf("Battle", StringComparison.OrdinalIgnoreCase) < 0)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[BattleSnapshotScheduler] MaintainStage skipped outside battle scene (scene='{sceneName}')");
+#endif
+            return;
+        }
+
         var payload = new RunStagePayloads.Battle
         {
             act = 0,
             floor = 0,
             nodeIndex = 0,
             battleKind = (int)(GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal),
-            sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+            sceneName = sceneName,
+            prevAct = 0,
+            prevFloor = 0,
+            prevNodeIndex = 0,
+            prevBattleKind = (int)(GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal),
+            hasPrevLocation = false,
+            isPending = false
         };
         _stageService.SetStage(RunStageType.Battle, payload.sceneName, RunStageService.ToJson(payload));
     }

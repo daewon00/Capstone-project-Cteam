@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +33,8 @@ public class MapTraversalController : MonoBehaviour
         public RunStagePayloads.Location LocationPayload;
         public MapNodeState PendingVisited;
         public int PreviousFloor;
+        public int PreviousNodeIndex;
+        public int PreviousAct;
         public RunStagePayloads.Event EventPayload;
         public EventSessionDTO PreparedEventSession;
         public RunStagePayloads.Shop ShopPayload;
@@ -39,6 +42,8 @@ public class MapTraversalController : MonoBehaviour
         public string BattleSceneToLoad;
         public GameContext.BattleKind? PreparedBattleKind;
         public bool TriggerAssignedScene;
+        public GameContext.BattleKind PreviousBattleKind;
+        public bool ShouldPersistPosition = true;
     }
 
     [SerializeField] private ShopOverlayController _shopOverlay; //상점 오버레이 저장
@@ -64,6 +69,8 @@ public class MapTraversalController : MonoBehaviour
         if (data == null) { Debug.LogError("[Traversal] 런 로드 실패"); return; }
 
         _run = data.Run;
+
+        Debug.Log($"[MapTraversalController] Start runId={_runId}, act={_run.Act}, floor={_run.Floor}, nodeIndex={_run.NodeIndex}");
 
         // 씬의 모든 노드 수집
         var list = FindObjectsByType<NodeGoScene>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
@@ -97,6 +104,7 @@ public class MapTraversalController : MonoBehaviour
             };
 
             var currentStage = stageService.Current;
+            Debug.Log($"[MapTraversalController] Stage on entry: {(currentStage != null ? currentStage.Stage.ToString() : "(null)")}, sceneHint='{currentStage?.SceneHint}'");
             if (currentStage == null)
             {
                 stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
@@ -105,6 +113,43 @@ public class MapTraversalController : MonoBehaviour
             {
                 switch (currentStage.Stage)
                 {
+                    case RunStageType.BattlePending:
+                        if (!TryRestorePreviousMapPosition(stageService, currentStage.PayloadJson, locationPayload))
+                        {
+                            stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
+                        }
+                        break;
+                    case RunStageType.Battle:
+                    {
+                        var resumeScene = !string.IsNullOrEmpty(currentStage.SceneHint)
+                            ? currentStage.SceneHint
+                            : battleSceneName;
+                        bool payloadParsed = RunStageService.TryParse(currentStage.PayloadJson, out RunStagePayloads.Battle pendingPayload) && pendingPayload != null;
+                        if (payloadParsed && !string.IsNullOrEmpty(pendingPayload.sceneName))
+                        {
+                            resumeScene = pendingPayload.sceneName;
+                        }
+
+                        var currentSceneName = SceneManager.GetActiveScene().name;
+                        bool resumeLooksBattle = !string.IsNullOrEmpty(resumeScene) &&
+                            resumeScene.IndexOf("Battle", System.StringComparison.OrdinalIgnoreCase) >= 0;
+                        bool sameScene = string.Equals(resumeScene, currentSceneName, System.StringComparison.Ordinal);
+
+                        if (!resumeLooksBattle || sameScene)
+                        {
+                            Debug.Log("[MapTraversalController] Stage reported Battle but resume scene is invalid or current. Attempting to restore previous map position.");
+
+                            if (!payloadParsed || !TryRestorePreviousMapPosition(stageService, currentStage.PayloadJson, locationPayload))
+                            {
+                                stageService.SetStage(RunStageType.Map, currentSceneName, RunStageService.ToJson(locationPayload));
+                            }
+                            break;
+                        }
+
+                        RunCacheSynchronizer.Sync();
+                        SceneManager.LoadScene(resumeScene);
+                        return;
+                    }
                     case RunStageType.Map:
                     case RunStageType.Unknown:
                         stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
@@ -122,13 +167,15 @@ public class MapTraversalController : MonoBehaviour
                         // 보상 수령 전이면 그대로 유지하여 TriggerRewardUIIfNeeded가 처리하게 둡니다.
                         break;
                     case RunStageType.Event:
-                    case RunStageType.Battle:
-                        // 다른 씬으로 이어가기 해야 하지만 맵에 도달했다면 맵으로 복귀 처리.
+                        // 이벤트 씬에서 돌아왔으면 맵 상태로 정리.
                         stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
                         break;
                 }
             }
         }
+
+        var stageAfterInit = stageService?.Current?.Stage.ToString() ?? "null";
+        Debug.Log($"[MapTraversalController] Stage after Start: {stageAfterInit}, act={_run.Act}, floor={_run.Floor}, node={_run.NodeIndex}");
 
         // 전투 돌입 시 로딩 지연을 줄이기 위해 전투 씬 프리로드를 시작합니다.
         ServiceRegistry.Get<RunStatOverlay>()?.RefreshFallback();
@@ -206,16 +253,39 @@ public class MapTraversalController : MonoBehaviour
 
             var operation = _pendingOperation;
 
-            if (operation.PendingVisited != null)
+            IDatabase db = null;
+            if (operation.PendingVisited != null || operation.ShouldPersistPosition)
             {
                 try
                 {
-                    var db = ServiceRegistry.GetRequired<IDatabase>();
+                    db = ServiceRegistry.GetRequired<IDatabase>();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[MapTraversalController] DB 조회 중 오류: {e.Message}");
+                }
+            }
+
+            if (operation.PendingVisited != null && db != null)
+            {
+                try
+                {
                     db.UpsertNodeState(operation.PendingVisited);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[MapTraversalController] 노드 상태 저장 중 오류: {e.Message}");
+                }
+            }
+
+            if (operation.ShouldPersistPosition && db != null)
+            {
+                try
+                {
                     db.UpdateRunPosition(_run.RunId, _run.Act, _run.Floor, _run.NodeIndex);
                     ServiceRegistry.Get<ITutorialService>()?.NotifyMapNodeVisited(_run.Act, _run.Floor, _run.NodeIndex);
 
-                    if (operation.PreviousFloor != operation.PendingVisited.Floor)
+                    if (operation.PendingVisited != null && operation.PreviousFloor != operation.PendingVisited.Floor)
                     {
                         try
                         {
@@ -231,7 +301,7 @@ public class MapTraversalController : MonoBehaviour
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning($"[MapTraversalController] DB 업데이트 중 오류: {e.Message}");
+                    Debug.LogWarning($"[MapTraversalController] 위치 저장 중 오류: {e.Message}");
                 }
             }
 
@@ -327,11 +397,30 @@ public class MapTraversalController : MonoBehaviour
                     floor = locationPayload.floor,
                     nodeIndex = locationPayload.nodeIndex,
                     battleKind = (int)(operation.PreparedBattleKind ?? GameContext.BattleKind.Normal),
-                    sceneName = sceneToLoad
+                    sceneName = sceneToLoad,
+                    isPending = true,
+                    prevAct = operation.PreviousAct,
+                    prevFloor = operation.PreviousFloor,
+                    prevNodeIndex = operation.PreviousNodeIndex,
+                    prevBattleKind = (int)operation.PreviousBattleKind,
+                    hasPrevLocation = true
                 };
             }
+            else
+            {
+                battlePayload.sceneName = sceneToLoad;
+                battlePayload.isPending = true;
+                battlePayload.prevAct = operation.PreviousAct;
+                battlePayload.prevFloor = operation.PreviousFloor;
+                battlePayload.prevNodeIndex = operation.PreviousNodeIndex;
+                battlePayload.prevBattleKind = (int)operation.PreviousBattleKind;
+                battlePayload.hasPrevLocation = true;
+            }
 
-            stageService?.SetStage(RunStageType.Battle, sceneToLoad, RunStageService.ToJson(battlePayload));
+            Debug.Log($"[MapTraversalController] Battle pending -> prev act={battlePayload.prevAct}, floor={battlePayload.prevFloor}, index={battlePayload.prevNodeIndex}, kind={battlePayload.prevBattleKind}, scene={sceneToLoad}");
+            operation.BattlePayload = battlePayload;
+
+            stageService?.SetStage(RunStageType.BattlePending, sceneToLoad, RunStageService.ToJson(battlePayload));
             ServiceRegistry.Get<IDatabase>()?.DeleteActiveBattleState(_run.RunId);
             RunCacheSynchronizer.Sync();
             if (TryEnterBattleViaPreload(sceneToLoad)) return;
@@ -377,6 +466,12 @@ public class MapTraversalController : MonoBehaviour
         if (isMoveToChild)
         {
             operation.PreviousFloor = _run.Floor;
+            operation.PreviousNodeIndex = _run.NodeIndex;
+            operation.PreviousAct = _run.Act;
+            var currentBattleKind = GameContext.I != null
+                ? GameContext.I.CurrentBattleKind
+                : (GameContext.BattleKind)PlayerPrefs.GetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
+            operation.PreviousBattleKind = currentBattleKind;
             _run.Floor = target.floor;
             _run.NodeIndex = target.index;
             _run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
@@ -458,8 +553,16 @@ public class MapTraversalController : MonoBehaviour
                 floor = locationPayload.floor,
                 nodeIndex = locationPayload.nodeIndex,
                 battleKind = (int)kind,
-                sceneName = battleSceneToLoad
+                sceneName = battleSceneToLoad,
+                isPending = true,
+                prevAct = operation.PreviousAct,
+                prevFloor = operation.PreviousFloor,
+                prevNodeIndex = operation.PreviousNodeIndex,
+                prevBattleKind = (int)operation.PreviousBattleKind,
+                hasPrevLocation = true
             };
+            operation.PendingVisited = null;
+            operation.ShouldPersistPosition = false;
             return;
         }
 
@@ -488,6 +591,86 @@ public class MapTraversalController : MonoBehaviour
             Debug.LogError($"[MapTraversalController] 이벤트 준비 중 오류: {e.Message}");
             return null;
         }
+    }
+
+    private bool TryRestorePreviousMapPosition(IRunStageService stageService, string serializedPayload, RunStagePayloads.Location locationPayload)
+    {
+        if (!RunStageService.TryParse(serializedPayload, out RunStagePayloads.Battle pendingPayload) || pendingPayload == null)
+        {
+            Debug.LogWarning("[MapTraversalController] Failed to parse pending battle payload; cannot restore.");
+            return false;
+        }
+
+        bool payloadHasPrev = pendingPayload.hasPrevLocation ||
+            pendingPayload.prevAct != 0 ||
+            pendingPayload.prevFloor != 0 ||
+            pendingPayload.prevNodeIndex != 0;
+
+        if (!payloadHasPrev)
+        {
+            Debug.LogWarning("[MapTraversalController] Pending battle payload lacks previous location; cannot restore.");
+            return false;
+        }
+
+        var prevAct = pendingPayload.prevAct;
+        var prevFloor = pendingPayload.prevFloor;
+        var prevNodeIndex = pendingPayload.prevNodeIndex;
+        Debug.Log($"[MapTraversalController] Restoring pending battle -> prev act={prevAct}, floor={prevFloor}, index={prevNodeIndex}, kind={pendingPayload.prevBattleKind}");
+
+        if (_run != null)
+        {
+            _run.Act = prevAct;
+            _run.Floor = prevFloor;
+            _run.NodeIndex = prevNodeIndex;
+            _run.UpdatedAtUtc = System.DateTime.UtcNow.ToString("o");
+        }
+
+        IDatabase db = null;
+        try
+        {
+            db = ServiceRegistry.Get<IDatabase>();
+        }
+        catch { }
+
+        if (db != null && !string.IsNullOrEmpty(_run?.RunId))
+        {
+            try
+            {
+                db.UpdateRunPosition(_run.RunId, prevAct, prevFloor, prevNodeIndex);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[MapTraversalController] 전투 대기 복원 중 위치 업데이트 실패: {e.Message}");
+            }
+        }
+
+        if (pendingPayload.prevBattleKind >= 0)
+        {
+            var boundedKind = Mathf.Clamp(pendingPayload.prevBattleKind, 0, (int)GameContext.BattleKind.Boss);
+            var prevKind = (GameContext.BattleKind)boundedKind;
+            if (GameContext.I != null)
+            {
+                GameContext.I.CurrentBattleKind = prevKind;
+            }
+            try
+            {
+                PlayerPrefs.SetInt("currentBattleKind", boundedKind);
+                PlayerPrefs.Save();
+            }
+            catch { }
+        }
+
+        locationPayload.act = prevAct;
+        locationPayload.floor = prevFloor;
+        locationPayload.nodeIndex = prevNodeIndex;
+
+        stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
+        Debug.Log($"[MapTraversalController] Pending battle cleared. Stage => {stageService?.Current?.Stage}");
+        RunCacheSynchronizer.Sync();
+        Debug.Log("[MapTraversalController] Battle transition did not complete. Restored previous map position.");
+        PlaceMarker(_run.Floor, _run.NodeIndex);
+        UpdateReachable(_run.Floor, _run.NodeIndex);
+        return true;
     }
 
     private void ResetSessionsForMove()
