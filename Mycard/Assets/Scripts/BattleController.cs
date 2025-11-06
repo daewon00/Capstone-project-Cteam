@@ -421,6 +421,9 @@ public class BattleController : MonoBehaviour
             {
                 case TurnOrder.playerActive:
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log("[BattleController] AdvanceTurn -> MoveTo homeTransform (playerActive)");
+#endif
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화

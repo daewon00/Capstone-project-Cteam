@@ -41,6 +41,23 @@ public class FieldViewGestureController : MonoBehaviour
     private bool _gestureTriggered;
     private PointerEventData _raycastEventData;
     private readonly List<RaycastResult> _raycastResults = new(16);
+    private static int _cardDragSuppression;
+
+    public static void PushCardDragSuppression()
+    {
+        _cardDragSuppression = Mathf.Clamp(_cardDragSuppression + 1, 0, int.MaxValue);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[FieldViewGesture] Suppress ++ => count={_cardDragSuppression}");
+#endif
+    }
+
+    public static void PopCardDragSuppression()
+    {
+        _cardDragSuppression = Mathf.Max(0, _cardDragSuppression - 1);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[FieldViewGesture] Suppress -- => count={_cardDragSuppression}");
+#endif
+    }
 
     private void Awake()
     {
@@ -185,12 +202,18 @@ public class FieldViewGestureController : MonoBehaviour
     {
         if (UIController.instance != null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[FieldViewGesture] SwitchToFieldView via UIController.FieldButton");
+#endif
             UIController.instance.FieldButton();
             return true;
         }
 
         if (CameraController.instance != null && CameraController.instance.battleTransform != null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[FieldViewGesture] SwitchToFieldView direct MoveTo battleTransform");
+#endif
             CameraController.instance.MoveTo(CameraController.instance.battleTransform);
             return true;
         }
@@ -202,12 +225,18 @@ public class FieldViewGestureController : MonoBehaviour
     {
         if (UIController.instance != null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[FieldViewGesture] SwitchToHandView via UIController.FieldBack");
+#endif
             UIController.instance.FieldBack();
             return true;
         }
 
         if (CameraController.instance != null && CameraController.instance.homeTransform != null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log("[FieldViewGesture] SwitchToHandView direct MoveTo homeTransform");
+#endif
             CameraController.instance.MoveTo(CameraController.instance.homeTransform);
             return true;
         }
@@ -225,6 +254,9 @@ public class FieldViewGestureController : MonoBehaviour
     private bool IsGestureGloballyAllowed()
     {
         if (BattleController.instance == null)
+            return false;
+
+        if (_cardDragSuppression > 0)
             return false;
 
         if (BattleController.instance.battleEnded)

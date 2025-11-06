@@ -150,6 +150,9 @@ public class UIController : MonoBehaviour
         if (!canActivate)
             return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("[UIController] FieldButton -> MoveTo battleTransform");
+#endif
         CameraController.instance.MoveTo(CameraController.instance.battleTransform);
         endTurnButton.SetActive(false);
         if (_useFieldToggleButtons)
@@ -168,6 +171,9 @@ public class UIController : MonoBehaviour
         if (!canActivate)
             return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("[UIController] FieldBack -> MoveTo homeTransform");
+#endif
         CameraController.instance.MoveTo(CameraController.instance.homeTransform);
         endTurnButton.SetActive(true);
         if (_useFieldToggleButtons)

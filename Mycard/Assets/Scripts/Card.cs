@@ -866,8 +866,12 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (!_isInteractable || !inHand || assignedPlace != null) return;
         if (BattleController.instance == null || BattleController.instance.battleEnded) return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Card] BeginDrag instance={InstanceId} pendingCameraMove={(CameraController.instance != null ? CameraController.instance.battleTransform != null : false)} camTarget={CameraController.instance?.CurrentTarget?.name}");
+#endif
         SetBoardPreviewState(false, false);
         _isDragging = true;
+        FieldViewGestureController.PushCardDragSuppression();
 
         if (theCol != null) theCol.enabled = false; // 자기 자신 레이캐스트 방지
 
@@ -899,6 +903,16 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (_pendingCameraMove)
         {
             TryActivateDragCamera(eventData);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_pendingCameraMove)
+            {
+                Debug.Log($"[Card] TryActivateDragCamera pending; travelled={Vector2.Distance(_dragStartScreenPos, eventData.position)} threshold={HandController.instance?.GetDragCameraActivationDistance()} camTarget={CameraController.instance?.CurrentTarget?.name}");
+            }
+            else
+            {
+                Debug.Log($"[Card] Drag camera activated instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
+            }
+#endif
             if (_pendingCameraMove)
             {
                 return;
@@ -923,6 +937,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (!_isDragging) return;
         _isDragging = false;
+        FieldViewGestureController.PopCardDragSuppression();
         _activeForwardOffset = 0f;
         _dragScaleApplied = false;
 
@@ -934,6 +949,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         // 드래그 종료 시 하이라이트 정리
         ClearHoverHighlight();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Card] EndDrag instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
+#endif
         // 1) 유효한 배치 포인트 검사 + 플레이 가능성 선검사
         Ray ray = Camera.main.ScreenPointToRay(eventData.position);
         RaycastHit hit;
@@ -942,6 +960,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             var selectedPoint = hit.collider.GetComponent<CardPlacePoint>();
             if (selectedPoint != null && selectedPoint.activeCard == null && selectedPoint.isPlayerPoint)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[Card] EndDrag slot hit instance={InstanceId} slot={selectedPoint.name}");
+#endif
                 // 플레이 가능성(턴/마나) 선검사
                 var playable = BattleController.instance.EvaluatePlayability(this);
                 if (playable != BattleController.Playability.Ok)
@@ -1028,12 +1049,15 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         // 3) 일반 미스: 핸드 복귀
         if (theHC != null) theHC.ResumeLayoutFor(this);
         if (theHC != null) theHC.ResumeLayout();
-        UIController.instance?.SetDragModeUIVisibility(true);
-        if (_sortingBinder != null)
-            _sortingBinder.RestoreAfterDrag();
-        UIController.instance?.SetDragModeUIVisibility(true);
-        ReturnToHand();
-    }
+            UIController.instance?.SetDragModeUIVisibility(true);
+            if (_sortingBinder != null)
+                _sortingBinder.RestoreAfterDrag();
+            UIController.instance?.SetDragModeUIVisibility(true);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Card] EndDrag miss; return to hand instance={InstanceId} camTarget(before)={CameraController.instance?.CurrentTarget?.name}");
+#endif
+            ReturnToHand();
+        }
 
     public void OnPointerUp(PointerEventData eventData)
     {
@@ -1059,7 +1083,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         {
             return;
         }
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Card] PointerUp instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
+#endif
         if (theHC != null)
         {
             theHC.ResumeLayoutFor(this);
@@ -1229,6 +1255,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         var hand = HandController.instance;
         if (hand == null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Card] TryActivateDragCamera abort: no hand instance instance={InstanceId}");
+#endif
             _pendingCameraMove = false;
             return;
         }
@@ -1243,6 +1272,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         float travelled = Vector2.Distance(_dragStartScreenPos, eventData.position);
         if (travelled >= threshold)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Card] TryActivateDragCamera exceeded threshold instance={InstanceId} travelled={travelled} threshold={threshold}");
+#endif
             ActivateDragCameraNow();
         }
     }
@@ -1252,6 +1284,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         _pendingCameraMove = false;
         if (CameraController.instance != null && CameraController.instance.battleTransform != null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Card] ActivateDragCameraNow instance={InstanceId} camTarget(before)={CameraController.instance.CurrentTarget?.name} -> {CameraController.instance.battleTransform.name}");
+#endif
             CameraController.instance.MoveTo(CameraController.instance.battleTransform);
         }
         ApplyDragScaleIfNeeded();

@@ -49,6 +49,9 @@ public class CameraController : MonoBehaviour
         if (mainCamera == null) return;
         Transform cam = mainCamera.transform;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[CameraController] MoveTo target={(target != null ? target.name : "<null>")} from={(CurrentTarget != null ? CurrentTarget.name : "<null>")}");
+#endif
         cam.DOKill();
         // 위치
         cam.DOMove(target.position, moveDuration).SetEase(easeType);
