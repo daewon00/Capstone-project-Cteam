@@ -203,5 +203,7 @@ public enum EventEffectType
     [InspectorName("저주 추가 (AddCurse)")]
     AddCurse,
     [InspectorName("카드 강화 (UpgradeRandomCard)")]
-    UpgradeRandomCard
+    UpgradeRandomCard,
+    [InspectorName("카드 제거 (RemoveCard)")]
+    RemoveCard
 }

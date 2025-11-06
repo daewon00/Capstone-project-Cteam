@@ -893,6 +893,18 @@ public sealed class DatabaseManager
             .ToList();
     }
 
+    public void DeleteCardRuntimeState(string runId, string instanceId)
+    {
+        if (string.IsNullOrEmpty(runId) || string.IsNullOrEmpty(instanceId))
+            return;
+
+        InTx(conn =>
+        {
+            conn.Table<CardRuntimeState>().Delete(c => c.RunId == runId && c.InstanceId == instanceId);
+            conn.Table<CardInDeck>().Delete(c => c.RunId == runId && c.InstanceId == instanceId);
+        });
+    }
+
     public System.Collections.Generic.List<CardRuntimeState> LoadCardRuntimeStates(string runId, CardLocation location)
     {
         if (string.IsNullOrEmpty(runId)) return new System.Collections.Generic.List<CardRuntimeState>();

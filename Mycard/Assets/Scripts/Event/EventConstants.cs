@@ -4,4 +4,5 @@
 public static class EventIds
 {
     public const string CampfireRest = "CampfireRestEvent";
+    public const string CardRemoval = "CardRemovalEvent";
 }

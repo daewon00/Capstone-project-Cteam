@@ -77,6 +77,12 @@ public interface IDeckService
     void AddCardToDeckById(string cardId, bool isUpgraded = false);
 
     /// <summary>
+    /// 인스턴스 ID 기준으로 카드를 덱에서 제거합니다.
+    /// </summary>
+    /// <returns>정상적으로 제거되면 true</returns>
+    bool RemoveCardFromRun(string instanceId);
+
+    /// <summary>
     /// 현재 런의 카드 런타임 상태 전체를 복사본으로 반환합니다.
     /// UI가 필터링하거나 정렬할 때 사용할 수 있습니다.
     /// </summary>

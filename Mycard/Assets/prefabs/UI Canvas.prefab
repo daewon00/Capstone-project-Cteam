@@ -2222,6 +2222,7 @@ GameObject:
   - component: {fileID: 8830575111766561361}
   - component: {fileID: 784752384441762579}
   - component: {fileID: 6436457524380690341}
+  - component: {fileID: 6483468228752995802}
   m_Layer: 5
   m_Name: UI Canvas
   m_TagString: Untagged
@@ -2360,6 +2361,25 @@ MonoBehaviour:
   EnemyUI: {fileID: 7140788903624328006}
   _enemyUIGroup: {fileID: 0}
   _playerActionGroup: {fileID: 0}
+--- !u!114 &6483468228752995802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4520213149262780617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c30484c6d2d485fa0aa7bcbfaf8cc15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  swipeThreshold: 140
+  fieldZoneMinNormalizedY: 0.35
+  fieldZoneMaxNormalizedY: 0.95
+  cardLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  verboseLogging: 0
 --- !u!1 &4584301286203195531
 GameObject:
   m_ObjectHideFlags: 0

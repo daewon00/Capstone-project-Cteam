@@ -11,6 +11,21 @@ using TMPro;
 /// </summary>
 public class DeckUpgradeSelectionPanel : MonoBehaviour
 {
+    public sealed class CardSelectionConfirmContext
+    {
+        public string Title;
+        public string Guidance;
+        public string ConfirmLabel;
+        public string CancelLabel;
+        public bool ShowUpgradePreview = true;
+        public string BeforePreviewTitle;
+        public string AfterPreviewTitle;
+        public string CenterPreviewTitle;
+        public bool? ShowCenterPreview;
+        public TextAlignmentOptions? CenterPreviewAlignment;
+        public bool UseCenterSlot;
+    }
+
     [Header("List")]
     [SerializeField] private Transform contentRoot;
     [SerializeField] private GameObject cardItemPrefab;
@@ -20,6 +35,7 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     [SerializeField] private Button confirmButton;
     [SerializeField] private Button cancelButton;
     [SerializeField] private TMP_Text emptyLabel;
+    [SerializeField] private TMP_Text headerLabel;
 
     [Header("Preview")]
     [SerializeField] private CardUpgradePreviewPanel previewPanel;
@@ -36,6 +52,11 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     // 단일 확인 모드 지원
     private bool _singleMode;
     private CardRuntimeState _singleSelectedState;
+    private TMP_Text _confirmButtonLabel;
+    private TMP_Text _cancelButtonLabel;
+    private string _defaultConfirmLabel;
+    private string _defaultCancelLabel;
+    private string _defaultHeaderLabel;
 
     private void Awake()
     {
@@ -44,6 +65,12 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
             confirmButton.onClick.AddListener(HandleConfirm);
         if (cancelButton != null)
             cancelButton.onClick.AddListener(HandleCancel);
+        _confirmButtonLabel = ExtractButtonLabel(confirmButton);
+        _cancelButtonLabel = ExtractButtonLabel(cancelButton);
+        _defaultConfirmLabel = _confirmButtonLabel != null ? _confirmButtonLabel.text : string.Empty;
+        _defaultCancelLabel = _cancelButtonLabel != null ? _cancelButtonLabel.text : string.Empty;
+        ResolveHeaderLabelIfNeeded();
+        _defaultHeaderLabel = headerLabel != null ? headerLabel.text : string.Empty;
         HideImmediate();
     }
 
@@ -74,7 +101,7 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     /// <summary>
     /// 외부에서 선택된 카드 1장을 전/후 프리뷰만으로 확인/취소하는 모드로 표시합니다.
     /// </summary>
-    public bool ShowSingle(CardRuntimeState state, Action<CardRuntimeState> onConfirm, Action onCancel = null)
+    public bool ShowSingle(CardRuntimeState state, Action<CardRuntimeState> onConfirm, Action onCancel = null, CardSelectionConfirmContext context = null)
     {
         AcquireServices();
         _onConfirm = onConfirm;
@@ -83,6 +110,8 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         // 단일 모드 활성화: 목록 관련 바인딩 없이 프리뷰만 사용
         _singleMode = true;
         _singleSelectedState = state;
+        bool showPreview = context?.ShowUpgradePreview ?? true;
+        string guidance = context?.Guidance;
 
         if (!EnsureBindings())
         {
@@ -96,17 +125,19 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         if (emptyLabel != null) emptyLabel.gameObject.SetActive(false);
 
         _spawnedItems.Clear();
-        _candidates.Clear();
-        _currentSelection = null;
-        previewPanel?.Clear();
+       _candidates.Clear();
+       _currentSelection = null;
+       previewPanel?.Clear();
 
         CardScriptableObject so = null;
         if (state != null && _cardCatalog != null)
             _cardCatalog.TryGetCardData(state.CardId, out so);
 
-        if (so != null && state != null) previewPanel?.Show(so, state);
+        if (so != null && state != null) previewPanel?.Show(so, state, showPreview, guidance, context);
         else previewPanel?.Clear();
         if (confirmButton != null) confirmButton.interactable = (state != null);
+        ApplyButtonLabels(context);
+        ApplyHeaderTitle(context);
 
         gameObject.SetActive(true);
         return true;
@@ -124,6 +155,8 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         if (contentRoot != null) contentRoot.gameObject.SetActive(true);
         _singleMode = false;
         _singleSelectedState = null;
+        RestoreDefaultLabels();
+        RestoreHeaderTitle();
     }
 
     public void HideImmediate()
@@ -138,6 +171,90 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         if (contentRoot != null) contentRoot.gameObject.SetActive(true);
         _singleMode = false;
         _singleSelectedState = null;
+        RestoreDefaultLabels();
+        RestoreHeaderTitle();
+    }
+
+    private TMP_Text ExtractButtonLabel(Button button)
+    {
+        if (button == null) return null;
+        return button.GetComponentInChildren<TMP_Text>(true);
+    }
+
+    private void ApplyButtonLabels(CardSelectionConfirmContext context)
+    {
+        if (context == null)
+        {
+            RestoreDefaultLabels();
+            return;
+        }
+
+        if (_confirmButtonLabel != null)
+        {
+            _confirmButtonLabel.text = !string.IsNullOrEmpty(context.ConfirmLabel)
+                ? context.ConfirmLabel
+                : _defaultConfirmLabel;
+        }
+
+        if (_cancelButtonLabel != null)
+        {
+            _cancelButtonLabel.text = !string.IsNullOrEmpty(context.CancelLabel)
+                ? context.CancelLabel
+                : _defaultCancelLabel;
+        }
+    }
+
+    private void RestoreDefaultLabels()
+    {
+        if (_confirmButtonLabel != null)
+            _confirmButtonLabel.text = _defaultConfirmLabel;
+        if (_cancelButtonLabel != null)
+            _cancelButtonLabel.text = _defaultCancelLabel;
+    }
+
+    private void ApplyHeaderTitle(CardSelectionConfirmContext context)
+    {
+        ResolveHeaderLabelIfNeeded();
+        if (headerLabel == null)
+            return;
+
+        if (context == null || string.IsNullOrEmpty(context.Title))
+        {
+            headerLabel.text = _defaultHeaderLabel;
+            return;
+        }
+
+        headerLabel.text = context.Title;
+    }
+
+    private void RestoreHeaderTitle()
+    {
+        ResolveHeaderLabelIfNeeded();
+        if (headerLabel != null)
+        {
+            headerLabel.text = _defaultHeaderLabel;
+        }
+    }
+
+    private void ResolveHeaderLabelIfNeeded()
+    {
+        if (headerLabel != null)
+            return;
+
+        var previewTransform = previewPanel != null ? previewPanel.transform : null;
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        foreach (var text in texts)
+        {
+            if (text == null)
+                continue;
+            if (text == emptyLabel || text == _confirmButtonLabel || text == _cancelButtonLabel)
+                continue;
+            if (previewTransform != null && text.transform.IsChildOf(previewTransform))
+                continue;
+
+            headerLabel = text;
+            break;
+        }
     }
 
     private void AcquireServices()

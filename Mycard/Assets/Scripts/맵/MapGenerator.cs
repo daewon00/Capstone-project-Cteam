@@ -71,6 +71,7 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private EventPoolDefinition eventPoolDefinition;
     [SerializeField] private string defaultEventId = "GoldenIdolEvent";
     [SerializeField] private string restEventId = EventIds.CampfireRest;
+    [SerializeField] private string cardRemovalEventId = EventIds.CardRemoval;
 
     [Header("레이아웃 정리(교차선 감소)")]
     [SerializeField] private bool enableBarycenterOrdering = true; // 배리센터 정렬 적용 여부
@@ -316,6 +317,22 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    private void AssignCardRemovalEventOverrides()
+    {
+        if (mapData == null || mapData.Count == 0) return;
+        if (string.IsNullOrEmpty(cardRemovalEventId)) return;
+
+        foreach (var layer in mapData)
+        {
+            foreach (var node in layer)
+            {
+                if (node == null || node.nodeType != NodeType.CardRemove) continue;
+                if (!string.IsNullOrEmpty(node.eventIdOverride)) continue;
+                node.eventIdOverride = cardRemovalEventId;
+            }
+        }
+    }
+
     private void RebuildMapDataFromSnapshot(MapLayoutSnapshot snapshot)
     {
         mapData = new List<List<MapDataNode>>();
@@ -440,11 +457,17 @@ public class MapGenerator : MonoBehaviour
 
         var usedIds = new HashSet<string>(StringComparer.Ordinal);
 
+        AssignCardRemovalEventOverrides();
         AssignRestEventOverrides();
 
         if (!string.IsNullOrEmpty(restEventId))
         {
             usedIds.Add(restEventId);
+        }
+
+        if (!string.IsNullOrEmpty(cardRemovalEventId))
+        {
+            usedIds.Add(cardRemovalEventId);
         }
 
         foreach (var layer in mapData)

@@ -102,6 +102,8 @@ public sealed class DatabaseFacade : IDatabase
 
     public System.Collections.Generic.List<CardRuntimeState> LoadCardRuntimeStates(string runId)
         => DatabaseManager.Instance.LoadCardRuntimeStates(runId);
+    public void DeleteCardRuntimeState(string runId, string instanceId)
+        => DatabaseManager.Instance.DeleteCardRuntimeState(runId, instanceId);
 
     public System.Collections.Generic.List<CardRuntimeState> LoadCardRuntimeStates(string runId, CardLocation location)
         => DatabaseManager.Instance.LoadCardRuntimeStates(runId, location);

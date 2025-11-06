@@ -16,6 +16,7 @@ public sealed class EventManager : IEventManager
     private static readonly Dictionary<string, EventScriptableObject> EventCache = new();
     private readonly HashSet<string> _seededRngDomains = new HashSet<string>(StringComparer.Ordinal);
     private readonly Queue<string> _pendingUpgradeSelections = new Queue<string>();
+    private readonly Queue<string> _pendingRemovalSelections = new Queue<string>();
 
     /// <summary>
     /// 런 ID와 DB 핸들을 받아 이벤트 매니저를 초기화합니다.
@@ -107,6 +108,14 @@ public sealed class EventManager : IEventManager
         _pendingUpgradeSelections.Enqueue(instanceId);
     }
 
+    public void QueueRemovalSelection(string instanceId)
+    {
+        if (string.IsNullOrEmpty(instanceId))
+            return;
+        Debug.Log($"[EventManager] QueueRemovalSelection {instanceId}");
+        _pendingRemovalSelections.Enqueue(instanceId);
+    }
+
     /// <summary>
     /// 전달된 선택지를 적용하고 런 상태 및 맵 노드 저장 데이터를 갱신합니다.
     /// </summary>
@@ -127,7 +136,10 @@ public sealed class EventManager : IEventManager
         {
             ["UPGRADE_MESSAGE"] = string.Empty,
             ["UPGRADED_CARD_NAMES"] = string.Empty,
-            ["UPGRADED_COUNT"] = "0"
+            ["UPGRADED_COUNT"] = "0",
+            ["REMOVAL_MESSAGE"] = string.Empty,
+            ["REMOVED_CARD_NAMES"] = string.Empty,
+            ["REMOVED_COUNT"] = "0"
         };
 
         foreach (var effect in effects)
@@ -244,6 +256,15 @@ public sealed class EventManager : IEventManager
                 if (!TryUpgradeRandomCards(effect, tokenReplacements))
                 {
                     Debug.LogWarning("[EventManager] UpgradeRandomCard 효과 적용 중 문제가 발생했습니다.");
+                }
+            }
+            else if (effect.type == EventEffectType.RemoveCard)
+            {
+                handled = true;
+                Debug.Log("[EventManager] RemoveCard 효과 처리 시작");
+                if (!TryRemoveSelectedCards(effect, tokenReplacements))
+                {
+                    Debug.LogWarning("[EventManager] RemoveCard 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.ReturnToMap)
@@ -447,6 +468,128 @@ public sealed class EventManager : IEventManager
         return true;
     }
 
+    private bool TryRemoveSelectedCards(EventEffectDTO effect, Dictionary<string, string> tokenReplacements)
+    {
+        var deckService = ServiceRegistry.Get<IDeckService>();
+        if (deckService == null)
+        {
+            SetRemovalTokens(tokenReplacements, "카드를 관리하는 서비스가 없어 제거가 취소되었습니다.", Array.Empty<string>());
+            return false;
+        }
+
+        var catalog = ServiceRegistry.Get<ICardCatalog>();
+        if (catalog == null)
+        {
+            SetRemovalTokens(tokenReplacements, "카드 데이터를 찾을 수 없어 제거가 취소되었습니다.", Array.Empty<string>());
+            return false;
+        }
+
+        var snapshot = deckService.GetAllCardsSnapshot();
+        if (snapshot == null || snapshot.Count == 0)
+        {
+            SetRemovalTokens(tokenReplacements, "덱이 비어 있어 제거할 카드가 없습니다.", Array.Empty<string>());
+            _pendingRemovalSelections.Clear();
+            return true;
+        }
+
+        var candidates = new List<(CardRuntimeState state, CardScriptableObject card)>();
+        foreach (var state in snapshot)
+        {
+            if (CardRemovalRules.TryGetRemovable(state, catalog, out var cardData))
+            {
+                candidates.Add((state, cardData));
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            SetRemovalTokens(tokenReplacements, "제거 가능한 카드가 없습니다.", Array.Empty<string>());
+            _pendingRemovalSelections.Clear();
+            return true;
+        }
+
+        int countToRemove = effect.quantity > 0
+            ? effect.quantity
+            : (effect.amount > 0 ? effect.amount : 1);
+
+        var removedNames = new List<string>();
+
+        // 우선 플레이어가 선택한 카드를 반영합니다.
+        while (_pendingRemovalSelections.Count > 0 && removedNames.Count < countToRemove)
+        {
+            var requestedId = _pendingRemovalSelections.Dequeue();
+            if (string.IsNullOrEmpty(requestedId))
+                continue;
+
+            int index = candidates.FindIndex(c => string.Equals(c.state.InstanceId, requestedId, StringComparison.Ordinal));
+            if (index < 0)
+            {
+                Debug.LogWarning($"[EventManager] QueueRemovalSelection 대상({requestedId})을 제거 후보에서 찾을 수 없습니다.");
+                continue;
+            }
+
+            var candidate = candidates[index];
+            if (!deckService.RemoveCardFromRun(candidate.state.InstanceId))
+            {
+                Debug.LogWarning($"[EventManager] RemoveCardFromRun 실패: {candidate.state.InstanceId}");
+                candidates.RemoveAt(index);
+                continue;
+            }
+
+            removedNames.Add(GetCardDisplayName(candidate.card, candidate.state));
+            candidates.RemoveAt(index);
+        }
+
+        // 남은 수량이 있다면 무작위로 제거하여 이벤트 진행을 보장합니다.
+        if (removedNames.Count < countToRemove && candidates.Count > 0)
+        {
+            var rng = ServiceRegistry.Get<IRngService>();
+            if (rng != null)
+            {
+                EnsureRngSeeded(rng, "event-card-removal");
+                while (removedNames.Count < countToRemove && candidates.Count > 0)
+                {
+                    int index = rng.NextInt("event-card-removal", 0, candidates.Count);
+                    var candidate = candidates[index];
+                    candidates.RemoveAt(index);
+
+                    if (!deckService.RemoveCardFromRun(candidate.state.InstanceId))
+                    {
+                        Debug.LogWarning($"[EventManager] 무작위 제거 실패: {candidate.state.InstanceId}");
+                        continue;
+                    }
+
+                    removedNames.Add(GetCardDisplayName(candidate.card, candidate.state));
+                }
+            }
+        }
+
+        _pendingRemovalSelections.Clear();
+
+        if (removedNames.Count == 0)
+        {
+            SetRemovalTokens(tokenReplacements, "카드를 제거하지 못했습니다.", Array.Empty<string>());
+            return true;
+        }
+
+        string message = removedNames.Count == 1
+            ? $"'{removedNames[0]}' 카드를 덱에서 제거했습니다."
+            : $"{removedNames.Count}장의 카드를 덱에서 제거했습니다: {string.Join(", ", removedNames)}.";
+        SetRemovalTokens(tokenReplacements, message, removedNames);
+        return true;
+    }
+
+    private static string GetCardDisplayName(CardScriptableObject card, CardRuntimeState state)
+    {
+        if (card != null)
+        {
+            bool upgraded = state != null && state.IsUpgraded();
+            return card.GetDisplayName(upgraded);
+        }
+
+        return state?.CardId ?? string.Empty;
+    }
+
     private static void SetUpgradeTokens(Dictionary<string, string> tokens, string message, IList<string> cardNames)
     {
         if (tokens == null) return;
@@ -454,6 +597,15 @@ public sealed class EventManager : IEventManager
         var names = cardNames != null && cardNames.Count > 0 ? string.Join(", ", cardNames) : string.Empty;
         tokens["UPGRADED_CARD_NAMES"] = names;
         tokens["UPGRADED_COUNT"] = (cardNames?.Count ?? 0).ToString();
+    }
+
+    private static void SetRemovalTokens(Dictionary<string, string> tokens, string message, IList<string> cardNames)
+    {
+        if (tokens == null) return;
+        tokens["REMOVAL_MESSAGE"] = message ?? string.Empty;
+        var names = cardNames != null && cardNames.Count > 0 ? string.Join(", ", cardNames) : string.Empty;
+        tokens["REMOVED_CARD_NAMES"] = names;
+        tokens["REMOVED_COUNT"] = (cardNames?.Count ?? 0).ToString();
     }
 
     private void EnsureRngSeeded(IRngService rng, string domain)
@@ -551,6 +703,11 @@ public sealed class EventManager : IEventManager
         if (!string.IsNullOrEmpty(eventId) && string.Equals(eventId, EventIds.CampfireRest, StringComparison.Ordinal))
         {
             return Game.Save.NodeType.Rest;
+        }
+
+        if (!string.IsNullOrEmpty(eventId) && string.Equals(eventId, EventIds.CardRemoval, StringComparison.Ordinal))
+        {
+            return Game.Save.NodeType.CardRemove;
         }
 
         return Game.Save.NodeType.Event;
