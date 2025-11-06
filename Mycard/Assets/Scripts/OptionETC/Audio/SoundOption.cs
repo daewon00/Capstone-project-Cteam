@@ -74,6 +74,13 @@ public class SoundOption : MonoBehaviour
         audioMixer.SetFloat("Master", db);
         VolumePrefs.Save(VolumePrefs.KeyMaster, db);
 
+        bool sliderRequestsMute = db <= -79.5f;
+        bool isMuted = VolumePrefs.LoadMute();
+        if (sliderRequestsMute != isMuted)
+        {
+            SetMuted(sliderRequestsMute);
+        }
+
         /*float master = MasterSlider.value;
 
         if (master == -40f) audioMixer.SetFloat("Master", -80f);
@@ -84,7 +91,8 @@ public class SoundOption : MonoBehaviour
     }
     private void OnEnable()
     {
-        SyncMuteUIAndAudio(VolumePrefs.LoadMute());
+        bool muted = VolumePrefs.LoadMute();
+        SyncMuteUIAndAudio(muted);
 
 
         float bgm = VolumePrefs.Load(VolumePrefs.KeyBgm, 0f);
@@ -93,7 +101,11 @@ public class SoundOption : MonoBehaviour
 
         if (BgmSlider) BgmSlider.SetValueWithoutNotify(bgm <= -80f ? -40f : bgm);
         if (SfxSlider) SfxSlider.SetValueWithoutNotify(sfx <= -80f ? -40f : sfx);
-        if (MasterSlider) MasterSlider.SetValueWithoutNotify(master <= -80f ? -40f : master);
+        if (MasterSlider)
+        {
+            float target = muted ? -40f : (master <= -80f ? -40f : master);
+            MasterSlider.SetValueWithoutNotify(target);
+        }
 
 
         //LoadVolumeSettings();
@@ -113,9 +125,20 @@ public class SoundOption : MonoBehaviour
 
     private void SetMuted(bool muted)
     {
-        AudioListener.volume = muted ? 0f : 1f;   // 전체 오디오 즉시 반영
         VolumePrefs.SaveMute(muted);              // 상태 저장
         SyncMuteUIAndAudio(muted);                // 버튼 표시 갱신
+
+        if (!MasterSlider) return;
+
+        if (muted)
+        {
+            MasterSlider.SetValueWithoutNotify(-40f);
+        }
+        else
+        {
+            float master = VolumePrefs.Load(VolumePrefs.KeyMaster, 0f);
+            MasterSlider.SetValueWithoutNotify(master <= -80f ? -40f : master);
+        }
     }
 
     private void SyncMuteUIAndAudio(bool muted)
@@ -129,8 +152,7 @@ public class SoundOption : MonoBehaviour
     {
         //AudioListener.volume = AudioListener.volume == 0 ? 1 : 0;
         bool willMute = AudioListener.volume > 0.0001f; // 현재 소리가 있으면 → 음소거로
-        AudioListener.volume = willMute ? 0f : 1f;
-        VolumePrefs.SaveMute(willMute);
+        SetMuted(willMute);
         
     }
 
