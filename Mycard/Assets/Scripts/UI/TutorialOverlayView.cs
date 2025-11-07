@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// 튜토리얼 안내 문구와 딤머를 함께 제어하는 뷰 컨트롤러입니다.
 /// </summary>
-public sealed class TutorialOverlayView : MonoBehaviour
+public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
 {
     [Serializable]
     private struct AnchorSlot
@@ -188,5 +189,11 @@ public sealed class TutorialOverlayView : MonoBehaviour
         rootGroup.alpha = visible ? 1f : 0f;
         rootGroup.blocksRaycasts = visible;
         rootGroup.interactable = visible;
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        var svc = ServiceRegistry.Get<ITutorialService>();
+        svc?.TryAdvanceOverlayStep();
     }
 }

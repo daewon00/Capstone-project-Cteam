@@ -73,6 +73,8 @@ public class TutorialStepConfig
     public int TargetAct = -1;
     public int TargetFloor = -1;
     public int TargetNodeIndex = -1;
+    [Tooltip("Overlay tap can advance the step when no other action is required.")]
+    public bool AllowTapToContinue = true;
     public bool AutoAdvance;
 
     public bool MatchesAction(TutorialRequiredActionType actionType, string context)

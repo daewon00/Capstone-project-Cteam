@@ -31,6 +31,11 @@ public sealed class TutorialService : ITutorialService
     public TutorialStep CurrentStep => _progress == null ? TutorialStep.None : (TutorialStep)_progress.CurrentStep;
     public TutorialStepConfig CurrentConfig { get; private set; }
     public RectTransform CurrentHighlight { get; private set; }
+    public bool CanAdvanceViaOverlay => IsActive
+                                        && CurrentConfig != null
+                                        && CurrentConfig.AllowTapToContinue
+                                        && (CurrentConfig.RequiredAction == TutorialRequiredActionType.None
+                                            || CurrentConfig.RequiredAction == TutorialRequiredActionType.ShowOverlayOnly);
 
     public TutorialService(IDatabase database)
     {
@@ -145,6 +150,17 @@ public sealed class TutorialService : ITutorialService
         }
 
         AdvanceStep();
+    }
+
+    public bool TryAdvanceOverlayStep()
+    {
+        if (!CanAdvanceViaOverlay)
+        {
+            return false;
+        }
+
+        AdvanceStep();
+        return true;
     }
 
     public void CompleteTutorial(string tutorialId)

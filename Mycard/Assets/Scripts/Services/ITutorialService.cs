@@ -15,6 +15,7 @@ public interface ITutorialService
     TutorialStep CurrentStep { get; }
     TutorialStepConfig CurrentConfig { get; }
     RectTransform CurrentHighlight { get; }
+    bool CanAdvanceViaOverlay { get; }
 
     /// <summary>
     /// 현재 프로필의 진행도를 불러오고 캐시합니다.
@@ -50,6 +51,11 @@ public interface ITutorialService
     /// 특정 행동이 수행되었음을 보고합니다.
     /// </summary>
     void ReportAction(TutorialRequiredActionType actionType, string context = null);
+
+    /// <summary>
+    /// 오버레이 탭 등을 통해 단계를 진행할 수 있는 경우 시도합니다.
+    /// </summary>
+    bool TryAdvanceOverlayStep();
 
     /// <summary>
     /// 튜토리얼이 완료되었을 때 호출합니다.
