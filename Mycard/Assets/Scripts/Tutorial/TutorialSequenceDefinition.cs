@@ -29,24 +29,46 @@ public class TutorialSequenceDefinition : ScriptableObject
 
     public TutorialStep GetNextStep(TutorialStep current)
     {
+        // 1) 에셋에 정의된 배열 순서를 우선적으로 따릅니다.
         if (steps == null || steps.Length == 0) return TutorialStep.Completed;
-        Array.Sort(steps, (a, b) => a?.Step.CompareTo(b?.Step ?? TutorialStep.None) ?? -1);
+
+        int foundIndex = -1;
         for (int i = 0; i < steps.Length; i++)
         {
-            if (steps[i] == null) continue;
-            if (steps[i].Step == current)
+            var cfg = steps[i];
+            if (cfg == null) continue;
+            if (cfg.Step == current)
             {
-                for (int j = i + 1; j < steps.Length; j++)
-                {
-                    if (steps[j] != null)
-                    {
-                        return steps[j].Step;
-                    }
-                }
+                foundIndex = i;
                 break;
             }
         }
-        return TutorialStep.Completed;
+
+        if (foundIndex >= 0)
+        {
+            for (int j = foundIndex + 1; j < steps.Length; j++)
+            {
+                if (steps[j] != null)
+                {
+                    return steps[j].Step;
+                }
+            }
+            return TutorialStep.Completed;
+        }
+
+        // 2) 폴백: 숫자 기준 오름차순으로 다음 항목을 계산
+        var list = new System.Collections.Generic.List<TutorialStepConfig>();
+        foreach (var s in steps) if (s != null) list.Add(s);
+        list.Sort((a, b) => a.Step.CompareTo(b.Step));
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].Step == current)
+            {
+                if (i + 1 < list.Count) return list[i + 1].Step;
+                return TutorialStep.Completed;
+            }
+        }
+        return list.Count > 0 ? list[0].Step : TutorialStep.Completed;
     }
 }
 
@@ -72,6 +94,8 @@ public class TutorialStepConfig
     public string HighlightTargetId;
     [Tooltip("해당 타깃이 없어도 단계를 진행할 수 있는지 여부입니다.")]
     public bool HighlightOptional;
+    [Tooltip("보조로 강조할 TutorialTarget ID 목록입니다.")]
+    public string[] SecondaryHighlightIds = Array.Empty<string>();
 
     [Header("Interaction")]
     [Tooltip("해당 단계에서 다른 UI 입력을 얼마나 차단할지 설정합니다.")]

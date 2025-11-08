@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 튜토리얼 안내 문구와 딤머를 함께 제어하는 뷰 컨트롤러입니다.
 /// </summary>
-public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
+public sealed partial class TutorialOverlayView : MonoBehaviour, IPointerClickHandler, ICanvasRaycastFilter
 {
     [Serializable]
     private struct AnchorSlot
@@ -24,6 +24,8 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text tapHintLabel;
     [SerializeField] private TutorialDimmer dimmer;
     [SerializeField] private AnchorSlot[] anchorSlots;
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = true;
 
     private readonly Dictionary<TutorialAnchor, RectTransform> _anchorLookup = new();
     private Canvas _canvas;
@@ -31,12 +33,17 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
     private TutorialStepConfig _currentConfig;
     private RectTransform _currentHighlight;
     private Graphic _panelGraphic;
+    private Graphic _overlayGraphic;
+    private bool _allowTap;
+    private bool _gateOthers;
+    private readonly List<RectTransform> _secondaryPassRects = new();
 
     private void Awake()
     {
         if (rootGroup == null) rootGroup = GetComponent<CanvasGroup>();
         if (panel == null) panel = transform as RectTransform;
         _panelGraphic = panel != null ? panel.GetComponent<Graphic>() : null;
+        _overlayGraphic = GetComponent<Graphic>();
         _canvas = GetComponentInParent<Canvas>();
         _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
 
@@ -50,6 +57,7 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
         }
 
         SetVisible(false);
+        D($"Awake: anchors={anchorSlots?.Length ?? 0}");
     }
 
     private void OnEnable()
@@ -59,6 +67,11 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
         {
             svc.OnStepVisualChanged += HandleStepVisualChanged;
             HandleStepVisualChanged(svc.CurrentConfig, svc.CurrentHighlight);
+            D($"OnEnable: svc active={svc.IsActive}, step={svc.CurrentStep}, canTap={svc.CanAdvanceViaOverlay}");
+        }
+        else
+        {
+            D("OnEnable: ITutorialService not found");
         }
     }
 
@@ -79,7 +92,8 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
         if (config == null)
         {
             SetVisible(false);
-            dimmer?.Apply(null, null);
+            _secondaryPassRects.Clear();
+            dimmer?.Apply(null, null, null);
             return;
         }
 
@@ -92,13 +106,18 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
         }
 
         ApplyAnchor(config, highlight);
-        dimmer?.Apply(config, highlight);
-        var allowTap = ServiceRegistry.Get<ITutorialService>()?.CanAdvanceViaOverlay ?? false;
-        UpdateTapState(allowTap);
+        var svc = ServiceRegistry.Get<ITutorialService>();
+        PopulateSecondaryRects(config, svc);
+        dimmer?.Apply(config, highlight, _secondaryPassRects);
+        _allowTap = svc?.CanAdvanceViaOverlay ?? false;
+        _gateOthers = config.InteractionGate == TutorialInteractionGate.BlockOthers
+                      || config.InteractionGate == TutorialInteractionGate.Exclusive;
+        UpdateRaycastState();
         if (tapHintLabel != null)
         {
-            tapHintLabel.gameObject.SetActive(allowTap);
+            tapHintLabel.gameObject.SetActive(_allowTap);
         }
+        D($"StepChanged: step={config.Step} req={config.RequiredAction} allowTap={config.AllowTapToContinue} svcCanTap={svc?.CanAdvanceViaOverlay ?? false} gate={config.InteractionGate} highlightId='{config.HighlightTargetId}' hasHighlight={highlight!=null}");
     }
 
     private void ApplyAnchor(TutorialStepConfig config, RectTransform highlight)
@@ -210,17 +229,19 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
         var svc = ServiceRegistry.Get<ITutorialService>();
         if (svc == null || !svc.CanAdvanceViaOverlay)
         {
+            D($"OnPointerClick IGNORED at {eventData.position}: canTap={svc?.CanAdvanceViaOverlay ?? false}");
             return;
         }
-        svc.TryAdvanceOverlayStep();
+        var ok = svc.TryAdvanceOverlayStep();
+        D($"OnPointerClick at {eventData.position}: advanceResult={ok}");
     }
 
-    private void UpdateTapState(bool allowTap)
+    private void UpdateRaycastState()
     {
         if (rootGroup != null)
         {
-            rootGroup.blocksRaycasts = allowTap;
-            rootGroup.interactable = allowTap;
+            rootGroup.blocksRaycasts = _gateOthers || _allowTap;
+            rootGroup.interactable = _allowTap;
         }
         if (_panelGraphic == null && panel != null)
         {
@@ -228,7 +249,78 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
         }
         if (_panelGraphic != null)
         {
-            _panelGraphic.raycastTarget = allowTap;
+            _panelGraphic.raycastTarget = false;
         }
+        if (_overlayGraphic != null)
+        {
+            _overlayGraphic.raycastTarget = _gateOthers || _allowTap;
+        }
+        D($"RaycastState: allowTap={_allowTap} gateOthers={_gateOthers} root.blocks={rootGroup?.blocksRaycasts} interactable={rootGroup?.interactable} overlay.raycast={_overlayGraphic?.raycastTarget}");
+    }
+
+    private void PopulateSecondaryRects(TutorialStepConfig config, ITutorialService svc)
+    {
+        _secondaryPassRects.Clear();
+        if (config?.SecondaryHighlightIds == null || svc == null)
+        {
+            return;
+        }
+
+        foreach (var id in config.SecondaryHighlightIds)
+        {
+            if (string.IsNullOrEmpty(id)) continue;
+            var rect = svc.GetTargetRect(id);
+            if (rect != null)
+            {
+                _secondaryPassRects.Add(rect);
+            }
+        }
+    }
+
+    public bool IsRaycastLocationValid(Vector2 sp, Camera eventCamera)
+    {
+        if (_allowTap)
+        {
+            return true;
+        }
+
+        if (!_gateOthers)
+        {
+            return false;
+        }
+
+        if (IsPointInside(_currentHighlight, sp, eventCamera))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _secondaryPassRects.Count; i++)
+        {
+            if (IsPointInside(_secondaryPassRects[i], sp, eventCamera))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool IsPointInside(RectTransform rectTransform, Vector2 screenPoint, Camera eventCamera)
+    {
+        if (rectTransform == null) return false;
+        return RectTransformUtility.RectangleContainsScreenPoint(rectTransform, screenPoint, eventCamera);
+    }
+}
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+// Local helper for uniform debug prefix
+#endif
+partial class TutorialOverlayView
+{
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    private void D(string msg)
+    {
+        if (!enableDebugLogs) return;
+        Debug.Log($"[TutorialOverlayView] {msg}", this);
     }
 }

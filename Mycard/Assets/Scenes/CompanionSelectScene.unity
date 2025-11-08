@@ -1836,7 +1836,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e117358725f4315a007e3945cf7ebec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetId: Companion-StartButton
+  targetId: start-button
   explicitRect: {fileID: 1479247937}
 --- !u!1 &1638654548
 GameObject:
@@ -2777,7 +2777,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e117358725f4315a007e3945cf7ebec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetId: Companion-CarouselRegion
+  targetId: companion-carousel
   explicitRect: {fileID: 210000000000000302}
 --- !u!1 &210000000000000401
 GameObject:

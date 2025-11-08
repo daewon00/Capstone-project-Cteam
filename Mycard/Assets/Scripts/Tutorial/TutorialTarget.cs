@@ -36,11 +36,37 @@ public sealed class TutorialTarget : MonoBehaviour
 
     public void SetId(string id)
     {
+        if (string.Equals(targetId, id, System.StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        // 서비스에 등록된 키를 갱신하기 위해 기존 키로 먼저 해제한 뒤, 새 키로 재등록합니다.
+        var svc = ServiceRegistry.Get<ITutorialService>();
+        if (svc != null && !string.IsNullOrEmpty(targetId))
+        {
+            // 현재 targetId는 '이전' 키이므로, 변경 전에 해제하면 정확히 제거됩니다.
+            svc.UnregisterTarget(this);
+        }
+
         targetId = id;
+
+        if (svc != null && isActiveAndEnabled)
+        {
+            svc.RegisterTarget(this);
+        }
     }
 
     public void SetFocusRect(RectTransform rect)
     {
+        // 씬에서 이미 명시적으로 지정된 포커스 Rect가 있다면 건드리지 않습니다.
+        if (explicitRect != null)
+        {
+            return;
+        }
+        if (rect == null) return;
         explicitRect = rect;
+        var svc = ServiceRegistry.Get<ITutorialService>();
+        svc?.RegisterTarget(this);
     }
 }

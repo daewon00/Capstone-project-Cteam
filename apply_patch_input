@@ -1,0 +1,4 @@
+*** Begin Patch
+*** Delete File: Mycard/Assets/Scripts/Tutorial/TutorialDimmer.cs
+*** End Patch
+EOF && apply_patch < apply_patch_input

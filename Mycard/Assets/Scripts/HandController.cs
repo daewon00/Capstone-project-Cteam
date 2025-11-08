@@ -98,6 +98,7 @@ public class HandController : MonoBehaviour
 
             card.inHand = true;
             card.handPosition = i;
+            card.RefreshTutorialTarget();
 
             card.UpdateCardDisplay();
         }
@@ -207,6 +208,7 @@ public class HandController : MonoBehaviour
             cardToAdd.inHand = true;
             cardToAdd.handPosition = index;
             cardToAdd.SetCardScale(handScale);
+            cardToAdd.RefreshTutorialTarget();
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         string addCardName = cardToAdd != null ? cardToAdd.name : "<null>";
@@ -222,6 +224,7 @@ public class HandController : MonoBehaviour
             heldCard.inHand = false;
             heldCard.MoveToPoint(BattleController.instance.discardPoint.position, heldCard.transform.rotation);
             heldCard.SetCardScale(boardScale);
+            heldCard.RefreshTutorialTarget();
 
         }
         heldCards.Clear();
