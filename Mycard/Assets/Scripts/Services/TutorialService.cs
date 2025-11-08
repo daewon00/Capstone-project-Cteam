@@ -21,11 +21,12 @@ public sealed class TutorialService : ITutorialService
 
     private string _activeRunId = string.Empty;
     private bool _isTutorialRun;
+    private bool _isPreviewMode;
 
     public event Action<TutorialStep> OnStepChanged;
     public event Action<TutorialStepConfig, RectTransform> OnStepVisualChanged;
 
-    public bool IsActive => _isTutorialRun && _progress != null && !_progress.IsCompleted;
+    public bool IsActive => (_isTutorialRun || _isPreviewMode) && _progress != null && !_progress.IsCompleted;
     public bool IsTutorialRun => _isTutorialRun;
     public string ActiveTutorialId => _activeTutorialId;
     public TutorialStep CurrentStep => _progress == null ? TutorialStep.None : (TutorialStep)_progress.CurrentStep;
@@ -56,6 +57,7 @@ public sealed class TutorialService : ITutorialService
             return false;
         }
 
+        _isPreviewMode = false;
         EnsureSequence(tutorialId);
         LoadProgress(tutorialId);
 
@@ -71,14 +73,38 @@ public sealed class TutorialService : ITutorialService
 
         _activeTutorialId = tutorialId;
         var firstStep = GetFirstStep();
-        if (_progress.CurrentStep < (int)firstStep)
+        _progress.CurrentStep = (int)TutorialStep.None;
+        SetStep(firstStep);
+
+        return true;
+    }
+
+    public bool BeginPreviewIfEligible(string tutorialId)
+    {
+        if (string.IsNullOrEmpty(tutorialId))
         {
-            SetStep(firstStep);
+            return false;
         }
-        else
+
+        EnsureSequence(tutorialId);
+        LoadProgress(tutorialId);
+
+        if (_progress == null)
         {
-            RefreshVisuals();
+            CreateProgressRow(tutorialId);
         }
+
+        if (_progress.IsCompleted)
+        {
+            _isPreviewMode = false;
+            return false;
+        }
+
+        _activeTutorialId = tutorialId;
+        _isPreviewMode = true;
+
+        _progress.CurrentStep = (int)TutorialStep.None;
+        SetStep(GetFirstStep());
 
         return true;
     }
@@ -87,6 +113,7 @@ public sealed class TutorialService : ITutorialService
     {
         _activeRunId = runId ?? string.Empty;
         _isTutorialRun = isTutorialRun && !string.IsNullOrEmpty(_activeRunId);
+        _isPreviewMode = false;
 
         if (!_isTutorialRun)
         {
@@ -183,6 +210,7 @@ public sealed class TutorialService : ITutorialService
         _progress.IsCompleted = true;
         PersistProgress();
         _isTutorialRun = false;
+        _isPreviewMode = false;
         _activeTutorialId = null;
 
         CurrentConfig = null;
@@ -228,6 +256,7 @@ public sealed class TutorialService : ITutorialService
     {
         _activeRunId = string.Empty;
         _isTutorialRun = false;
+        _isPreviewMode = false;
         _activeTutorialId = null;
         CurrentConfig = null;
         CurrentHighlight = null;

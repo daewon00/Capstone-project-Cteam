@@ -54,27 +54,41 @@ public class TutorialSequenceDefinition : ScriptableObject
 public class TutorialStepConfig
 {
     [Header("Identification")]
+    [Tooltip("이 단계가 속한 튜토리얼 단계 ID입니다.")]
     public TutorialStep Step = TutorialStep.None;
+    [Tooltip("플레이어에게 보여줄 안내 문구입니다.")]
     [TextArea] public string Message;
 
     [Header("Placement")]
+    [Tooltip("오버레이 패널이 처음 배치될 기준 위치입니다.")]
     public TutorialAnchor PrimaryAnchor = TutorialAnchor.Bottom;
+    [Tooltip("하이라이트와 겹칠 때 대체로 사용할 위치입니다.")]
     public TutorialAnchor FallbackAnchor = TutorialAnchor.Top;
+    [Tooltip("항상 보조 앵커 위치를 우선 적용할지 여부입니다.")]
     public bool PreferFallback;
 
     [Header("Highlight")]
+    [Tooltip("강조(하이라이트)할 TutorialTarget의 ID입니다.")]
     public string HighlightTargetId;
+    [Tooltip("해당 타깃이 없어도 단계를 진행할 수 있는지 여부입니다.")]
     public bool HighlightOptional;
 
     [Header("Interaction")]
+    [Tooltip("해당 단계에서 다른 UI 입력을 얼마나 차단할지 설정합니다.")]
     public TutorialInteractionGate InteractionGate = TutorialInteractionGate.None;
+    [Tooltip("다음 단계로 가기 위해 필요한 플레이어 행동 유형입니다.")]
     public TutorialRequiredActionType RequiredAction = TutorialRequiredActionType.None;
+    [Tooltip("RequiredAction이 ButtonClick/카드 플레이 등일 때 매칭할 추가 식별자입니다.")]
     public string ActionId;
+    [Tooltip("RequiredAction이 NodeTravel일 때 허용할 Act 번호입니다. -1은 전체 허용입니다.")]
     public int TargetAct = -1;
+    [Tooltip("RequiredAction이 NodeTravel일 때 허용할 층 번호입니다. -1은 전체 허용입니다.")]
     public int TargetFloor = -1;
+    [Tooltip("RequiredAction이 NodeTravel일 때 허용할 노드 인덱스입니다. -1은 전체 허용입니다.")]
     public int TargetNodeIndex = -1;
-    [Tooltip("Overlay tap can advance the step when no other action is required.")]
+    [Tooltip("별도 행동 요구가 없을 때 오버레이 탭만으로도 진행할 수 있는지 여부입니다.")]
     public bool AllowTapToContinue = true;
+    [Tooltip("문구를 보여주자마자 자동으로 다음 단계로 넘어갈지 여부입니다.")]
     public bool AutoAdvance;
 
     public bool MatchesAction(TutorialRequiredActionType actionType, string context)

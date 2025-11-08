@@ -96,7 +96,22 @@ public class UIController : MonoBehaviour
 
     public void setPlayerHealthText(int healthAmount)
     {
-        playerHealthText.text = "" + healthAmount;
+        if (playerHealthText == null)
+        {
+            return;
+        }
+
+        var battleController = BattleController.instance;
+        int maxHealth = battleController != null ? Mathf.Max(1, battleController.playerMaxHealth) : 0;
+        int clampedCurrent = Mathf.Max(0, healthAmount);
+
+        if (maxHealth > 0)
+        {
+            playerHealthText.text = $"{clampedCurrent}/{maxHealth}";
+            return;
+        }
+
+        playerHealthText.text = clampedCurrent.ToString();
     }
     public void setEnemyHealthText(int healthAmount)
     {

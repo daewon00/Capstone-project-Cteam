@@ -11,6 +11,7 @@ public sealed class RunStatOverlay : MonoBehaviour
     [SerializeField] private TMP_Text maxHpText;
     [SerializeField] private TMP_Text manaText;
     [SerializeField] private TMP_Text goldText;
+    [SerializeField] private RollingNumberAnimator goldAnimator = new RollingNumberAnimator();
 
     [Header("Optional Fill Targets")]
     [SerializeField] private UnityEngine.UI.Image hpFillImage;
@@ -36,6 +37,12 @@ public sealed class RunStatOverlay : MonoBehaviour
 
     private void OnEnable()
     {
+        if (goldAnimator == null)
+        {
+            goldAnimator = new RollingNumberAnimator();
+        }
+        goldAnimator.Bind(this, goldText);
+
         _wallet = ServiceRegistry.Get<IWalletService>();
         if (_wallet != null)
         {
@@ -50,6 +57,8 @@ public sealed class RunStatOverlay : MonoBehaviour
             _wallet.OnGoldChanged -= HandleGoldChanged;
             _wallet = null;
         }
+
+        goldAnimator.Unbind();
     }
 
     private void Start()
@@ -122,11 +131,12 @@ public sealed class RunStatOverlay : MonoBehaviour
 
     private void UpdateTexts(EventRunSnapshot snapshot)
     {
+        int currentHp = Mathf.Max(0, snapshot.CurrentHp);
         int maxHp = Mathf.Max(1, snapshot.MaxHpBase + snapshot.MaxHpFromPerks + snapshot.MaxHpFromRelics);
 
         if (hpText != null)
         {
-            hpText.text = Mathf.Max(0, snapshot.CurrentHp).ToString();
+            hpText.text = maxHp > 0 ? $"{currentHp}/{maxHp}" : currentHp.ToString();
         }
 
         if (maxHpText != null)
@@ -134,7 +144,7 @@ public sealed class RunStatOverlay : MonoBehaviour
             maxHpText.text = maxHp.ToString();
         }
 
-        float hpRatio = maxHp > 0 ? Mathf.Clamp01((float)Mathf.Max(0, snapshot.CurrentHp) / maxHp) : 0f;
+        float hpRatio = maxHp > 0 ? Mathf.Clamp01((float)currentHp / maxHp) : 0f;
         if (hpFillImage != null)
         {
             hpFillImage.fillAmount = hpRatio;
@@ -143,7 +153,7 @@ public sealed class RunStatOverlay : MonoBehaviour
         {
             hpSlider.minValue = 0f;
             hpSlider.maxValue = maxHp;
-            hpSlider.value = Mathf.Clamp(Mathf.Max(0, snapshot.CurrentHp), 0, maxHp);
+            hpSlider.value = Mathf.Clamp(currentHp, 0, maxHp);
         }
 
         int energyMax = snapshot.EnergyMax > 0 ? snapshot.EnergyMax : 0;
@@ -162,17 +172,11 @@ public sealed class RunStatOverlay : MonoBehaviour
             manaFillImage.fillAmount = energyMax > 0 ? 1f : 0f;
         }
 
-        if (goldText != null)
-        {
-            goldText.text = Mathf.Max(0, snapshot.Gold).ToString();
-        }
+        goldAnimator.SetInstant(Mathf.Max(0, snapshot.Gold));
     }
 
     private void HandleGoldChanged(int gold)
     {
-        if (goldText != null)
-        {
-            goldText.text = Mathf.Max(0, gold).ToString();
-        }
+        goldAnimator.AnimateTo(Mathf.Max(0, gold));
     }
 }

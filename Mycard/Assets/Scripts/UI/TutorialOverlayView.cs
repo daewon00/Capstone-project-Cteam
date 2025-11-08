@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 /// <summary>
 /// 튜토리얼 안내 문구와 딤머를 함께 제어하는 뷰 컨트롤러입니다.
@@ -20,6 +21,7 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
     [SerializeField] private CanvasGroup rootGroup;
     [SerializeField] private RectTransform panel;
     [SerializeField] private TMP_Text messageLabel;
+    [SerializeField] private TMP_Text tapHintLabel;
     [SerializeField] private TutorialDimmer dimmer;
     [SerializeField] private AnchorSlot[] anchorSlots;
 
@@ -28,11 +30,13 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
     private RectTransform _canvasRect;
     private TutorialStepConfig _currentConfig;
     private RectTransform _currentHighlight;
+    private Graphic _panelGraphic;
 
     private void Awake()
     {
         if (rootGroup == null) rootGroup = GetComponent<CanvasGroup>();
         if (panel == null) panel = transform as RectTransform;
+        _panelGraphic = panel != null ? panel.GetComponent<Graphic>() : null;
         _canvas = GetComponentInParent<Canvas>();
         _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
 
@@ -89,6 +93,12 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
 
         ApplyAnchor(config, highlight);
         dimmer?.Apply(config, highlight);
+        var allowTap = ServiceRegistry.Get<ITutorialService>()?.CanAdvanceViaOverlay ?? false;
+        UpdateTapState(allowTap);
+        if (tapHintLabel != null)
+        {
+            tapHintLabel.gameObject.SetActive(allowTap);
+        }
     }
 
     private void ApplyAnchor(TutorialStepConfig config, RectTransform highlight)
@@ -187,13 +197,38 @@ public sealed class TutorialOverlayView : MonoBehaviour, IPointerClickHandler
     {
         if (rootGroup == null) return;
         rootGroup.alpha = visible ? 1f : 0f;
-        rootGroup.blocksRaycasts = visible;
-        rootGroup.interactable = visible;
+        if (!visible)
+        {
+            rootGroup.blocksRaycasts = false;
+            rootGroup.interactable = false;
+            if (_panelGraphic != null) _panelGraphic.raycastTarget = false;
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
         var svc = ServiceRegistry.Get<ITutorialService>();
-        svc?.TryAdvanceOverlayStep();
+        if (svc == null || !svc.CanAdvanceViaOverlay)
+        {
+            return;
+        }
+        svc.TryAdvanceOverlayStep();
+    }
+
+    private void UpdateTapState(bool allowTap)
+    {
+        if (rootGroup != null)
+        {
+            rootGroup.blocksRaycasts = allowTap;
+            rootGroup.interactable = allowTap;
+        }
+        if (_panelGraphic == null && panel != null)
+        {
+            _panelGraphic = panel.GetComponent<Graphic>();
+        }
+        if (_panelGraphic != null)
+        {
+            _panelGraphic.raycastTarget = allowTap;
+        }
     }
 }

@@ -33,6 +33,11 @@ public interface ITutorialService
     void BindRun(string runId, bool isTutorialRun);
 
     /// <summary>
+    /// 런을 시작하기 전에 프리뷰 모드로 튜토리얼을 보여줄지 시도합니다.
+    /// </summary>
+    bool BeginPreviewIfEligible(string tutorialId);
+
+    /// <summary>
     /// 튜토리얼 런 도중 전투가 끝났을 때 호출합니다.
     /// </summary>
     void NotifyBattleCompleted();

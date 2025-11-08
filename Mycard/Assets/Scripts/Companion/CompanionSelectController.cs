@@ -36,6 +36,7 @@ public class CompanionSelectController : MonoBehaviour
 
     private CompanionDefinition _selected;
     private CompanionDefinition[] _all;
+    private bool _allowTutorialSelectionReport;
 
     /// <summary>
     /// 데이터베이스 연결을 보장하고 동료 카드 목록을 구성한 뒤 UI 이벤트를 초기화합니다.
@@ -69,11 +70,13 @@ public class CompanionSelectController : MonoBehaviour
         }
 
         RegisterStaticTargets();
+        ServiceRegistry.Get<ITutorialService>()?.BeginPreviewIfEligible(TutorialIds.CoreOnboarding);
 
         if (carousel != null)
         {
             carousel.SelectionChanged += OnSelect;
             carousel.Initialize(_all, initialIndex);
+            _allowTutorialSelectionReport = true;
         }
 
         if (startButton != null)
@@ -109,7 +112,10 @@ public class CompanionSelectController : MonoBehaviour
         {
             GameContext.I.SelectedCompanionId = data.CompanionId;
         }
-        ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, $"companion-select:{data.CompanionId}");
+        if (_allowTutorialSelectionReport)
+        {
+            ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, $"companion-select:{data.CompanionId}");
+        }
         UpdateUI();
     }
 
@@ -173,6 +179,7 @@ public class CompanionSelectController : MonoBehaviour
 
         if (carousel != null)
         {
+            _allowTutorialSelectionReport = false;
             carousel.SelectionChanged -= OnSelect;
         }
     }
