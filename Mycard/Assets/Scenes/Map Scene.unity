@@ -1184,6 +1184,12 @@ MonoBehaviour:
   maxHpText: {fileID: 0}
   manaText: {fileID: 0}
   goldText: {fileID: 0}
+  goldAnimator:
+    numberFormat: N0
+    minUnitsPerSecond: 90
+    maxUnitsPerSecond: 2000
+    maxRollDuration: 0.65
+    slowTailThreshold: 20
   hpFillImage: {fileID: 0}
   hpSlider: {fileID: 0}
   manaFillImage: {fileID: 0}
@@ -2063,7 +2069,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 677674820086583141, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2369928739683320788, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
       propertyPath: m_Pivot.x

@@ -854,6 +854,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: TutorialOverlay
       objectReference: {fileID: 0}
+    - target: {fileID: 677674820086583141, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2369928739683320788, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

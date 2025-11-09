@@ -7,13 +7,14 @@ using UnityEngine.UI;
 /// </summary>
 [RequireComponent(typeof(CanvasRenderer))]
 [RequireComponent(typeof(CanvasGroup))]
-public sealed class TutorialDimmer : MonoBehaviour
+public sealed partial class TutorialDimmer : MonoBehaviour
 {
     [SerializeField] private RectTransform highlightFrame;
     [SerializeField] private float highlightPadding = 12f;
     [SerializeField] private Color overlayColor = new Color(0f, 0f, 0f, 0.78f);
     [SerializeField] private Material overrideMaterial;
 
+    [SerializeField] private bool enableDebugLogs = true;
     private CanvasGroup _group;
     private CanvasRenderer _renderer;
     private RectTransform _rootRect;
@@ -85,6 +86,7 @@ public sealed class TutorialDimmer : MonoBehaviour
 
         var rootRect = _rootRect.rect;
         CollectCutouts(rootRect, mainHighlight, secondaryHighlights);
+        D($"Apply: root=({rootRect.xMin:F1},{rootRect.yMin:F1})-({rootRect.xMax:F1},{rootRect.yMax:F1}) cuts={_cutouts.Count} main={(mainHighlight!=null?mainHighlight.name:"<null>")}");
 
         if (_cutouts.Count == 0)
         {
@@ -95,10 +97,16 @@ public sealed class TutorialDimmer : MonoBehaviour
             }
 
             GenerateSolidCover(rootRect);
+            D("Apply: solid cover (no cutouts)");
             return;
         }
 
         GenerateMesh(rootRect);
+        if (_cutouts.Count > 0)
+        {
+            var r = _cutouts[0];
+            D($"Apply: mainCut=({r.xMin:F1},{r.yMin:F1}) size=({r.width:F1},{r.height:F1})");
+        }
     }
 
     private void Hide()
@@ -130,6 +138,7 @@ public sealed class TutorialDimmer : MonoBehaviour
             {
                 _cutouts.Add(mainRect);
                 UpdateHighlightFrame(mainRect, rootRect);
+                D($"CollectCutouts: main='{mainHighlight.name}' rect=({mainRect.xMin:F1},{mainRect.yMin:F1}) size=({mainRect.width:F1},{mainRect.height:F1})");
             }
             else if (highlightFrame != null)
             {
@@ -154,6 +163,7 @@ public sealed class TutorialDimmer : MonoBehaviour
             rect = ClampToRoot(rect, rootRect);
             if (rect.width <= Epsilon || rect.height <= Epsilon) continue;
             _cutouts.Add(rect);
+            D($"CollectCutouts: secondary='{rectTransform.name}' size=({rect.width:F1},{rect.height:F1})");
         }
     }
 
@@ -316,8 +326,28 @@ public sealed class TutorialDimmer : MonoBehaviour
         target.GetWorldCorners(worldCorners);
         Vector2[] localCorners = new Vector2[4];
 
-        var canvas = GetComponentInParent<Canvas>();
-        var camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        // 좌표 투영 기준 카메라 선택:
+        // - 오버레이가 Overlay 모드이면 타겟이 속한 Canvas의 worldCamera를 우선 사용
+        // - 오버레이가 Camera/WorldSpace 모드이면 오버레이 Canvas의 worldCamera 사용
+        // - 폴백: Camera.main
+        var overlayCanvas = GetComponentInParent<Canvas>();
+        var targetCanvas = target.GetComponentInParent<Canvas>();
+        Camera camera = null;
+        if (overlayCanvas != null && overlayCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+        {
+            if (targetCanvas != null && targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                camera = targetCanvas.worldCamera;
+            }
+        }
+        else if (overlayCanvas != null)
+        {
+            camera = overlayCanvas.worldCamera;
+        }
+        if (camera == null)
+        {
+            camera = Camera.main;
+        }
 
         for (int i = 0; i < 4; i++)
         {
@@ -333,6 +363,7 @@ public sealed class TutorialDimmer : MonoBehaviour
         }
 
         rect = new Rect(min, max - min);
+        D($"TryGetHighlightRect: target='{target.name}' cam={(camera!=null?camera.name:"<null>")} local=({rect.xMin:F1},{rect.yMin:F1}) size=({rect.width:F1},{rect.height:F1})");
         return true;
     }
 
@@ -344,3 +375,15 @@ public sealed class TutorialDimmer : MonoBehaviour
         rect.yMax += amount;
     }
 }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+partial class TutorialDimmer
+{
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    private void D(string msg)
+    {
+        if (!enableDebugLogs) return;
+        Debug.Log($"[TutorialDimmer] {msg}", this);
+    }
+}
+#endif

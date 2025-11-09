@@ -23,6 +23,7 @@ public class HandServiceBinder : MonoBehaviour
     private readonly Stack<Card> _cardPool = new Stack<Card>();
     private bool _subscribed;
     private bool _initialized;
+    private bool _tutorialInitialDrawSignaled;
 
     public static Card SharedCardPrefab { get; private set; }
 
@@ -112,6 +113,12 @@ public class HandServiceBinder : MonoBehaviour
         if (result.Reason == DrawReason.TurnStart)
         {
             BattleController.instance?.NotifyPlayerTurnStartReady();
+            // 튜토리얼: 초기 드로우가 끝났음을 한번만 신호합니다.
+            if (!_tutorialInitialDrawSignaled)
+            {
+                ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "initial-draw-complete");
+                _tutorialInitialDrawSignaled = true;
+            }
         }
     }
 
@@ -133,6 +140,11 @@ public class HandServiceBinder : MonoBehaviour
         if (result.Reason == DrawReason.TurnStart)
         {
             BattleController.instance?.NotifyPlayerTurnStartReady();
+            if (!_tutorialInitialDrawSignaled)
+            {
+                ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "initial-draw-complete");
+                _tutorialInitialDrawSignaled = true;
+            }
         }
     }
 
