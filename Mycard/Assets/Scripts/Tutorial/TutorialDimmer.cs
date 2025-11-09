@@ -1,29 +1,77 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
-/// 튜토리얼 단계에서 화면을 어둡게 처리하고 강조 영역만 남겨두는 뷰 컨트롤러입니다.
+/// 튜토리얼 단계에서 화면을 어둡게 처리하고 여러 강조 영역만 남겨두는 뷰 컨트롤러입니다.
 /// </summary>
+[RequireComponent(typeof(CanvasRenderer))]
 [RequireComponent(typeof(CanvasGroup))]
 public sealed class TutorialDimmer : MonoBehaviour
 {
-    [SerializeField] private RectTransform topBlock;
-    [SerializeField] private RectTransform bottomBlock;
-    [SerializeField] private RectTransform leftBlock;
-    [SerializeField] private RectTransform rightBlock;
     [SerializeField] private RectTransform highlightFrame;
     [SerializeField] private float highlightPadding = 12f;
+    [SerializeField] private Color overlayColor = new Color(0f, 0f, 0f, 0.78f);
+    [SerializeField] private Material overrideMaterial;
 
     private CanvasGroup _group;
+    private CanvasRenderer _renderer;
     private RectTransform _rootRect;
+    private Material _runtimeMaterial;
+    private Mesh _mesh;
+
+    private readonly List<Rect> _cutouts = new();
+    private readonly List<float> _gridX = new();
+    private readonly List<float> _gridY = new();
+    private readonly List<Vector3> _vertices = new();
+    private readonly List<Color32> _colors = new();
+    private readonly List<int> _indices = new();
+
+    private Rect _lastRootRect;
+
+    private const float Epsilon = 0.01f;
 
     private void Awake()
     {
         _group = GetComponent<CanvasGroup>();
+        _renderer = GetComponent<CanvasRenderer>();
         _rootRect = transform as RectTransform;
+
+        _mesh = new Mesh { name = "TutorialDimmerMesh" };
+        _mesh.MarkDynamic();
+
+        if (overrideMaterial != null)
+        {
+            _runtimeMaterial = Instantiate(overrideMaterial);
+        }
+        else
+        {
+            _runtimeMaterial = new Material(Graphic.defaultGraphicMaterial)
+            {
+                name = "TutorialDimmerMaterial"
+            };
+        }
+
+        _renderer.SetMaterial(_runtimeMaterial, null);
         Hide();
     }
 
-    public void Apply(TutorialStepConfig config, RectTransform highlight)
+    private void OnDestroy()
+    {
+        if (_mesh != null)
+        {
+            Destroy(_mesh);
+            _mesh = null;
+        }
+
+        if (_runtimeMaterial != null)
+        {
+            Destroy(_runtimeMaterial);
+            _runtimeMaterial = null;
+        }
+    }
+
+    public void Apply(TutorialStepConfig config, RectTransform mainHighlight, IReadOnlyList<RectTransform> secondaryHighlights)
     {
         if (config == null || config.InteractionGate == TutorialInteractionGate.None)
         {
@@ -35,26 +83,22 @@ public sealed class TutorialDimmer : MonoBehaviour
         _group.blocksRaycasts = true;
         _group.interactable = true;
 
-        if (highlight == null && config.HighlightOptional)
+        var rootRect = _rootRect.rect;
+        CollectCutouts(rootRect, mainHighlight, secondaryHighlights);
+
+        if (_cutouts.Count == 0)
         {
-            HideHighlight();
+            if (config.HighlightOptional)
+            {
+                ClearMesh();
+                return;
+            }
+
+            GenerateSolidCover(rootRect);
             return;
         }
 
-        if (highlight == null)
-        {
-            CoverAll();
-            return;
-        }
-
-        if (!TryGetHighlightRect(highlight, out var rect))
-        {
-            CoverAll();
-            return;
-        }
-
-        InflateRect(ref rect, highlightPadding);
-        ApplyCutout(rect);
+        GenerateMesh(rootRect);
     }
 
     private void Hide()
@@ -62,88 +106,202 @@ public sealed class TutorialDimmer : MonoBehaviour
         _group.alpha = 0f;
         _group.blocksRaycasts = false;
         _group.interactable = false;
-        HideHighlight();
-    }
-
-    private void HideHighlight()
-    {
+        ClearMesh();
         if (highlightFrame != null)
         {
             highlightFrame.gameObject.SetActive(false);
         }
-        CoverAll();
     }
 
-    private void CoverAll()
+    private void ClearMesh()
     {
-        if (topBlock != null)
-        {
-            topBlock.anchorMin = Vector2.zero;
-            topBlock.anchorMax = Vector2.one;
-            topBlock.offsetMin = Vector2.zero;
-            topBlock.offsetMax = Vector2.zero;
-            topBlock.gameObject.SetActive(true);
-        }
-        if (bottomBlock != null) bottomBlock.gameObject.SetActive(false);
-        if (leftBlock != null) leftBlock.gameObject.SetActive(false);
-        if (rightBlock != null) rightBlock.gameObject.SetActive(false);
+        _renderer.SetMesh(null);
     }
 
-    private void ApplyCutout(Rect rect)
+    private void CollectCutouts(Rect rootRect, RectTransform mainHighlight, IReadOnlyList<RectTransform> secondary)
     {
-        var canvasRect = _rootRect.rect;
-        float width = canvasRect.width;
-        float height = canvasRect.height;
+        _cutouts.Clear();
 
-        float leftNorm = Mathf.Clamp01((rect.xMin + canvasRect.width * _rootRect.pivot.x) / width);
-        float rightNorm = Mathf.Clamp01((rect.xMax + canvasRect.width * _rootRect.pivot.x) / width);
-        float bottomNorm = Mathf.Clamp01((rect.yMin + canvasRect.height * _rootRect.pivot.y) / height);
-        float topNorm = Mathf.Clamp01((rect.yMax + canvasRect.height * _rootRect.pivot.y) / height);
-
-        if (topBlock != null)
+        if (mainHighlight != null && TryGetHighlightRect(mainHighlight, out var mainRect))
         {
-            topBlock.gameObject.SetActive(true);
-            topBlock.anchorMin = new Vector2(0f, topNorm);
-            topBlock.anchorMax = new Vector2(1f, 1f);
-            topBlock.offsetMin = Vector2.zero;
-            topBlock.offsetMax = Vector2.zero;
+            InflateRect(ref mainRect, highlightPadding);
+            mainRect = ClampToRoot(mainRect, rootRect);
+            if (mainRect.width > Epsilon && mainRect.height > Epsilon)
+            {
+                _cutouts.Add(mainRect);
+                UpdateHighlightFrame(mainRect, rootRect);
+            }
+            else if (highlightFrame != null)
+            {
+                highlightFrame.gameObject.SetActive(false);
+            }
+        }
+        else if (highlightFrame != null)
+        {
+            highlightFrame.gameObject.SetActive(false);
         }
 
-        if (bottomBlock != null)
+        if (secondary == null)
         {
-            bottomBlock.gameObject.SetActive(true);
-            bottomBlock.anchorMin = new Vector2(0f, 0f);
-            bottomBlock.anchorMax = new Vector2(1f, bottomNorm);
-            bottomBlock.offsetMin = Vector2.zero;
-            bottomBlock.offsetMax = Vector2.zero;
+            return;
         }
 
-        if (leftBlock != null)
+        foreach (var rectTransform in secondary)
         {
-            leftBlock.gameObject.SetActive(true);
-            leftBlock.anchorMin = new Vector2(0f, bottomNorm);
-            leftBlock.anchorMax = new Vector2(leftNorm, topNorm);
-            leftBlock.offsetMin = Vector2.zero;
-            leftBlock.offsetMax = Vector2.zero;
+            if (rectTransform == null) continue;
+            if (!TryGetHighlightRect(rectTransform, out var rect)) continue;
+            InflateRect(ref rect, highlightPadding);
+            rect = ClampToRoot(rect, rootRect);
+            if (rect.width <= Epsilon || rect.height <= Epsilon) continue;
+            _cutouts.Add(rect);
+        }
+    }
+
+    private void UpdateHighlightFrame(Rect rect, Rect rootRect)
+    {
+        if (highlightFrame == null) return;
+        highlightFrame.gameObject.SetActive(true);
+
+        float width = rootRect.width;
+        float height = rootRect.height;
+
+        float leftNorm = Mathf.Clamp01((rect.xMin - rootRect.xMin) / width);
+        float rightNorm = Mathf.Clamp01((rect.xMax - rootRect.xMin) / width);
+        float bottomNorm = Mathf.Clamp01((rect.yMin - rootRect.yMin) / height);
+        float topNorm = Mathf.Clamp01((rect.yMax - rootRect.yMin) / height);
+
+        highlightFrame.anchorMin = new Vector2(leftNorm, bottomNorm);
+        highlightFrame.anchorMax = new Vector2(rightNorm, topNorm);
+        highlightFrame.offsetMin = Vector2.zero;
+        highlightFrame.offsetMax = Vector2.zero;
+    }
+
+    private void GenerateSolidCover(Rect rootRect)
+    {
+        _vertices.Clear();
+        _indices.Clear();
+        _colors.Clear();
+        AddQuad(rootRect);
+        CommitMesh();
+    }
+
+    private void GenerateMesh(Rect rootRect)
+    {
+        BuildGrid(rootRect);
+
+        _vertices.Clear();
+        _indices.Clear();
+        _colors.Clear();
+
+        for (int xi = 0; xi < _gridX.Count - 1; xi++)
+        {
+            for (int yi = 0; yi < _gridY.Count - 1; yi++)
+            {
+                var cell = Rect.MinMaxRect(_gridX[xi], _gridY[yi], _gridX[xi + 1], _gridY[yi + 1]);
+                if (cell.width <= Epsilon || cell.height <= Epsilon) continue;
+
+                var center = cell.center;
+                bool inside = false;
+                for (int i = 0; i < _cutouts.Count; i++)
+                {
+                    if (_cutouts[i].Contains(center))
+                    {
+                        inside = true;
+                        break;
+                    }
+                }
+
+                if (!inside)
+                {
+                    AddQuad(cell);
+                }
+            }
         }
 
-        if (rightBlock != null)
+        CommitMesh();
+    }
+
+    private void BuildGrid(Rect rootRect)
+    {
+        _gridX.Clear();
+        _gridY.Clear();
+        _gridX.Add(rootRect.xMin);
+        _gridX.Add(rootRect.xMax);
+        _gridY.Add(rootRect.yMin);
+        _gridY.Add(rootRect.yMax);
+
+        foreach (var rect in _cutouts)
         {
-            rightBlock.gameObject.SetActive(true);
-            rightBlock.anchorMin = new Vector2(rightNorm, bottomNorm);
-            rightBlock.anchorMax = new Vector2(1f, topNorm);
-            rightBlock.offsetMin = Vector2.zero;
-            rightBlock.offsetMax = Vector2.zero;
+            _gridX.Add(Mathf.Clamp(rect.xMin, rootRect.xMin, rootRect.xMax));
+            _gridX.Add(Mathf.Clamp(rect.xMax, rootRect.xMin, rootRect.xMax));
+            _gridY.Add(Mathf.Clamp(rect.yMin, rootRect.yMin, rootRect.yMax));
+            _gridY.Add(Mathf.Clamp(rect.yMax, rootRect.yMin, rootRect.yMax));
         }
 
-        if (highlightFrame != null)
+        _gridX.Sort();
+        _gridY.Sort();
+        RemoveDuplicates(_gridX);
+        RemoveDuplicates(_gridY);
+    }
+
+    private static void RemoveDuplicates(List<float> values)
+    {
+        for (int i = values.Count - 2; i >= 0; i--)
         {
-            highlightFrame.gameObject.SetActive(true);
-            highlightFrame.anchorMin = new Vector2(leftNorm, bottomNorm);
-            highlightFrame.anchorMax = new Vector2(rightNorm, topNorm);
-            highlightFrame.offsetMin = Vector2.zero;
-            highlightFrame.offsetMax = Vector2.zero;
+            if (Mathf.Abs(values[i] - values[i + 1]) < Epsilon)
+            {
+                values.RemoveAt(i);
+            }
         }
+    }
+
+    private void AddQuad(Rect rect)
+    {
+        var idx = _vertices.Count;
+        _vertices.Add(new Vector3(rect.xMin, rect.yMin, 0f));
+        _vertices.Add(new Vector3(rect.xMin, rect.yMax, 0f));
+        _vertices.Add(new Vector3(rect.xMax, rect.yMax, 0f));
+        _vertices.Add(new Vector3(rect.xMax, rect.yMin, 0f));
+
+        var color32 = (Color32)overlayColor;
+        _colors.Add(color32);
+        _colors.Add(color32);
+        _colors.Add(color32);
+        _colors.Add(color32);
+
+        _indices.Add(idx);
+        _indices.Add(idx + 1);
+        _indices.Add(idx + 2);
+        _indices.Add(idx);
+        _indices.Add(idx + 2);
+        _indices.Add(idx + 3);
+    }
+
+    private void CommitMesh()
+    {
+        if (_vertices.Count == 0)
+        {
+            _renderer.SetMesh(null);
+            return;
+        }
+
+        _mesh.Clear();
+        _mesh.SetVertices(_vertices);
+        _mesh.SetColors(_colors);
+        _mesh.SetTriangles(_indices, 0);
+        _renderer.SetMesh(_mesh);
+        _renderer.SetColor(Color.white);
+    }
+
+    private static Rect ClampToRoot(Rect rect, Rect root)
+    {
+        float xMin = Mathf.Max(rect.xMin, root.xMin);
+        float xMax = Mathf.Min(rect.xMax, root.xMax);
+        float yMin = Mathf.Max(rect.yMin, root.yMin);
+        float yMax = Mathf.Min(rect.yMax, root.yMax);
+        if (xMax < xMin) xMax = xMin;
+        if (yMax < yMin) yMax = yMin;
+        return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
     }
 
     private bool TryGetHighlightRect(RectTransform target, out Rect rect)

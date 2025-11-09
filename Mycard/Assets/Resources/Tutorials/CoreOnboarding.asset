@@ -14,13 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tutorialId: core_onboarding
   steps:
-  - Step: 5
-    Message: "안녕하세요. 메멘토스의 세계에 오신 것을 환영합니다."
+  - Step: 11
+    Message: "\uC548\uB155\uD558\uC138\uC694. \uBA54\uBA58\uD1A0\uC2A4\uC758 \uC138\uACC4\uC5D0
+      \uC624\uC2E0 \uAC83\uC744 \uD658\uC601\uD569\uB2C8\uB2E4."
     PrimaryAnchor: 3
     FallbackAnchor: 3
     PreferFallback: 0
     HighlightTargetId: 
     HighlightOptional: 1
+    SecondaryHighlightIds: []
     InteractionGate: 0
     RequiredAction: 5
     ActionId: 
@@ -29,13 +31,15 @@ MonoBehaviour:
     TargetNodeIndex: -1
     AllowTapToContinue: 1
     AutoAdvance: 0
-  - Step: 7
-    Message: "여기서는 당신에게 도움을 줄 동료를 선택할 수 있습니다."
+  - Step: 12
+    Message: "\uC5EC\uAE30\uC11C\uB294 \uB2F9\uC2E0\uC5D0\uAC8C \uB3C4\uC6C0\uC744
+      \uC904 \uB3D9\uB8CC\uB97C \uC120\uD0DD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
     PrimaryAnchor: 3
     FallbackAnchor: 3
     PreferFallback: 0
     HighlightTargetId: 
     HighlightOptional: 1
+    SecondaryHighlightIds: []
     InteractionGate: 0
     RequiredAction: 5
     ActionId: 
@@ -44,13 +48,15 @@ MonoBehaviour:
     TargetNodeIndex: -1
     AllowTapToContinue: 1
     AutoAdvance: 0
-  - Step: 10
-    Message: "동료를 고르고 능력을 확인해 보세요."
+  - Step: 13
+    Message: "\uC88C\uC6B0\uB85C \uB4DC\uB798\uADF8\uD558\uAC70\uB098 \uBC84\uD2BC\uC744
+      \uB20C\uB7EC \uB3D9\uB8CC\uB97C \uC120\uD0DD\uD574\uC8FC\uC138\uC694."
     PrimaryAnchor: 3
     FallbackAnchor: 3
     PreferFallback: 0
-    HighlightTargetId: Companion-CarouselRegion
+    HighlightTargetId: companion-carousel
     HighlightOptional: 0
+    SecondaryHighlightIds: []
     InteractionGate: 2
     RequiredAction: 1
     ActionId: 
@@ -59,16 +65,40 @@ MonoBehaviour:
     TargetNodeIndex: -1
     AllowTapToContinue: 0
     AutoAdvance: 0
-  - Step: 20
-    Message: "선택이 끝났다면 시작 버튼을 눌러 튜토리얼 런을 시작하세요."
+  - Step: 14
+    Message: "\uC120\uD0DD\uC774 \uB05D\uB0AC\uB2E4\uBA74 \uC120\uD0DD \uBC84\uD2BC\uC744
+      \uB20C\uB7EC \uC9C4\uD589\uD574\uC8FC\uC138\uC694."
     PrimaryAnchor: 3
     FallbackAnchor: 3
     PreferFallback: 0
-    HighlightTargetId: Companion-StartButton
+    HighlightTargetId: start-button
     HighlightOptional: 0
+    SecondaryHighlightIds:
+    - companion-carousel
     InteractionGate: 2
     RequiredAction: 1
     ActionId: start-run
+    TargetAct: -1
+    TargetFloor: -1
+    TargetNodeIndex: -1
+    AllowTapToContinue: 0
+    AutoAdvance: 0
+  - Step: 20
+    Message: "\uCE74\uB4DC\uB97C \uB20C\uB7EC \uB4DC\uB798\uADF8\uD558\uC5EC \uD544\uB4DC
+      \uD654\uBA74\uC73C\uB85C \uC804\uD658\uB429\uB2C8\uB2E4."
+    PrimaryAnchor: 3
+    FallbackAnchor: 3
+    PreferFallback: 0
+    HighlightTargetId: card-hand-0
+    HighlightOptional: 0
+    SecondaryHighlightIds:
+    - card-hand-1
+    - card-hand-2
+    - card-hand-3
+    - card-hand-4
+    InteractionGate: 2
+    RequiredAction: 3
+    ActionId: 
     TargetAct: -1
     TargetFloor: -1
     TargetNodeIndex: -1

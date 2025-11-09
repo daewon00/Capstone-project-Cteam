@@ -86,4 +86,9 @@ public interface ITutorialService
     /// 하이라이트 타겟 등록을 해제합니다.
     /// </summary>
     void UnregisterTarget(TutorialTarget target);
+
+    /// <summary>
+    /// 특정 타깃 ID에 해당하는 RectTransform을 반환합니다.
+    /// </summary>
+    RectTransform GetTargetRect(string targetId);
 }

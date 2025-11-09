@@ -237,7 +237,13 @@ public class MapTraversalController : MonoBehaviour
         {
             if (node == null) continue;
             var target = node.GetComponent<TutorialTarget>() ?? node.gameObject.AddComponent<TutorialTarget>();
-            target.SetId($"map-node-{node.floor}-{node.index}");
+            // 씬에서 미리 지정된 ID가 있다면 유지합니다.
+            if (string.IsNullOrEmpty(target.TargetId))
+            {
+                target.SetId($"map-node-{node.floor}-{node.index}");
+            }
+            // FocusRect는 작성자가 별도 지정하지 않았다면(기본 transform) 그대로 두어도 동일 동작
+            // 필요 시 명시적으로 지정
             target.SetFocusRect(node.transform as RectTransform);
         }
     }

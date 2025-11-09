@@ -379,14 +379,21 @@ public class CompanionSelectController : MonoBehaviour
 
         if (startButton != null)
         {
-            var target = EnsureTarget(startButton.gameObject, "start-button");
-            target?.SetFocusRect(startButton.transform as RectTransform);
+            // 이미 동일 ID가 등록되어 있다면 씬의 작성값을 존중하고 새로 추가/등록하지 않습니다.
+            if (tutorialService.GetTargetRect("start-button") == null)
+            {
+                var target = EnsureTarget(startButton.gameObject, "start-button");
+                target?.SetFocusRect(startButton.transform as RectTransform);
+            }
         }
 
         if (carousel != null)
         {
-            var target = EnsureTarget(carousel.gameObject, "companion-carousel");
-            target?.SetFocusRect(carousel.transform as RectTransform);
+            if (tutorialService.GetTargetRect("companion-carousel") == null)
+            {
+                var target = EnsureTarget(carousel.gameObject, "companion-carousel");
+                target?.SetFocusRect(carousel.transform as RectTransform);
+            }
         }
     }
 
@@ -394,7 +401,11 @@ public class CompanionSelectController : MonoBehaviour
     {
         if (go == null || string.IsNullOrEmpty(id)) return null;
         var target = go.GetComponent<TutorialTarget>() ?? go.AddComponent<TutorialTarget>();
-        target.SetId(id);
+        // 씬에서 이미 설정된 ID가 있다면 덮어쓰지 않습니다(WYSIWYG 보존)
+        if (string.IsNullOrEmpty(target.TargetId))
+        {
+            target.SetId(id);
+        }
         return target;
     }
 

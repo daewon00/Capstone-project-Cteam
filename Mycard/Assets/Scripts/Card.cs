@@ -98,6 +98,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private float _activeForwardOffset = 0f;
     private bool _pendingCameraMove;
     private bool _dragScaleApplied;
+    private TutorialTarget _tutorialTarget;
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
     private CardPlacePoint _currentHoveredSlot;
@@ -322,6 +323,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         IsUpgraded = isUpgraded && cardSO.UpgradeEnabled;
         SetupCard();
         SetInteractable(true);
+        RefreshTutorialTarget();
     }
 
     public void SetBattleInstanceId(string id)
@@ -448,6 +450,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         assignedPlace = null;
         transform.SetParent(null, true);
         inHand = false;
+        RefreshTutorialTarget();
 
         effectService?.UnregisterBoardCard(this);
 
@@ -735,6 +738,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         GameEvents.OnCardHealthModifiersChanged += HandleHealthModifiersChanged;
         GameEvents.OnPlayerManaChanged += HandlePlayerManaChanged;
         GameEvents.OnCardManaCostModifiersChanged += HandleAttackModifiersChanged; // 비용 변경 시에도 표시 갱신
+
+        EnsureTutorialTargetIsAttached();
     }
 
     private void OnDisable()
@@ -750,6 +755,59 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         // 비활성화 시 하이라이트 잔상 제거
         ClearHoverHighlight();
+    }
+
+    public void RefreshTutorialTarget()
+    {
+        if (!ShouldRegisterTutorialTarget())
+        {
+            return;
+        }
+
+        EnsureTutorialTargetIsAttached();
+    }
+
+    private void EnsureTutorialTargetIsAttached()
+    {
+        if (!ShouldRegisterTutorialTarget())
+        {
+            return;
+        }
+
+        var rect = transform as RectTransform;
+        if (rect == null)
+        {
+            return;
+        }
+
+        if (_tutorialTarget == null)
+        {
+            _tutorialTarget = GetComponent<TutorialTarget>() ?? gameObject.AddComponent<TutorialTarget>();
+        }
+
+        _tutorialTarget.SetId(BuildTutorialTargetId());
+        _tutorialTarget.SetFocusRect(rect);
+    }
+
+    private bool ShouldRegisterTutorialTarget()
+    {
+        var tutorial = ServiceRegistry.Get<ITutorialService>();
+        return tutorial != null && tutorial.IsActive;
+    }
+
+    private string BuildTutorialTargetId()
+    {
+        if (inHand)
+        {
+            return $"card-hand-{Mathf.Max(0, handPosition)}";
+        }
+
+        if (!string.IsNullOrEmpty(InstanceId))
+        {
+            return $"card-instance-{InstanceId}";
+        }
+
+        return $"card-instance-{GetInstanceID()}";
     }
 
     private void HandleAttackModifiersChanged()
@@ -979,11 +1037,13 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 selectedPoint.activeCard = this;
                 assignedPlace = selectedPoint;
                 inHand = false;
+                RefreshTutorialTarget();
 
                 bool success = BattleController.instance.AttemptPlayCard(this);
                 if (success)
                 {
                     GameEvents.RaiseCardPlayed(this);
+                    ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.CardPlay, InstanceId);
                     AudioManager.instance.PlaySFX(4);
 
                     if (assignedPlace.cameraFocusPoint != null)
