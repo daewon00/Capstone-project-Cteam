@@ -15,8 +15,7 @@ MonoBehaviour:
   relicId: extradraw
   displayName: "\uC774\uC0C1\uD55C \uC57D"
   description: "\uAC01 \uD134\uB9C8\uB2E4 \uCE74\uB4DC\uB97C \uCD94\uAC00\uB85C \uB4DC\uB85C\uC6B0\uB97C
-    \uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4\n-\uC774\uC0C1\uD55C \uB0C4\uC0C8\uAC00
-    \uB09C\uB2E4-"
+    \uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
   icon: {fileID: 21300000, guid: 6f2ebf0c52b37b84c981671fa8043367, type: 3}
   stackable: 0
   maxStacks: 1

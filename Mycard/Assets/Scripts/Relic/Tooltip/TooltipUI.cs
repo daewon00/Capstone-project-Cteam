@@ -9,10 +9,13 @@ public class TooltipUI : MonoBehaviour
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text descriptionText;
     [SerializeField] private Vector2 mouseOffset = new(24f, -24f);
-
+    [SerializeField] private float hideDelay = 2f;
     private Canvas parentCanvas;
     private RectTransform canvasRect;
     private bool isVisible;
+    private bool shouldFollowMouse = true;
+    private Vector2 lastScreenPosition;
+    private Coroutine hideCoroutine;
     private readonly Vector3[] canvasWorldCorners = new Vector3[4];
     private readonly Vector3[] tooltipWorldCorners = new Vector3[4];
 
@@ -44,7 +47,11 @@ public class TooltipUI : MonoBehaviour
             return;
         }
 
-        UpdatePosition(Input.mousePosition);
+        if (shouldFollowMouse)
+        {
+            lastScreenPosition = Input.mousePosition;
+            UpdatePosition(lastScreenPosition);
+        }
     }
 
     public void Show(string title, string description)
@@ -58,21 +65,30 @@ public class TooltipUI : MonoBehaviour
         {
             descriptionText.text = string.IsNullOrEmpty(description) ? string.Empty : description;
         }
-
+        CancelHideRoutine();
+        shouldFollowMouse = true;
         isVisible = true;
         SetVisibleState(true);
-        UpdatePosition(Input.mousePosition);
+        lastScreenPosition = Input.mousePosition;
+        UpdatePosition(lastScreenPosition);
     }
 
     public void Hide()
     {
-        isVisible = false;
-        SetVisibleState(false);
+        if (!isVisible)
+        {
+            return;
+        }
+
+        CancelHideRoutine();
+        shouldFollowMouse = false;
+        hideCoroutine = StartCoroutine(HideAfterDelay());
     }
 
     private void HideImmediate()
     {
-        
+        CancelHideRoutine();
+        shouldFollowMouse = false;
         isVisible = false;
         SetVisibleState(false);
     }
@@ -91,6 +107,22 @@ public class TooltipUI : MonoBehaviour
             root.gameObject.SetActive(visible);
         }
     }
+    private IEnumerator HideAfterDelay()
+    {
+        yield return new WaitForSeconds(hideDelay);
+        hideCoroutine = null;
+        isVisible = false;
+        SetVisibleState(false);
+    }
+
+    private void CancelHideRoutine()
+    {
+        if (hideCoroutine != null)
+        {
+            StopCoroutine(hideCoroutine);
+            hideCoroutine = null;
+        }
+    }
 
     private void UpdatePosition(Vector2 screenPosition)
     {
@@ -106,7 +138,7 @@ public class TooltipUI : MonoBehaviour
         {
             camera = parentCanvas.worldCamera;
         }
-
+        lastScreenPosition = screenPosition;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPosition, camera, out var localPoint);
         localPoint += mouseOffset;
 
