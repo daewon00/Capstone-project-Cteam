@@ -22,7 +22,7 @@ MonoBehaviour:
   - effectType: 4
     effectIcon: {fileID: 21300000, guid: 2c20ab2ffe5bf8a4c97073e9ad49d8db, type: 3}
   - effectType: 5
-    effectIcon: {fileID: 21300000, guid: 4451ef1d174fe554cae7c7f0fbbdfd5a, type: 3}
+    effectIcon: {fileID: 21300000, guid: 885ac178f78c3544aaadb42c75da4561, type: 3}
   - effectType: 6
     effectIcon: {fileID: 21300000, guid: 508b8582b62ef7145bd9f4953bb2200b, type: 3}
   - effectType: 7
