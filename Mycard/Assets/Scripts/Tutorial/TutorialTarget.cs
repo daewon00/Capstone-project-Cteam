@@ -36,6 +36,9 @@ public sealed class TutorialTarget : MonoBehaviour
 
     public void SetId(string id)
     {
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[TutorialTarget] SetId: {targetId} -> {id} ({gameObject.name})", this);
+        #endif
         if (string.Equals(targetId, id, System.StringComparison.Ordinal))
         {
             return;
@@ -54,19 +57,18 @@ public sealed class TutorialTarget : MonoBehaviour
         if (svc != null && isActiveAndEnabled)
         {
             svc.RegisterTarget(this);
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[TutorialTarget] Re-registered with new id: {targetId}", this);
+        #endif
         }
     }
 
     public void SetFocusRect(RectTransform rect)
     {
-        // 씬에서 이미 명시적으로 지정된 포커스 Rect가 있다면 건드리지 않습니다.
-        if (explicitRect != null)
-        {
-            return;
-        }
         if (rect == null) return;
+        if (explicitRect == rect) return;
         explicitRect = rect;
-        var svc = ServiceRegistry.Get<ITutorialService>();
-        svc?.RegisterTarget(this);
+        // FocusRect 변경은 서비스 재등록 없이도 Dimmer가 최신 Rect를 참조합니다.
+        // (루프 방지: RegisterTarget를 호출하지 않습니다.)
     }
 }

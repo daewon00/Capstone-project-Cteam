@@ -37,6 +37,10 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     [SerializeField] private TMP_Text skillEffectValueText;
     [SerializeField] private EffectIconDatabase iconDatabaseOverride;
     [SerializeField] private CardVisualProfile visualProfileOverride;
+    
+    [Header("Tutorial")]
+    [SerializeField, Tooltip("튜토리얼 하이라이트에 사용할 UI RectTransform. 비워두면 자식 캔버스를 자동 검색합니다.")]
+    private RectTransform tutorialHighlightRect;
 
     //카드 움직임 관련
     private Vector3 targetPoint;
@@ -774,10 +778,33 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             return;
         }
 
-        var rect = transform as RectTransform;
+        RectTransform rect = tutorialHighlightRect;
         if (rect == null)
         {
-            return;
+            // 1) 자식 중 최상위 Canvas의 RectTransform을 우선 사용
+            var canvas = GetComponentInChildren<Canvas>(true);
+            if (canvas != null)
+            {
+                rect = canvas.transform as RectTransform;
+            }
+            // 2) 폴백: 자식 중 첫 RectTransform을 사용
+            if (rect == null)
+            {
+                var allRects = GetComponentsInChildren<RectTransform>(true);
+                for (int i = 0; i < allRects.Length; i++)
+                {
+                    var r = allRects[i];
+                    if (r != null && r.gameObject != this.gameObject)
+                    {
+                        rect = r;
+                        break;
+                    }
+                }
+            }
+            if (rect == null)
+            {
+                return; // UI RectTransform을 찾지 못한 경우 등록 보류
+            }
         }
 
         if (_tutorialTarget == null)
@@ -785,7 +812,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             _tutorialTarget = GetComponent<TutorialTarget>() ?? gameObject.AddComponent<TutorialTarget>();
         }
 
-        _tutorialTarget.SetId(BuildTutorialTargetId());
+        var id = BuildTutorialTargetId();
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[Card] EnsureTutorialTarget id='{id}' inHand={inHand} handPos={handPosition} focusRect='{(rect!=null?rect.name:"<null>")}' instance={InstanceId}", this);
+        #endif
+        _tutorialTarget.SetId(id);
         _tutorialTarget.SetFocusRect(rect);
     }
 
