@@ -83,13 +83,29 @@ MonoBehaviour:
     TargetNodeIndex: -1
     AllowTapToContinue: 0
     AutoAdvance: 0
+  - Step: 15
+    Message: ""
+    PrimaryAnchor: 3
+    FallbackAnchor: 3
+    PreferFallback: 0
+    HighlightTargetId: 
+    HighlightOptional: 1
+    SecondaryHighlightIds: []
+    InteractionGate: 0
+    RequiredAction: 1
+    ActionId: initial-draw-complete
+    TargetAct: -1
+    TargetFloor: -1
+    TargetNodeIndex: -1
+    AllowTapToContinue: 0
+    AutoAdvance: 0
   - Step: 20
     Message: "\uCE74\uB4DC\uB97C \uB20C\uB7EC \uB4DC\uB798\uADF8\uD558\uC5EC \uD544\uB4DC
       \uD654\uBA74\uC73C\uB85C \uC804\uD658\uB429\uB2C8\uB2E4."
     PrimaryAnchor: 3
     FallbackAnchor: 3
     PreferFallback: 0
-    HighlightTargetId: card-hand-0
+    HighlightTargetId: hand-area
     HighlightOptional: 0
     SecondaryHighlightIds:
     - card-hand-1

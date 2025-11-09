@@ -290,6 +290,9 @@ public sealed class TutorialService : ITutorialService
         }
 
         _targets[target.TargetId] = target;
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[TutorialService] RegisterTarget id='{target.TargetId}' focusRect={(target.FocusRect!=null?target.FocusRect.name:"<null>")} currentStep={CurrentStep} currentHighlightId='{CurrentConfig?.HighlightTargetId}'");
+        #endif
         if (CurrentConfig != null && string.Equals(CurrentConfig.HighlightTargetId, target.TargetId, StringComparison.OrdinalIgnoreCase))
         {
             RefreshVisuals();
@@ -306,6 +309,9 @@ public sealed class TutorialService : ITutorialService
         if (_targets.TryGetValue(target.TargetId, out var existing) && existing == target)
         {
             _targets.Remove(target.TargetId);
+            #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[TutorialService] UnregisterTarget id='{target.TargetId}'");
+            #endif
             if (CurrentConfig != null && string.Equals(CurrentConfig.HighlightTargetId, target.TargetId, StringComparison.OrdinalIgnoreCase))
             {
                 RefreshVisuals();
@@ -320,6 +326,9 @@ public sealed class TutorialService : ITutorialService
         {
             return target.FocusRect;
         }
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log($"[TutorialService] GetTargetRect MISS id='{targetId}'. Registered={_targets.Count}");
+        #endif
         return null;
     }
 

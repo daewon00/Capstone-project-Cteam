@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -56,6 +57,12 @@ public sealed partial class TutorialOverlayView : MonoBehaviour, IPointerClickHa
             }
         }
 
+        // 오버레이에서 월드 프록시 코디네이터가 없으면 보강
+        if (GetComponent<HighlightProxyCoordinator>() == null)
+        {
+            gameObject.AddComponent<HighlightProxyCoordinator>();
+        }
+
         SetVisible(false);
         D($"Awake: anchors={anchorSlots?.Length ?? 0}");
     }
@@ -87,7 +94,6 @@ public sealed partial class TutorialOverlayView : MonoBehaviour, IPointerClickHa
     private void HandleStepVisualChanged(TutorialStepConfig config, RectTransform highlight)
     {
         _currentConfig = config;
-        _currentHighlight = highlight;
 
         if (config == null)
         {
@@ -104,11 +110,12 @@ public sealed partial class TutorialOverlayView : MonoBehaviour, IPointerClickHa
                 ? string.Empty
                 : config.Message;
         }
-
-        ApplyAnchor(config, highlight);
         var svc = ServiceRegistry.Get<ITutorialService>();
+        // 메인 하이라이트를 서비스 상태에서 재해석(프록시/동적 타깃 반영)
+        var main = ResolveMainHighlight(config, highlight);
+        ApplyAnchor(config, main);
         PopulateSecondaryRects(config, svc);
-        dimmer?.Apply(config, highlight, _secondaryPassRects);
+        dimmer?.Apply(config, main, _secondaryPassRects);
         _allowTap = svc?.CanAdvanceViaOverlay ?? false;
         _gateOthers = config.InteractionGate == TutorialInteractionGate.BlockOthers
                       || config.InteractionGate == TutorialInteractionGate.Exclusive;
@@ -117,7 +124,38 @@ public sealed partial class TutorialOverlayView : MonoBehaviour, IPointerClickHa
         {
             tapHintLabel.gameObject.SetActive(_allowTap);
         }
-        D($"StepChanged: step={config.Step} req={config.RequiredAction} allowTap={config.AllowTapToContinue} svcCanTap={svc?.CanAdvanceViaOverlay ?? false} gate={config.InteractionGate} highlightId='{config.HighlightTargetId}' hasHighlight={highlight!=null}");
+        D($"StepChanged: step={config.Step} req={config.RequiredAction} allowTap={config.AllowTapToContinue} svcCanTap={svc?.CanAdvanceViaOverlay ?? false} gate={config.InteractionGate} highlightId='{config.HighlightTargetId}' hasHighlight={(main!=null)}");
+
+        // 프록시/타깃 등록 타이밍을 고려해 한 프레임 뒤 재적용(안정화)
+        if (_delayedRefresh != null) StopCoroutine(_delayedRefresh);
+        _delayedRefresh = StartCoroutine(DelayedReapply());
+    }
+
+    private RectTransform ResolveMainHighlight(TutorialStepConfig config, RectTransform fallback)
+    {
+        RectTransform resolved = null;
+        if (config != null && !string.IsNullOrEmpty(config.HighlightTargetId))
+        {
+            try { resolved = ServiceRegistry.Get<ITutorialService>()?.GetTargetRect(config.HighlightTargetId); } catch { resolved = null; }
+        }
+        if (resolved == null) resolved = fallback;
+        _currentHighlight = resolved;
+        return resolved;
+    }
+
+    private Coroutine _delayedRefresh;
+    private IEnumerator DelayedReapply()
+    {
+        yield return null; // 한 프레임 대기(프록시 바인딩 완료 대기)
+        var cfg = _currentConfig;
+        if (cfg == null) yield break;
+        var svc = ServiceRegistry.Get<ITutorialService>();
+        var main = ResolveMainHighlight(cfg, _currentHighlight);
+        PopulateSecondaryRects(cfg, svc);
+        dimmer?.Apply(cfg, main, _secondaryPassRects);
+        UpdateRaycastState();
+        if (tapHintLabel != null) tapHintLabel.gameObject.SetActive(_allowTap);
+        _delayedRefresh = null;
     }
 
     private void ApplyAnchor(TutorialStepConfig config, RectTransform highlight)
