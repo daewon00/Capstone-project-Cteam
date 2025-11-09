@@ -376,16 +376,22 @@ public sealed partial class TutorialDimmer : MonoBehaviour
     }
 }
 
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 partial class TutorialDimmer
 {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-    //[System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
     private void D(string msg)
     {
         if (!enableDebugLogs) return;
         Debug.Log($"[TutorialDimmer] {msg}", this);
     }
-#endif
 }
+#endif
 
+#if !(UNITY_EDITOR || DEVELOPMENT_BUILD)
+partial class TutorialDimmer
+{
+    // 릴리즈 빌드용 no-op 디버그 함수 스텁
+    private void D(string msg) { }
+}
+#endif
