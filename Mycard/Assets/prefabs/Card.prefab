@@ -838,10 +838,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   _battleInstanceId: 
+  _pressTooltipDelay: 1
   _pressViewportPaddingX: 0.08
   _pressViewportPaddingY: 0.12
   _pressViewportEdgePaddingX: 0.28
   _pressViewportEdgePaddingY: 0.12
+  _debugFieldTooltip: 1
 --- !u!65 &2183193030056329190
 BoxCollider:
   m_ObjectHideFlags: 0

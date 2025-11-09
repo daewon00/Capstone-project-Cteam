@@ -191,7 +191,12 @@ public class RunService : IRunService
 
         Debug.Log("[RunService] Node cleared. Rewards saved. Transitioning to Map Scene.");
         RunCacheSynchronizer.Sync();
-        SceneManager.LoadScene("Map Scene");
+        var nextMapScene = PlayerPrefs.GetString("lastMapScene", "Map Scene");
+        if (string.IsNullOrEmpty(nextMapScene))
+        {
+            nextMapScene = "Map Scene";
+        }
+        SceneManager.LoadScene(nextMapScene);
     }
 
     /// <summary>

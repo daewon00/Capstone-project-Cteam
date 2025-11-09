@@ -102,6 +102,12 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private float _activeForwardOffset = 0f;
     private bool _pendingCameraMove;
     private bool _dragScaleApplied;
+    private bool _tooltipVisible;
+    [SerializeField, Tooltip("손패에서 카드를 눌렀을 때 툴팁이 나타나기까지 필요한 최소 유지 시간(초)")]
+    private float _pressTooltipDelay = 1f;
+    private bool _isPointerHeld;
+    private bool _tooltipPending;
+    private float _tooltipActivateTime;
     private TutorialTarget _tutorialTarget;
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
@@ -301,6 +307,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         transform.position = Vector3.Lerp(transform.position, targetPoint, moveSpeed * Time.deltaTime);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotateSpeed * Time.deltaTime);
+        UpdatePressTooltipTimer();
+        UpdateFieldTooltipCollider();
     }
 
     // UI 이벤트 시스템 클릭 처리: 카드 선택 전용(사용은 배치 시 BattleController 경유)
@@ -759,6 +767,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         // 비활성화 시 하이라이트 잔상 제거
         ClearHoverHighlight();
+        _isPointerHeld = false;
+        CancelPendingPressTooltip();
+        HidePressTooltip();
     }
 
     public void RefreshTutorialTarget()
@@ -879,18 +890,165 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         bool shouldUpdateDisplay = assignedPlace != null || inHand;
         RecalculateHealthFromModifiers(resetCurrent: false, updateDisplay: shouldUpdateDisplay);
     }
+
+    private void UpdatePressTooltipTimer()
+    {
+        if (!_isPointerHeld || !_tooltipPending || _tooltipVisible)
+            return;
+
+        if (Time.time < _tooltipActivateTime)
+            return;
+
+        _tooltipPending = false;
+        if ((inHand && !_isDragging) || (!inHand && ShouldAllowFieldTooltip()))
+        {
+            ShowPressTooltip();
+        }
+    }
+
+    private void UpdateFieldTooltipCollider()
+    {
+        if (theCol == null || _isInteractable)
+            return;
+
+        bool allow = ShouldAllowFieldTooltip();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (_debugFieldTooltip && allow != _lastFieldTooltipAllowed)
+        {
+            ShouldAllowFieldTooltip(true);
+        }
+#endif
+        _lastFieldTooltipAllowed = allow;
+
+        bool enable = allow;
+        if (theCol.enabled == enable)
+            return;
+
+        theCol.enabled = enable;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (_debugFieldTooltip)
+        {
+            Debug.Log($"[Card] FieldTooltipCollider {(enable ? "ENABLED" : "DISABLED")} card={name}");
+        }
+#endif
+        if (!enable)
+        {
+            CancelPendingPressTooltip();
+            HidePressTooltip();
+        }
+    }
+
+    private void ShowPressTooltip()
+    {
+        if (_tooltipVisible || cardSO == null)
+            return;
+
+        bool canShow = inHand || ShouldAllowFieldTooltip();
+        if (!canShow)
+            return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (_debugFieldTooltip)
+        {
+            Debug.Log($"[Card] ShowPressTooltip invoked card={name} inHand={inHand} shouldAllowField={ShouldAllowFieldTooltip()}");
+        }
+#endif
+        var tooltipService = ServiceRegistry.Get<ICardTooltipService>();
+        if (tooltipService == null)
+            return;
+
+        var data = new CardTooltipData(string.Empty, BuildActionTooltipDescription());
+        tooltipService.Show(this, data);
+        _tooltipVisible = true;
+    }
+
+    private void HidePressTooltip()
+    {
+        if (!_tooltipVisible)
+            return;
+
+        var tooltipService = ServiceRegistry.Get<ICardTooltipService>();
+        tooltipService?.Hide(this);
+        _tooltipVisible = false;
+    }
+
+    private void CancelPendingPressTooltip()
+    {
+        _tooltipPending = false;
+    }
+
+    private string BuildActionTooltipDescription()
+    {
+        if (actionDescriptionText != null && !string.IsNullOrWhiteSpace(actionDescriptionText.text))
+            return actionDescriptionText.text;
+        return cardSO != null ? cardSO.actionDescription : string.Empty;
+    }
+
+    [SerializeField, Tooltip("필드 카드 툴팁 조건을 디버그 로그로 출력합니다(에디터/개발 빌드).")]
+    private bool _debugFieldTooltip;
+    private bool _lastFieldTooltipAllowed;
+
+    private bool ShouldAllowFieldTooltip(bool logReasons = false)
+    {
+        bool assigned = assignedPlace != null;
+        bool battleActive = BattleController.instance != null && !BattleController.instance.battleEnded;
+        bool camValid = CameraController.instance != null;
+        bool atBattleView = camValid && CameraController.instance.IsAtBattleView;
+
+        bool allowed = assigned && battleActive && atBattleView;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (logReasons && _debugFieldTooltip)
+        {
+            Debug.Log($"[Card] FieldTooltipCheck card={name} assigned={assigned} battleActive={battleActive} camPresent={camValid} atBattleView={atBattleView} allowed={allowed}");
+        }
+#endif
+
+        return allowed;
+    }
     // =============================
     // 이벤트 기반 입력 핸들러 구현
     // =============================
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (!_isInteractable || assignedPlace != null || BattleController.instance == null) return;
+        bool allowFieldTooltip = ShouldAllowFieldTooltip();
+        bool isFieldPressOnly = allowFieldTooltip && !inHand;
+
+        if (((!_isInteractable) || assignedPlace != null) && !allowFieldTooltip)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_debugFieldTooltip && assignedPlace != null && !inHand)
+                ShouldAllowFieldTooltip(true);
+#endif
+            return;
+        }
+        if (BattleController.instance == null)
+            return;
+
+        _isPointerHeld = true;
+        float delay = isFieldPressOnly ? 0.1f : _pressTooltipDelay;
+        if (delay <= 0f)
+        {
+            _tooltipPending = false;
+            ShowPressTooltip();
+        }
+        else
+        {
+            _tooltipPending = true;
+            _tooltipActivateTime = Time.time + delay;
+        }
         _dragStartScreenPos = eventData.position;
         _dragStartTime = Time.time;
 
         // Press 피드백: 스케일 업 + 살짝 들어 올리기
         transform.DOKill(false);
         var pressTargetScale = Vector3.Scale(_currentBaseScale, _pressScaleMultiplier);
+        if (isFieldPressOnly)
+        {
+            transform.DOScale(pressTargetScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+            return;
+        }
+
         var handCtrl = HandController.instance;
         if (handCtrl != null && inHand)
         {
@@ -904,7 +1062,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         _activeForwardOffset = 0f;
         _dragScaleApplied = false;
         _pendingCameraMove = false;
-        if (theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
+        if (inHand && theHC != null && handPosition >= 0 && handPosition < theHC.cardPositions.Count)
         {
             var targetPos = theHC.cardPositions[handPosition] + _pressPositionOffset;
             float forwardOffset = 0f;
@@ -941,7 +1099,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             MoveToPoint(targetPos, transform.rotation);
         }
         // 레이아웃을 잠그어 자동 재정렬로 인한 오더/위치 되돌림 방지
-        if (theHC != null) theHC.SuspendLayoutFor(this);
+        if (inHand && theHC != null) theHC.SuspendLayoutFor(this);
         // Press 순간에도 최상위로 올려 이웃 카드에 가리지 않도록 함
         var hand = HandController.instance;
         if (hand != null && _sortingBinder != null)
@@ -954,6 +1112,10 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (!_isInteractable || !inHand || assignedPlace != null) return;
         if (BattleController.instance == null || BattleController.instance.battleEnded) return;
+
+        _isPointerHeld = false;
+        CancelPendingPressTooltip();
+        HidePressTooltip();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         Debug.Log($"[Card] BeginDrag instance={InstanceId} pendingCameraMove={(CameraController.instance != null ? CameraController.instance.battleTransform != null : false)} camTarget={CameraController.instance?.CurrentTarget?.name}");
@@ -1026,9 +1188,13 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (!_isDragging) return;
         _isDragging = false;
+        _isPointerHeld = false;
+        CancelPendingPressTooltip();
+        HidePressTooltip();
         FieldViewGestureController.PopCardDragSuppression();
         _activeForwardOffset = 0f;
         _dragScaleApplied = false;
+        HidePressTooltip();
 
         if (theCol != null) theCol.enabled = true;
 
@@ -1152,6 +1318,8 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        _isPointerHeld = false;
+        CancelPendingPressTooltip();
         if (_isDragging) return; // 드래그 종료에서 처리됨
         _activeForwardOffset = 0f;
         _dragScaleApplied = false;
@@ -1168,6 +1336,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         // 탭/클릭 종료 시 비주얼 원복
         transform.DOKill(false);
         transform.DOScale(_currentBaseScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+        HidePressTooltip();
 
         // 필드 위 카드나 inHand가 아닌 경우는 위치 복귀를 수행하지 않음
         if (!inHand || assignedPlace != null)
@@ -1380,6 +1549,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 #endif
             CameraController.instance.MoveTo(CameraController.instance.battleTransform);
         }
+        HidePressTooltip();
         ApplyDragScaleIfNeeded();
         UIController.instance?.SetDragModeUIVisibility(false);
     }

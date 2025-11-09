@@ -30,7 +30,7 @@ MonoBehaviour:
         upgrade: 0
       - type: 5
         amount: 0
-        refId: RELIC_RADIANT_HEART
+        refId: MANAup
         quantity: 1
         upgrade: 0
       nextStageId: tower_peak
@@ -59,7 +59,7 @@ MonoBehaviour:
       nextStageId: 
   - stageId: tower_peak
     description: "\uB2F9\uC2E0\uC744 \uB9C9\uB294 \uC7A5\uC560\uBB3C\uB4E4 \uB118\uC5B4\uAC00\uBA70\n\uACE0\uB41C
-      \uC5EC\uC815 \uB05D\uC5D0 \uAD11\uD718\uC758 \uC720\uBB3C\uC744 \uC5BB\uC5C8\uB2E4."
+      \uC5EC\uC815 \uB05D\uC5D0 '\uACE0\uB300\uC758 \uC720\uBB3C'\uC744 \uC5BB\uC5C8\uB2E4."
     choices:
     - id: tower_peak_continue
       label: "\uB5A0\uB09C\uB2E4."

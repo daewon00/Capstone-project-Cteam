@@ -139,25 +139,22 @@ public class CompanionDetailView : MonoBehaviour
             }
         }
 
-        if (companion.StartingCardIds == null || companion.StartingCardIds.Count == 0)
+        var previewEntries = CompanionDeckPreviewBuilder.BuildEntries(companion);
+        if (previewEntries == null || previewEntries.Count == 0)
         {
             return;
         }
 
-        var groupedCards = companion.StartingCardIds
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .GroupBy(id => id);
-
         int index = 0;
-        foreach (var group in groupedCards)
+        foreach (var entry in previewEntries)
         {
             var cardView = GetOrCreateCardView(index++);
             if (cardView == null)
                 continue;
 
-            var cardData = LoadCardData(group.Key);
+            var cardData = LoadCardData(entry.CardId);
             cardView.gameObject.SetActive(true);
-            cardView.Bind(cardData, cardState: null, groupedCount: group.Count());
+            cardView.Bind(cardData, cardState: null, groupedCount: entry.Count);
         }
     }
 

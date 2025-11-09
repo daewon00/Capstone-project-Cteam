@@ -39,7 +39,7 @@ MonoBehaviour:
         upgrade: 0
       - type: 5
         amount: 0
-        refId: RELIC_BLESSING_ORB
+        refId: HPup
         quantity: 1
         upgrade: 0
       nextStageId: sanctum_offering
@@ -66,8 +66,8 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: 
   - stageId: sanctum_offering
-    description: "\uD5CC\uAE08\uD55C \uB355\uBD84\uC5D0 \uCD95\uBCF5\uBC1B\uC740
-      \uC720\uBB3C\uC744 \uC5BB\uC5C8\uB2E4."
+    description: "\uD5CC\uAE08\uD55C \uB355\uBD84\uC5D0 '\uC790\uC591\uAC15\uC7A5\uC81C'\uB97C
+      \uC5BB\uC5C8\uB2E4."
     choices:
     - id: sanctum_offering_continue
       label: "\uB5A0\uB09C\uB2E4."

@@ -15,7 +15,7 @@ MonoBehaviour:
   cardName: "\uAD70\uCCB4\uC758 \uC9C0\uBC30\uC790"
   CardId: CARD_BROOD_SOVEREIGN
   actionDescription: "\uC804\uC7A5\uC5D0 \uB098\uC62C \uB54C \uC88C\uC6B0 \uBE48
-    \uCE78\uC5D0 2/2 \uBB34\uB9AC\uB97C \uC18C\uD658\uD569\uB2C8\uB2E4."
+    \uCE78\uC5D0 1/1 \uBB34\uB9AC\uB97C \uC18C\uD658\uD569\uB2C8\uB2E4."
   cardLore: 
   manaCost: 6
   attackPower: 7

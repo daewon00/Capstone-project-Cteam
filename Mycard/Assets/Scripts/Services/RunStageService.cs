@@ -185,6 +185,7 @@ public static class RunStagePayloads
         public int prevBattleKind;
         public bool hasPrevLocation;
         public bool isPending;
+        public bool isFirstBattle;
     }
 
     [Serializable]

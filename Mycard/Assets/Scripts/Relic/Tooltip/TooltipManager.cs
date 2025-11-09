@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class TooltipManager : MonoBehaviour
@@ -7,6 +5,11 @@ public class TooltipManager : MonoBehaviour
     public static TooltipManager Instance { get; private set; }
 
     [SerializeField] private TooltipUI tooltipUI;
+    [SerializeField] private TooltipDisplayMode initialDisplayMode = TooltipDisplayMode.Default;
+
+    private TooltipDisplayMode _currentDisplayMode;
+
+    public bool HasVisibleTooltip => tooltipUI != null && tooltipUI.IsVisible;
 
     private void Awake()
     {
@@ -22,7 +25,9 @@ public class TooltipManager : MonoBehaviour
         {
             tooltipUI = GetComponentInChildren<TooltipUI>(true);
         }
-        
+
+        _currentDisplayMode = initialDisplayMode;
+        ApplyDisplayMode();
     }
 
     private void OnDestroy()
@@ -35,14 +40,13 @@ public class TooltipManager : MonoBehaviour
 
     public void ShowTooltip(string title, string description)
     {
-
         if (!tooltipUI)
         {
             return;
         }
 
+        ResetDisplayMode();
         tooltipUI.Show(title, description);
-        Debug.LogWarning("tooltipon");
     }
 
     public void ShowRelicTooltip(RelicData data)
@@ -60,5 +64,38 @@ public class TooltipManager : MonoBehaviour
     {
         
         tooltipUI?.Hide();
+    }
+
+    public void ShowTooltipAtScreenPosition(string title, string description, Vector2 screenPosition, Vector2? customOffset = null)
+    {
+        ApplyDisplayMode();
+        tooltipUI?.ShowAtScreenPoint(title, description, screenPosition, customOffset, false);
+    }
+
+    public void UpdateTooltipScreenPosition(Vector2 screenPosition, Vector2? customOffset = null)
+    {
+        tooltipUI?.UpdateScreenPosition(screenPosition, customOffset);
+    }
+
+    public void HideTooltipImmediate()
+    {
+        tooltipUI?.HideImmediate();
+    }
+
+    public void SetDisplayMode(TooltipDisplayMode mode)
+    {
+        _currentDisplayMode = mode;
+        ApplyDisplayMode();
+    }
+
+    public void ResetDisplayMode()
+    {
+        _currentDisplayMode = TooltipDisplayMode.Default;
+        ApplyDisplayMode();
+    }
+
+    private void ApplyDisplayMode()
+    {
+        tooltipUI?.ApplyStyle(_currentDisplayMode);
     }
 }

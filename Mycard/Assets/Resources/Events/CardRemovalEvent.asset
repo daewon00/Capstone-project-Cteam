@@ -28,11 +28,32 @@ MonoBehaviour:
         quantity: 1
         upgrade: 0
       nextStageId: removal_result
+    - id: removal_skip
+      label: "카드를 제거하지 않는다"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: removal_skip_result
   - stageId: removal_result
     description: "{REMOVAL_MESSAGE}"
     choices:
     - id: removal_finish
       label: "맵으로 돌아간다"
+      effects:
+      - type: 4
+        amount: 0
+        refId: 
+        quantity: 0
+        upgrade: 0
+      nextStageId: 
+  - stageId: removal_skip_result
+    description: "덱을 그대로 두기로 했습니다. 맵으로 돌아갑니다."
+    choices:
+    - id: removal_skip_finish
+      label: "계속 이동한다"
       effects:
       - type: 4
         amount: 0

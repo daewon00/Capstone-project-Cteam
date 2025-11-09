@@ -45,7 +45,7 @@ MonoBehaviour:
         upgrade: 0
       - type: 5
         amount: 0
-        refId: RELIC_RITUAL_MASK
+        refId: cardattackup
         quantity: 1
         upgrade: 0
       nextStageId: rite_gold
@@ -72,7 +72,7 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: 
   - stageId: rite_gold
-    description: "\uACE8\uB4DC\uC640 \uB9DE\uBC14\uAFBC \uC758\uC2DD \uB3C4\uAD6C\uB97C
+    description: "\uACE8\uB4DC\uC640 \uB9DE\uBC14\uAFBC '\uBBFF\uC74C\uC758 \uC7A5\uAC11'\uC744
       \uC190\uC5D0 \uB123\uC5C8\uB2E4."
     choices:
     - id: rite_gold_continue

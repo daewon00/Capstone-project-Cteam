@@ -14,6 +14,7 @@ public class CompanionSelectController : MonoBehaviour
 {
     [SerializeField] private string mapScene = "Map Scene";
     [SerializeField] private string tutorialBattleScene = "Battle_android";
+    [SerializeField] private string initialBattleScene = "Battle_android";
     
     [Header("Run Defaults")]
     [SerializeField] private int startingAct = 1;
@@ -27,9 +28,11 @@ public class CompanionSelectController : MonoBehaviour
     [SerializeField] private CompanionCarouselPresenter carousel;
     [SerializeField] private Button startButton;
     [SerializeField] private Button detailButton;
+    [SerializeField] private Button deckButton;
     [SerializeField] private TMP_Text selectedLabel;
     [SerializeField] private Button backButton;
     [SerializeField] private string previousScene = "Main Menu";
+    [SerializeField] private DeckOverlayController deckOverlay;
 
     [Header("FX")]
     [SerializeField] private CompanionSelectFxController fxController;
@@ -88,6 +91,11 @@ public class CompanionSelectController : MonoBehaviour
         {
             detailButton.onClick.AddListener(OnClickDetail);
         }
+        EnsureDeckUiReferences();
+        if (deckButton != null)
+        {
+            deckButton.onClick.AddListener(OnClickDeck);
+        }
 
         if (backButton != null)
         {
@@ -132,6 +140,10 @@ public class CompanionSelectController : MonoBehaviour
         {
             detailButton.interactable = _selected != null;
         }
+        if (deckButton != null)
+        {
+            deckButton.interactable = _selected != null;
+        }
         if (fxController != null)
         {
             fxController.enabled = _selected != null;
@@ -172,6 +184,10 @@ public class CompanionSelectController : MonoBehaviour
         {
             detailButton.onClick.RemoveListener(OnClickDetail);
         }
+        if (deckButton != null)
+        {
+            deckButton.onClick.RemoveListener(OnClickDeck);
+        }
         if (backButton != null)
         {
             backButton.onClick.RemoveListener(OnClickBack);
@@ -198,6 +214,39 @@ public class CompanionSelectController : MonoBehaviour
             : _selected.Description;
 
         Debug.Log($"[CompanionSelect] Detail\n{summary}\n{description}");
+    }
+
+    void OnClickDeck()
+    {
+        if (_selected == null)
+        {
+            Debug.LogWarning("[CompanionSelect] Deck button pressed without an active selection.");
+            return;
+        }
+
+        EnsureDeckUiReferences();
+        if (deckOverlay == null)
+        {
+            Debug.LogWarning("[CompanionSelect] DeckOverlayController를 찾지 못했습니다. Scene에 DeckOverlay 프리팹이 배치되어 있는지 확인하세요.");
+            return;
+        }
+
+        var entries = CompanionDeckPreviewBuilder.BuildEntries(_selected);
+        deckOverlay.ShowPreview(_selected.DisplayName, entries);
+    }
+
+    void EnsureDeckUiReferences()
+    {
+        if (deckButton == null)
+        {
+            deckButton = GetComponentsInChildren<Button>(true)
+                .FirstOrDefault(b => b != null && b.name == "Deck Icon");
+        }
+
+        if (deckOverlay == null)
+        {
+            deckOverlay = FindObjectOfType<DeckOverlayController>(true);
+        }
     }
 
     void BeginNewRun()
@@ -295,37 +344,28 @@ public class CompanionSelectController : MonoBehaviour
             ServiceRegistry.Get<IRunService>()?.RebindRun(runId);
 
             var stageService = ServiceRegistry.Get<IRunStageService>();
+            string battleSceneToLoad = startTutorialRun
+                ? tutorialBattleScene
+                : (string.IsNullOrWhiteSpace(initialBattleScene) ? tutorialBattleScene : initialBattleScene);
             if (stageService != null)
             {
                 stageService.RebindRun(runId);
-                if (startTutorialRun)
+                var battlePayload = new RunStagePayloads.Battle
                 {
-                    var battlePayload = new RunStagePayloads.Battle
-                    {
-                        act = run.Act,
-                        floor = run.Floor,
-                        nodeIndex = run.NodeIndex,
-                        battleKind = (int)GameContext.BattleKind.Normal,
-                        sceneName = tutorialBattleScene,
-                        prevAct = run.Act,
-                        prevFloor = run.Floor,
-                        prevNodeIndex = run.NodeIndex,
-                        prevBattleKind = (int)GameContext.BattleKind.Normal,
-                        hasPrevLocation = false,
-                        isPending = false
-                    };
-                    stageService.SetStage(RunStageType.Battle, tutorialBattleScene, RunStageService.ToJson(battlePayload));
-                }
-                else
-                {
-                    var locationPayload = new RunStagePayloads.Location
-                    {
-                        act = run.Act,
-                        floor = run.Floor,
-                        nodeIndex = run.NodeIndex
-                    };
-                    stageService.SetStage(RunStageType.Map, mapScene, RunStageService.ToJson(locationPayload));
-                }
+                    act = run.Act,
+                    floor = run.Floor,
+                    nodeIndex = run.NodeIndex,
+                    battleKind = (int)GameContext.BattleKind.Normal,
+                    sceneName = battleSceneToLoad,
+                    prevAct = run.Act,
+                    prevFloor = run.Floor,
+                    prevNodeIndex = run.NodeIndex,
+                    prevBattleKind = (int)GameContext.BattleKind.Normal,
+                    hasPrevLocation = false,
+                    isPending = false,
+                    isFirstBattle = true
+                };
+                stageService.SetStage(RunStageType.Battle, battleSceneToLoad, RunStageService.ToJson(battlePayload));
             }
 
             // 3.8. 이벤트 매니저 등록(조건부): 런이 생성된 시점에 EventManager를 등록합니다.
@@ -342,25 +382,25 @@ public class CompanionSelectController : MonoBehaviour
                 Debug.LogWarning($"[CompanionSelect] EventManager registration failed: {e.Message}");
             }
 
-            if (startTutorialRun)
+            if (GameContext.I != null)
             {
-                if (GameContext.I != null)
+                GameContext.I.CurrentBattleKind = GameContext.BattleKind.Normal;
+            }
+            try
+            {
+                PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
+                if (!string.IsNullOrEmpty(mapScene))
                 {
-                    GameContext.I.CurrentBattleKind = GameContext.BattleKind.Normal;
+                    PlayerPrefs.SetString("lastMapScene", mapScene);
                 }
-                try
-                {
-                    PlayerPrefs.SetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
-                    PlayerPrefs.Save();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"[CompanionSelect] Failed to persist currentBattleKind: {e.Message}");
-                }
+                PlayerPrefs.Save();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[CompanionSelect] Failed to persist currentBattleKind: {e.Message}");
             }
 
-            var nextScene = startTutorialRun ? tutorialBattleScene : mapScene;
-            SceneManager.LoadScene(nextScene);
+            SceneManager.LoadScene(battleSceneToLoad);
         }
         catch (System.Exception e)
         {

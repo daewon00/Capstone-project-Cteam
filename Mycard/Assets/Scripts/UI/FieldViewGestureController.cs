@@ -206,6 +206,7 @@ public class FieldViewGestureController : MonoBehaviour
             Debug.Log("[FieldViewGesture] SwitchToFieldView via UIController.FieldButton");
 #endif
             UIController.instance.FieldButton();
+            SyncCameraTarget(CameraController.instance != null ? CameraController.instance.battleTransform : null);
             return true;
         }
 
@@ -215,6 +216,7 @@ public class FieldViewGestureController : MonoBehaviour
             Debug.Log("[FieldViewGesture] SwitchToFieldView direct MoveTo battleTransform");
 #endif
             CameraController.instance.MoveTo(CameraController.instance.battleTransform);
+            SyncCameraTarget(CameraController.instance.battleTransform);
             return true;
         }
 
@@ -229,6 +231,7 @@ public class FieldViewGestureController : MonoBehaviour
             Debug.Log("[FieldViewGesture] SwitchToHandView via UIController.FieldBack");
 #endif
             UIController.instance.FieldBack();
+            SyncCameraTarget(CameraController.instance != null ? CameraController.instance.homeTransform : null);
             return true;
         }
 
@@ -238,6 +241,7 @@ public class FieldViewGestureController : MonoBehaviour
             Debug.Log("[FieldViewGesture] SwitchToHandView direct MoveTo homeTransform");
 #endif
             CameraController.instance.MoveTo(CameraController.instance.homeTransform);
+            SyncCameraTarget(CameraController.instance.homeTransform);
             return true;
         }
 
@@ -346,5 +350,13 @@ public class FieldViewGestureController : MonoBehaviour
         {
             Debug.Log($"[FieldViewGestureController] {message}");
         }
+    }
+
+    private void SyncCameraTarget(Transform target)
+    {
+        if (target == null || CameraController.instance == null)
+            return;
+
+        CameraController.instance.ForceSetCurrentTarget(target);
     }
 }
