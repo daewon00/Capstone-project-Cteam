@@ -27,8 +27,9 @@ MonoBehaviour:
   - CARD_HEALING_ACOLYTE
   - CARD_VIGILANT_GUARD
   - CARD_TRAINING_BLADE
+  - CARD_RADIANT_WARDEN
   StartingRelicIds: []
   StartingPotionIds: []
   MaxHpBonus: 0
   GoldBonus: 0
-  EnergyMaxBonus: 1
+  EnergyMaxBonus: 2

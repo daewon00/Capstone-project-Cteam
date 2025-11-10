@@ -26,8 +26,10 @@ MonoBehaviour:
   - CARD_SWIFT_CAPTAIN
   - CARD_SIEGE_VANGUARD
   - CARD_VENOM_ASSASSIN
+  - CARD_HEALING_ACOLYTE
+  - CARD_THORN_WALL
   StartingRelicIds: []
   StartingPotionIds: []
   MaxHpBonus: 10
   GoldBonus: 200
-  EnergyMaxBonus: 0
+  EnergyMaxBonus: 1
