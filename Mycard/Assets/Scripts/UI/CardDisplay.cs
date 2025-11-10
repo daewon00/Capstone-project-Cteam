@@ -41,6 +41,11 @@ public sealed class CardDisplay : MonoBehaviour
     private bool _hasDefaultAttackColor;
     private bool _hasDefaultHealthColor;
     private bool _hasDefaultCostColor;
+    public CardScriptableObject BoundCard { get; private set; }
+    public bool BoundUpgraded { get; private set; }
+    public string BoundDisplayName { get; private set; }
+    public string BoundDescription { get; private set; }
+    public bool HasBoundData => !string.IsNullOrEmpty(BoundDisplayName);
 
     private void Awake()
     {
@@ -101,30 +106,42 @@ public sealed class CardDisplay : MonoBehaviour
 
         if (effectValueText != null)
             effectValueText.text = string.Empty;
+
+        BoundCard = null;
+        BoundUpgraded = false;
+        BoundDisplayName = string.Empty;
+        BoundDescription = string.Empty;
     }
 
     public void Bind(CardScriptableObject cardSO, CardRuntimeState runtimeState)
     {
+        BoundCard = cardSO;
+        BoundUpgraded = runtimeState != null && runtimeState.IsUpgraded();
         CacheDefaultColors();
 
-        bool upgraded = runtimeState != null && runtimeState.IsUpgraded();
+        bool upgraded = BoundUpgraded;
         string fallbackId = cardSO != null ? cardSO.CardId : (runtimeState?.CardId ?? string.Empty);
 
         if (cardNameText != null)
         {
             if (cardSO != null)
             {
-                cardNameText.text = cardSO.GetDisplayName(upgraded);
+                BoundDisplayName = cardSO.GetDisplayName(upgraded);
+                cardNameText.text = BoundDisplayName;
                 cardNameText.color = upgraded && cardSO.UpgradeEnabled
                     ? CardScriptableObject.UpgradeNameColor
                     : _defaultNameColor;
             }
             else
             {
-                string displayName = upgraded ? $"{fallbackId}+" : fallbackId;
-                cardNameText.text = displayName;
+                BoundDisplayName = upgraded ? $"{fallbackId}+" : fallbackId;
+                cardNameText.text = BoundDisplayName;
                 cardNameText.color = upgraded ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
             }
+        }
+        else
+        {
+            BoundDisplayName = cardSO != null ? cardSO.GetDisplayName(upgraded) : (upgraded ? $"{fallbackId}+" : fallbackId);
         }
 
         if (costText != null)
@@ -140,8 +157,9 @@ public sealed class CardDisplay : MonoBehaviour
             }
         }
 
+        BoundDescription = cardSO != null ? cardSO.actionDescription : string.Empty;
         if (descriptionText != null)
-            descriptionText.text = cardSO != null ? cardSO.actionDescription : string.Empty;
+            descriptionText.text = BoundDescription;
 
         UpdateStats(cardSO, upgraded);
         ApplyArtwork(cardSO);

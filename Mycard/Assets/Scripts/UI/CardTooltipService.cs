@@ -5,8 +5,6 @@ using UnityEngine;
 /// </summary>
 public class CardTooltipService : MonoBehaviour, ICardTooltipService
 {
-    [SerializeField, Tooltip("World-space offset applied on top of the card pivot when anchoring the tooltip.")]
-    private Vector3 worldAnchorOffset = new Vector3(0f, 1.6f, 0f);
     [SerializeField, Tooltip("Screen-space offset (in pixels) applied after projecting the world anchor.")]
     private Vector2 screenOffset = new Vector2(0f, 48f);
     [SerializeField, Tooltip("전용 카드 툴팁 프리젠터 참조(없으면 자동 검색/로드)")]
@@ -16,7 +14,7 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     [SerializeField, Tooltip("씬 내에서 CardTooltipPresenter를 자동으로 찾아 사용할지 여부")]
     private bool searchSceneForPresenter = true;
 
-    private Card _activeCard;
+    private ICardTooltipSource _activeSource;
     private CardTooltipData _activeData;
     private bool _visible;
     private CardTooltipPresenter _presenter;
@@ -26,14 +24,13 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         EnsurePresenter();
     }
 
-    public void Show(Card owner, CardTooltipData data)
+    public void Show(ICardTooltipSource source)
     {
-        if (owner == null)
+        if (source == null || !source.IsTooltipValid)
         {
             HideAll();
             return;
         }
-        GameLog.Info($"[CardTooltipService] Show request for {owner?.name ?? "<null>"} dataDesc={(data.Description ?? "<null>")}");
 
         _presenter = EnsurePresenter();
         if (_presenter == null)
@@ -42,16 +39,18 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             return;
         }
 
-        _activeCard = owner;
-        _activeData = data;
+        _activeSource = source;
+        _activeData = source.GetTooltipData();
         _visible = true;
         UpdateTooltipPosition(forceRefresh: true);
     }
 
-    public void Hide(Card owner)
+    public void Hide(ICardTooltipSource source)
     {
-        if (_activeCard != null && owner != null && owner != _activeCard)
+        if (_activeSource != null && source != null && !ReferenceEquals(source, _activeSource))
+        {
             return;
+        }
 
         HideAll();
     }
@@ -59,7 +58,7 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     public void HideAll()
     {
         _visible = false;
-        _activeCard = null;
+        _activeSource = null;
         _presenter?.HideImmediate();
     }
 
@@ -70,10 +69,10 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
 
     private void LateUpdate()
     {
-        if (!_visible || _activeCard == null)
+        if (!_visible || _activeSource == null)
             return;
 
-        if (!_activeCard.isActiveAndEnabled)
+        if (!_activeSource.IsTooltipValid)
         {
             HideAll();
             return;
@@ -84,7 +83,7 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
 
     private void UpdateTooltipPosition(bool forceRefresh)
     {
-        if (_activeCard == null)
+        if (_activeSource == null)
         {
             HideAll();
             return;
@@ -99,8 +98,16 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             return;
         }
 
-        Vector3 anchor = GetAnchorPosition(_activeCard.transform);
-        Vector3 screen = cam.WorldToScreenPoint(anchor);
+        Vector3 anchor = GetAnchorPosition();
+        Vector3 screen;
+        if (TryProjectFromCanvas(_activeSource, anchor, out var canvasScreen))
+        {
+            screen = canvasScreen;
+        }
+        else
+        {
+            screen = cam.WorldToScreenPoint(anchor);
+        }
         if (screen.z <= 0f)
         {
             HideAll();
@@ -129,32 +136,34 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         }
     }
 
-    private Vector3 GetAnchorPosition(Transform target)
+    private Vector3 GetAnchorPosition()
     {
-        if (target == null)
+        if (_activeSource == null)
             return Vector3.zero;
 
-        return target.position + target.TransformVector(worldAnchorOffset);
+        return _activeSource.GetTooltipAnchorWorldPos();
     }
 
     private Vector2 ResolveScreenOffset(Vector3 screenPoint)
     {
         Vector2 offset = screenOffset;
-        if (_activeCard == null)
+        if (_activeSource == null)
             return offset;
 
-        if (!_activeCard.inHand)
+        float xNorm = Screen.width > 0 ? screenPoint.x / Screen.width : 0.5f;
+        float yNorm = Screen.height > 0 ? screenPoint.y / Screen.height : 0.5f;
+        bool useHand = _activeSource.ShouldUseHandOffset;
+        float leftThreshold = useHand ? 0.18f : 0.25f;
+        float rightThreshold = useHand ? 0.7f : 0.75f;
+        float baseX = Mathf.Abs(offset.x) < 1f ? (useHand ? 140f : 140f) : Mathf.Abs(offset.x);
+        if (xNorm < leftThreshold)
+            offset.x = baseX;
+        else if (xNorm > rightThreshold)
+            offset.x = -baseX;
+
+        if (!useHand)
         {
-            float xNorm = Screen.width > 0 ? screenPoint.x / Screen.width : 0.5f;
-            float yNorm = Screen.height > 0 ? screenPoint.y / Screen.height : 0.5f;
-            float baseX = Mathf.Abs(offset.x) < 1f ? 140f : Mathf.Abs(offset.x);
             float baseY = Mathf.Abs(offset.y) < 1f ? 90f : Mathf.Abs(offset.y);
-
-            if (xNorm < 0.25f)
-                offset.x = baseX;
-            else if (xNorm > 0.75f)
-                offset.x = -baseX;
-
             if (yNorm < 0.35f)
                 offset.y = baseY;
             else if (yNorm > 0.8f)
@@ -232,6 +241,36 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
                 return canvas;
         }
 
-        return FindFirstObjectByType<Canvas>();
+        canvas = FindFirstObjectByType<Canvas>();
+        return canvas;
+    }
+
+    private bool TryProjectFromCanvas(ICardTooltipSource source, Vector3 worldPos, out Vector3 screenPos)
+    {
+        screenPos = default;
+        if (source is not Component component)
+            return false;
+
+        var canvas = component.GetComponentInParent<Canvas>();
+        if (canvas == null)
+            return false;
+
+        Camera uiCamera = null;
+        switch (canvas.renderMode)
+        {
+            case RenderMode.ScreenSpaceOverlay:
+                uiCamera = null;
+                break;
+            case RenderMode.ScreenSpaceCamera:
+                uiCamera = canvas.worldCamera;
+                break;
+            case RenderMode.WorldSpace:
+                uiCamera = canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+                break;
+        }
+
+        var screen2D = RectTransformUtility.WorldToScreenPoint(uiCamera, worldPos);
+        screenPos = new Vector3(screen2D.x, screen2D.y, 1f);
+        return true;
     }
 }

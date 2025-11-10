@@ -5,7 +5,7 @@ using Game.Save; // CardRuntimeState
 
 // 역할: 카드 한 장의 UI를 제어하고, 데이터를 받아서 내용을 채워넣는다.
 [DisallowMultipleComponent]
-public class DeckCardItemView : MonoBehaviour
+public class DeckCardItemView : MonoBehaviour, ICardTooltipSource
 {
     [Header("UI Elements")]
     [SerializeField] private CardDisplay cardDisplay;
@@ -20,6 +20,8 @@ public class DeckCardItemView : MonoBehaviour
     [SerializeField] private TMP_Text effectValueText;
     [SerializeField] private GameObject countBadge;   // (선택사항) 카드 매수 표시용
     [SerializeField] private TMP_Text countText;      // (선택사항)
+    [Header("Tooltip")]
+    [SerializeField] private RectTransform tooltipAnchor;
 
     // 바인딩에 사용된 최근 데이터(디버깅/툴팁용)
     public string BoundInstanceId { get; private set; }
@@ -29,10 +31,21 @@ public class DeckCardItemView : MonoBehaviour
     private Color _defaultNameColor = Color.white;
     private bool _hasDefaultNameColor;
 
+    private CardTooltipTriggerUI _tooltipTrigger;
+    private string _tooltipTitle;
+    private string _tooltipDescription;
+
+    private void Awake()
+    {
+        EnsureTooltipTrigger();
+    }
+
     public void Clear()
     {
         BoundInstanceId = null;
         BoundCardId = null;
+        _tooltipTitle = string.Empty;
+        _tooltipDescription = string.Empty;
         if (cardDisplay != null)
         {
             cardDisplay.Clear();
@@ -134,6 +147,12 @@ public class DeckCardItemView : MonoBehaviour
                 countBadge.SetActive(false);
             }
         }
+
+        bool upgradedFlag = cardState != null && cardState.IsUpgraded();
+        _tooltipTitle = cardSO != null ? cardSO.GetDisplayName(upgradedFlag) : (upgradedFlag ? $"{BoundCardId}+" : BoundCardId);
+        _tooltipDescription = cardSO != null ? cardSO.actionDescription : string.Empty;
+
+        EnsureTooltipTrigger();
     }
 
     private void UpdateStatTexts(CardScriptableObject cardSO, bool upgraded)
@@ -239,5 +258,35 @@ public class DeckCardItemView : MonoBehaviour
                 ServiceRegistry.Register<EffectIconDatabase>(_iconDatabase);
             }
         }
+    }
+
+    public CardTooltipData GetTooltipData()
+    {
+        return new CardTooltipData(_tooltipTitle ?? string.Empty, _tooltipDescription ?? string.Empty);
+    }
+
+    public Vector3 GetTooltipAnchorWorldPos()
+    {
+        if (tooltipAnchor != null)
+            return tooltipAnchor.position;
+        if (cardDisplay != null)
+            return cardDisplay.transform.position;
+        return transform.position;
+    }
+
+    public bool ShouldUseHandOffset => true;
+
+    public bool IsTooltipValid => isActiveAndEnabled && !string.IsNullOrEmpty(_tooltipTitle);
+
+    private void EnsureTooltipTrigger()
+    {
+        if (_tooltipTrigger == null)
+        {
+            _tooltipTrigger = GetComponent<CardTooltipTriggerUI>();
+            if (_tooltipTrigger == null)
+                _tooltipTrigger = gameObject.AddComponent<CardTooltipTriggerUI>();
+        }
+
+        _tooltipTrigger.SetSource(this);
     }
 }

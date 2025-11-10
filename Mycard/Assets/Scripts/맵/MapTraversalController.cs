@@ -243,8 +243,13 @@ public class MapTraversalController : MonoBehaviour
                 target.SetId($"map-node-{node.floor}-{node.index}");
             }
             // FocusRect는 작성자가 별도 지정하지 않았다면(기본 transform) 그대로 두어도 동일 동작
-            // 필요 시 명시적으로 지정
             target.SetFocusRect(node.transform as RectTransform);
+
+            target.AddAlias($"map-node-{node.nodeType.ToString().ToLowerInvariant()}");
+            if (_run != null && node.floor == _run.Floor && node.index == _run.NodeIndex)
+            {
+                target.AddAlias("map-node-current");
+            }
         }
     }
 

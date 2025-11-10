@@ -7,7 +7,7 @@ using DG.Tweening;
 using UnityEngine.EventSystems;
 using BattleSnapshot;
 
-public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerUpHandler
+public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerUpHandler, ICardTooltipSource
 {
     public CardScriptableObject cardSO; //카드 설계도
 
@@ -41,6 +41,9 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     [Header("Tutorial")]
     [SerializeField, Tooltip("튜토리얼 하이라이트에 사용할 UI RectTransform. 비워두면 자식 캔버스를 자동 검색합니다.")]
     private RectTransform tutorialHighlightRect;
+    [Header("Tooltip")]
+    [SerializeField, Tooltip("툴팁 기준점으로 사용할 Transform. 비워두면 카드 위치를 사용합니다.")]
+    private Transform tooltipAnchor;
 
     //카드 움직임 관련
     private Vector3 targetPoint;
@@ -85,6 +88,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private bool _isPreviewPlacementValid;
     private static readonly Color PreviewAllowedTint = new Color(0.72f, 0.95f, 1f, 1f);
     private static readonly Color PreviewBlockedTint = new Color(1f, 0.78f, 0.78f, 1f);
+    private static readonly Vector3 TooltipWorldOffset = new Vector3(0f, 1.6f, 0f);
 
     // 이벤트 기반 입력 상태(탭/드래그 구분)
     private bool _isDragging;
@@ -108,6 +112,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private bool _isPointerHeld;
     private bool _tooltipPending;
     private float _tooltipActivateTime;
+    private Vector3 _tooltipAnchorWorldPos;
     private TutorialTarget _tutorialTarget;
 
     // 드래그 중 현재 하이라이트한 슬롯 캐시(잔상 방지)
@@ -164,6 +169,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         _sortingBinder = GetComponentInChildren<CardSortingBinder>(true);
         ApplyReadabilityStyling();
         ApplyPreviewVisuals();
+        _tooltipAnchorWorldPos = tooltipAnchor != null ? tooltipAnchor.position : transform.position;
     }
 
     private CardVisualProfile ResolveVisualProfile()
@@ -309,6 +315,14 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, rotateSpeed * Time.deltaTime);
         UpdatePressTooltipTimer();
         UpdateFieldTooltipCollider();
+        if (_isPointerHeld)
+        {
+            _tooltipAnchorWorldPos = tooltipAnchor != null ? tooltipAnchor.position : transform.position;
+        }
+        else if (!_tooltipPending)
+        {
+            _tooltipAnchorWorldPos = tooltipAnchor != null ? tooltipAnchor.position : transform.position;
+        }
     }
 
     // UI 이벤트 시스템 클릭 처리: 카드 선택 전용(사용은 배치 시 BattleController 경유)
@@ -957,8 +971,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (tooltipService == null)
             return;
 
-        var data = new CardTooltipData(string.Empty, BuildActionTooltipDescription());
-        tooltipService.Show(this, data);
+        tooltipService.Show(this);
         _tooltipVisible = true;
     }
 
@@ -1006,6 +1019,29 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         return allowed;
     }
+
+    public CardTooltipData GetTooltipData()
+    {
+        string title = cardSO != null ? cardSO.GetDisplayName(IsUpgraded) : name;
+        return new CardTooltipData(title, BuildActionTooltipDescription());
+    }
+
+    public Vector3 GetTooltipAnchorWorldPos()
+    {
+        Vector3 basePos = tooltipAnchor != null ? tooltipAnchor.position : _tooltipAnchorWorldPos;
+        return basePos + transform.TransformVector(TooltipWorldOffset);
+    }
+
+    public bool ShouldUseHandOffset => inHand;
+
+    public bool IsTooltipValid => isActiveAndEnabled;
+
+    public Vector3 TooltipAnchorWorldPos => tooltipAnchor != null ? tooltipAnchor.position : _tooltipAnchorWorldPos;
+
+    private void SetTooltipAnchor(Vector3 worldPos)
+    {
+        _tooltipAnchorWorldPos = worldPos;
+    }
     // =============================
     // 이벤트 기반 입력 핸들러 구현
     // =============================
@@ -1013,6 +1049,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         bool allowFieldTooltip = ShouldAllowFieldTooltip();
         bool isFieldPressOnly = allowFieldTooltip && !inHand;
+        SetTooltipAnchor(transform.position);
 
         if (((!_isInteractable) || assignedPlace != null) && !allowFieldTooltip)
         {
@@ -1046,6 +1083,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (isFieldPressOnly)
         {
             transform.DOScale(pressTargetScale, _pressAnimationTime).SetEase(Ease.OutQuad);
+            SetTooltipAnchor(transform.position);
             return;
         }
 
@@ -1097,6 +1135,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             }
             targetPos = ClampPressInspectPosition(targetPos, isEdgeCard);
             MoveToPoint(targetPos, transform.rotation);
+            SetTooltipAnchor(targetPos);
         }
         // 레이아웃을 잠그어 자동 재정렬로 인한 오더/위치 되돌림 방지
         if (inHand && theHC != null) theHC.SuspendLayoutFor(this);

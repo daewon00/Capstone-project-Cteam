@@ -19,6 +19,8 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
 
     private Action _onClosedCallback;
     private IDeckService _deckService;
+    private const string TutorialRewardActionId = "reward-selected";
+    private bool _tutorialRewardAcknowledged;
 
     private void Awake()
     {
@@ -42,6 +44,7 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
             enabled = true;
         }
 
+        _tutorialRewardAcknowledged = false;
         _onClosedCallback = onClosed;
 
         if (rewards == null)
@@ -87,6 +90,7 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
 
     private void Close()
     {
+        SignalTutorialRewardAcknowledged();
         if (rootPanel != null) rootPanel.SetActive(false);
         _onClosedCallback?.Invoke();
         _onClosedCallback = null;
@@ -101,7 +105,15 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
         else if (selected != null && !string.IsNullOrEmpty(selected.CardId))
         {
             _deckService.AddCardToDeckById(selected.CardId, selected.IsUpgraded);
+            SignalTutorialRewardAcknowledged();
         }
         Close();
+    }
+
+    private void SignalTutorialRewardAcknowledged()
+    {
+        if (_tutorialRewardAcknowledged) return;
+        _tutorialRewardAcknowledged = true;
+        ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, TutorialRewardActionId);
     }
 }

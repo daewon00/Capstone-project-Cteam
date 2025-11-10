@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: COMP_Wizard
   m_EditorClassIdentifier: 
   CompanionId: COMP_Wizard
-  DisplayName: "\uB808\uC804\uB4DC \uB9C8\uBC95\uC0AC"
+  DisplayName: "\uB9C8\uBC95\uC0AC"
   Description: "\uB9C8\uBC95\uC801\uC778 \uC2A4\uD0AC\uC744 \uC0AC\uC6A9\uD558\uB294
     \uB3D9\uB8CC"
   Portrait: {fileID: 21300000, guid: 9bafee56f84ffee4395735512d0064bc, type: 3}

@@ -135,6 +135,7 @@ public class UIController : MonoBehaviour
 
 
         BattleController.instance.EndPlayerTurn();
+        ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "end-turn");
 
         AudioManager.instance.PlaySFX(0);
     }
@@ -178,6 +179,7 @@ public class UIController : MonoBehaviour
                 FieldBackButton.SetActive(true);
         }
         EnemyUI.SetActive(false);
+        ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "field-view-open");
     }
 
     public void FieldBack()

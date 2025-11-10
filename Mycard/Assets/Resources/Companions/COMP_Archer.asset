@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: COMP_Archer
   m_EditorClassIdentifier: 
   CompanionId: COMP_Archer
-  DisplayName: "\uC601\uC6C5 \uAD81\uC218"
+  DisplayName: "\uAD81\uC218"
   Description: "\uC0C1\uB300\uB97C \uC6D0\uAC70\uB9AC\uC5D0\uC11C \uC9C1\uC811 \uACF5\uACA9\uD558\uB294
     \uBBFC\uCCA9\uD55C \uB3D9\uB8CC"
   Portrait: {fileID: 21300000, guid: add20b285c482f64996ec6fdc48b663c, type: 3}

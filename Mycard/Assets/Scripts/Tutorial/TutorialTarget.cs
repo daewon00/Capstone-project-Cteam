@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -8,9 +10,11 @@ public sealed class TutorialTarget : MonoBehaviour
 {
     [SerializeField] private string targetId = string.Empty;
     [SerializeField] private RectTransform explicitRect;
+    [SerializeField] private string[] aliasIds = Array.Empty<string>();
 
     public string TargetId => targetId;
     public RectTransform FocusRect => explicitRect != null ? explicitRect : transform as RectTransform;
+    public IReadOnlyList<string> Aliases => aliasIds;
 
     private void OnEnable()
     {
@@ -70,5 +74,23 @@ public sealed class TutorialTarget : MonoBehaviour
         explicitRect = rect;
         // FocusRect 변경은 서비스 재등록 없이도 Dimmer가 최신 Rect를 참조합니다.
         // (루프 방지: RegisterTarget를 호출하지 않습니다.)
+    }
+
+    public void AddAlias(string aliasId)
+    {
+        if (string.IsNullOrEmpty(aliasId)) return;
+        if (Array.Exists(aliasIds, id => string.Equals(id, aliasId, System.StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        Array.Resize(ref aliasIds, aliasIds.Length + 1);
+        aliasIds[^1] = aliasId;
+
+        var svc = ServiceRegistry.Get<ITutorialService>();
+        if (svc != null && isActiveAndEnabled)
+        {
+            svc.RegisterTarget(this);
+        }
     }
 }

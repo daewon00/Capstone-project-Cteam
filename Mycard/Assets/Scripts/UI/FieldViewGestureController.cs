@@ -34,6 +34,9 @@ public class FieldViewGestureController : MonoBehaviour
     private Transform overlayIgnoreRoot;
     [SerializeField, Tooltip("필드 제스처를 허용할 RectTransform. 비워두면 전체 화면을 사용합니다.")]
     private RectTransform allowedRegion;
+    [Header("Tutorial Target")]
+    [SerializeField, Tooltip("튜토리얼 하이라이트에 사용할 타깃 ID입니다.")]
+    private string tutorialTargetId = "field-swipe-zone";
 
     private bool _tracking;
     private Vector2 _startScreenPosition;
@@ -42,6 +45,7 @@ public class FieldViewGestureController : MonoBehaviour
     private PointerEventData _raycastEventData;
     private readonly List<RaycastResult> _raycastResults = new(16);
     private static int _cardDragSuppression;
+    private TutorialTarget _tutorialTarget;
 
     public static void PushCardDragSuppression()
     {
@@ -75,6 +79,8 @@ public class FieldViewGestureController : MonoBehaviour
         {
             overlayCanvasGroup.blocksRaycasts = false;
         }
+
+        EnsureTutorialTarget();
     }
 
     private void Update()
@@ -217,6 +223,7 @@ public class FieldViewGestureController : MonoBehaviour
 #endif
             CameraController.instance.MoveTo(CameraController.instance.battleTransform);
             SyncCameraTarget(CameraController.instance.battleTransform);
+            ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "field-view-open");
             return true;
         }
 
@@ -232,6 +239,7 @@ public class FieldViewGestureController : MonoBehaviour
 #endif
             UIController.instance.FieldBack();
             SyncCameraTarget(CameraController.instance != null ? CameraController.instance.homeTransform : null);
+            ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "hand-view-open");
             return true;
         }
 
@@ -242,6 +250,7 @@ public class FieldViewGestureController : MonoBehaviour
 #endif
             CameraController.instance.MoveTo(CameraController.instance.homeTransform);
             SyncCameraTarget(CameraController.instance.homeTransform);
+            ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "hand-view-open");
             return true;
         }
 
@@ -253,6 +262,17 @@ public class FieldViewGestureController : MonoBehaviour
         _tracking = false;
         _gestureTriggered = false;
         _activePointerId = -1;
+    }
+
+    private void EnsureTutorialTarget()
+    {
+        if (string.IsNullOrEmpty(tutorialTargetId)) return;
+        _tutorialTarget = GetComponent<TutorialTarget>() ?? gameObject.AddComponent<TutorialTarget>();
+        _tutorialTarget.SetId(tutorialTargetId);
+        if (_tutorialTarget.FocusRect == null && transform is RectTransform rect)
+        {
+            _tutorialTarget.SetFocusRect(rect);
+        }
     }
 
     private bool IsGestureGloballyAllowed()

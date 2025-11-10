@@ -29,6 +29,8 @@ public class GameInitializer : MonoBehaviour
         GameLog.Info("[BossFlow][GI] ServiceRegistry cleared. Bootstrapping...");
 #endif
 
+        EnsureCardTooltipService();
+
         // 1. [기반 시스템 준비] 데이터베이스에 먼저 연결합니다.
         DatabaseManager.Instance.Connect();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -143,20 +145,18 @@ public class GameInitializer : MonoBehaviour
         GameLog.Info("[BossFlow][GI] Registered Perk/Modifier/Achievement services.");
 #endif
 
-        // [Tutorial] 서비스 비활성화: 안정적으로 튜토리얼 전역 기능을 끕니다.
-        // 아래 블록을 주석 해제하면 다시 활성화됩니다.
-        // var tutorialService = new TutorialService(dbFacade);
-        // var profileId = GameContext.I != null ? GameContext.I.ProfileId : "P1";
-        // tutorialService.RebindProfile(profileId);
-        // bool isTutorialRun = runData?.Run?.IsTutorialRun ?? false;
-        // if (!string.IsNullOrEmpty(runId))
-        // {
-        //     tutorialService.BindRun(runId, isTutorialRun);
-        // }
-        // ServiceRegistry.Register<ITutorialService>(tutorialService);
-        // #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // GameLog.Info($"[BossFlow][GI] Registered ITutorialService (runId='{runId}', tutorialRun={isTutorialRun}).");
-        // #endif
+        var tutorialService = new TutorialService(dbFacade);
+        var profileId = GameContext.I != null ? GameContext.I.ProfileId : "P1";
+        tutorialService.RebindProfile(profileId);
+        bool isTutorialRun = runData?.Run?.IsTutorialRun ?? false;
+        if (!string.IsNullOrEmpty(runId))
+        {
+            tutorialService.BindRun(runId, isTutorialRun);
+        }
+        ServiceRegistry.Register<ITutorialService>(tutorialService);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        GameLog.Info($"[BossFlow][GI] Registered ITutorialService (runId='{runId}', tutorialRun={isTutorialRun}).");
+#endif
 
         // 5.6 업적 이벤트 구독: 게임 이벤트 허브 → 업적 서비스
         // 전투 승리: '첫 전투 승리' 진행도 증가 및 해금 시도
@@ -315,5 +315,21 @@ public class GameInitializer : MonoBehaviour
         if (states == null) return;
         _db?.UpsertRngStates(runId, states);
         GameLog.Info("[GameInitializer] RNG states persisted.");
+    }
+
+    private void EnsureCardTooltipService()
+    {
+        if (ServiceRegistry.Get<ICardTooltipService>() != null)
+            return;
+
+        var existing = FindAnyObjectByType<CardTooltipService>(FindObjectsInactive.Include);
+        CardTooltipService service = existing;
+        if (service == null)
+        {
+            var tooltipGo = new GameObject("CardTooltipService");
+            tooltipGo.transform.SetParent(transform, false);
+            service = tooltipGo.AddComponent<CardTooltipService>();
+        }
+        ServiceRegistry.Register<ICardTooltipService>(service);
     }
 }

@@ -1118,7 +1118,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 677674820086583141, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2369928739683320788, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
       propertyPath: m_Pivot.x
@@ -1835,6 +1835,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapScene: Map Scene
   tutorialBattleScene: Battle_android
+  initialBattleScene: Battle_android
   startingAct: 1
   startingFloor: 0
   startingNodeIndex: 0
