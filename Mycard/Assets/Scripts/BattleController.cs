@@ -427,6 +427,7 @@ public class BattleController : MonoBehaviour
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
                     UIController.instance.drawCardButton.SetActive(true);   //카드 뽑기 버튼 활성화
+                    UIController.instance.ManaCostshow.SetActive(true);
                     if (UIController.instance.UseFieldToggleButtons && UIController.instance.FieldShowButton != null)
                         UIController.instance.FieldShowButton.SetActive(true);
                     
@@ -490,6 +491,7 @@ public class BattleController : MonoBehaviour
     {
         UIController.instance.endTurnButton.SetActive(false);
         UIController.instance.drawCardButton.SetActive(false);
+        UIController.instance.ManaCostshow.SetActive(false);
         if (UIController.instance.UseFieldToggleButtons)
         {
             if (UIController.instance.FieldBackButton != null)

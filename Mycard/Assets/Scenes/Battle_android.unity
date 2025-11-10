@@ -3828,6 +3828,7 @@ MonoBehaviour:
   PauseScreen: {fileID: 3738778616447973985}
   FieldShowButton: {fileID: 0}
   FieldBackButton: {fileID: 0}
+  ManaCostshow: {fileID: 269550454}
   EnemyUI: {fileID: 4588859532963835548}
   _useFieldToggleButtons: 1
   _enemyUIGroup: {fileID: 6247149553279407920}

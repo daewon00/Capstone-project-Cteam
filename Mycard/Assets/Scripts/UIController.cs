@@ -27,7 +27,7 @@ public class UIController : MonoBehaviour
     public GameObject PauseScreen;
     public GameObject FieldShowButton;
     public GameObject FieldBackButton;
-
+    public GameObject ManaCostshow;
     public GameObject EnemyUI;
 
     [Header("Field View Toggle Buttons")]
