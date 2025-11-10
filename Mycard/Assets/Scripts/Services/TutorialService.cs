@@ -568,6 +568,11 @@ public sealed class TutorialService : ITutorialService
                 }
             }
         }
+        else
+        {
+            _progress = null;
+            _currentIndex = -1;
+        }
     }
 
     private void CreateProgressRow(string tutorialId)
