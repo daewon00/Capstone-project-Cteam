@@ -48,7 +48,7 @@ MonoBehaviour:
       effects:
       - type: 2
         amount: 0
-        refId: CARD_HEALING_WAVE
+        refId: CARD_HEALING_ACOLYTE
         quantity: 1
         upgrade: 0
       nextStageId: spring_collect

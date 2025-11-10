@@ -36,7 +36,7 @@ MonoBehaviour:
         upgrade: 0
       - type: 2
         amount: 0
-        refId: CARD_TIME_SHIFT
+        refId: CARD_ARCANE_CONDUCTOR
         quantity: 1
         upgrade: 0
       nextStageId: merchant_buy

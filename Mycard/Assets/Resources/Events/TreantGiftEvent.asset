@@ -25,9 +25,9 @@ MonoBehaviour:
       effects:
       - type: 2
         amount: 0
-        refId: CARD_GROWTH
+        refId: CARD_THORN_BLADEMASTER
         quantity: 1
-        upgrade: 1
+        upgrade: 0
       - type: 6
         amount: 20
         refId: 

@@ -41,8 +41,8 @@ MonoBehaviour:
       effects:
       - type: 7
         amount: 0
-        refId: CARD_PLAGUE_SAMPLE
-        quantity: 2
+        refId: CARD_BLOOD_VICEROY
+        quantity: 1
         upgrade: 0
       - type: 6
         amount: 20
