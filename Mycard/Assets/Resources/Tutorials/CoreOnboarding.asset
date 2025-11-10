@@ -299,7 +299,7 @@ MonoBehaviour:
     AutoAdvance: 0
   - Step: 32
     Message: "\uAE38\uC744 \uD1B5\uD574 \uAC08 \uC218 \uC788\uB294 \uB178\uB4DC \uC911
-      \uC6D0\uD558\uB294 \uB178\uB4DC\uB97C \uD0C0\uCE58\uD574 \uC9C4\uD589\uD558\uC138\uC694."
+      \uC6D0\uD558\uB294 \uB178\uB4DC\uB97C \uD130\uCE58\uD574 \uC9C4\uD589\uD558\uC138\uC694."
     PrimaryAnchor: 3
     FallbackAnchor: 3
     PreferFallback: 0
