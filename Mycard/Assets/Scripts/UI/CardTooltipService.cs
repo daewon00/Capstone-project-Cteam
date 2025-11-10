@@ -13,8 +13,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     private string presenterResourcePath = "UI/CardTooltipPresenter";
     [SerializeField, Tooltip("씬 내에서 CardTooltipPresenter를 자동으로 찾아 사용할지 여부")]
     private bool searchSceneForPresenter = true;
-    [SerializeField, Tooltip("디버그 로그 출력 여부")]
-    private bool debugLogging = true;
 
     private ICardTooltipSource _activeSource;
     private CardTooltipData _activeData;
@@ -24,15 +22,12 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     private void Awake()
     {
         EnsurePresenter();
-        Log("Awake complete. Presenter ensured.");
     }
 
     public void Show(ICardTooltipSource source)
     {
-        Log($"Show requested. Source null? {source == null}");
         if (source == null || !source.IsTooltipValid)
         {
-            Log("Show aborted: source missing or invalid.");
             HideAll();
             return;
         }
@@ -40,14 +35,12 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         _presenter = EnsurePresenter();
         if (_presenter == null)
         {
-            Log("Show aborted: presenter missing.");
             HideAll();
             return;
         }
 
         _activeSource = source;
         _activeData = source.GetTooltipData();
-        Log($"Tooltip data captured. Title='{_activeData.Title}', DescLength={_activeData.Description?.Length ?? 0}, UseHandOffset={source.ShouldUseHandOffset}");
         _visible = true;
         UpdateTooltipPosition(forceRefresh: true);
     }
@@ -56,7 +49,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     {
         if (_activeSource != null && source != null && !ReferenceEquals(source, _activeSource))
         {
-            Log("Hide ignored: source mismatch.");
             return;
         }
 
@@ -68,12 +60,10 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         _visible = false;
         _activeSource = null;
         _presenter?.HideImmediate();
-        Log("HideAll called.");
     }
 
     private void OnDisable()
     {
-        Log("Service disabled -> HideAll.");
         HideAll();
     }
 
@@ -95,7 +85,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     {
         if (_activeSource == null)
         {
-            Log("UpdateTooltipPosition aborted: active source null.");
             HideAll();
             return;
         }
@@ -105,7 +94,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             : Camera.main;
         if (cam == null)
         {
-            Log("No camera available; hiding tooltip.");
             HideAll();
             return;
         }
@@ -122,7 +110,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         }
         if (screen.z <= 0f)
         {
-            Log($"Anchor behind camera (screen.z={screen.z}). Hiding.");
             HideAll();
             return;
         }
@@ -132,7 +119,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             _presenter = EnsurePresenter();
             if (_presenter == null)
             {
-                Log("Presenter missing during update; hiding.");
                 HideAll();
                 return;
             }
@@ -142,7 +128,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
 
         if (forceRefresh)
         {
-            Log($"Showing tooltip at screen {screen} with offset {offset}");
             _presenter.Show(_activeData, screen, offset);
         }
         else
@@ -197,7 +182,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         {
             _presenter = presenterOverride;
             _presenter.EnsureParentCanvas();
-            Log("Presenter resolved via override.");
             return _presenter;
         }
 
@@ -211,7 +195,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             if (_presenter != null)
             {
                 AttachPresenterToCanvas(_presenter);
-                Log("Presenter found in scene.");
                 return _presenter;
             }
         }
@@ -223,15 +206,12 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             {
                 _presenter = Instantiate(prefab);
                 AttachPresenterToCanvas(_presenter);
-                Log("Presenter instantiated from Resources.");
                 return _presenter;
             }
             GameLog.Warn($"[CardTooltipService] Failed to load CardTooltipPresenter at Resources/{presenterResourcePath}");
-            Log("Presenter load failed from Resources.");
         }
 
         GameLog.Warn("[CardTooltipService] CardTooltipPresenter not found. Card press tooltip will be disabled.");
-        Log("Presenter not found; returning null.");
         return null;
     }
 
@@ -244,12 +224,10 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         if (canvas != null)
         {
             presenter.AttachToCanvas(canvas);
-            Log($"Presenter attached to canvas '{canvas.name}'.");
         }
         else
         {
             presenter.EnsureParentCanvas();
-            Log("Presenter ensure parent canvas called (canvas unresolved).");
         }
     }
 
@@ -260,17 +238,10 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         {
             canvas = UIController.instance.GetComponentInParent<Canvas>();
             if (canvas != null)
-            {
-                Log($"Canvas resolved via UIController: {canvas.name}");
                 return canvas;
-            }
         }
 
         canvas = FindFirstObjectByType<Canvas>();
-        if (canvas != null)
-            Log($"Canvas resolved via FindFirstObjectByType: {canvas.name}");
-        else
-            Log("No canvas found in scene.");
         return canvas;
     }
 
@@ -300,16 +271,6 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
 
         var screen2D = RectTransformUtility.WorldToScreenPoint(uiCamera, worldPos);
         screenPos = new Vector3(screen2D.x, screen2D.y, 1f);
-        var cameraName = uiCamera != null ? uiCamera.name : "null";
-        Log($"Projected via canvas '{canvas.name}' (mode={canvas.renderMode}, camera={cameraName}): screen={screenPos}");
         return true;
-    }
-
-    private void Log(string message)
-    {
-        if (!debugLogging)
-            return;
-
-        Debug.Log($"[CardTooltipService] {message}", this);
     }
 }
