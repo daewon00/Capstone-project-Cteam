@@ -22,6 +22,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1f6ca9f7d5fd4f5ab6a1e45ae1e27004, type: 2}
   - {fileID: 11400000, guid: 1f6ca9f7d5fd4f5ab6a1e45ae1e27004, type: 2}
   - {fileID: 11400000, guid: 6c2b4dc2a9b64f6ab9c9d6a7d29aaf7e, type: 2}
+  - {fileID: 11400000, guid: e7f4e7e941c6434b8ce742f934cb839b, type: 2}
+  - {fileID: 11400000, guid: f7c4cc5c32cf4e51a6603bceb0774a2d, type: 2}
+  - {fileID: 11400000, guid: 21936a9f6b314d6e93d85fcd7611b697, type: 2}
+  - {fileID: 11400000, guid: 4b5594caf0dd4b0cb549f8fd7cc19b65, type: 2}
+  - {fileID: 11400000, guid: e6a47230d0cc40f48c6b288feda4bda6, type: 2}
+  - {fileID: 11400000, guid: b3aa3bd7afd7aa44a909c48d436bf20f, type: 2}
   "\uC801\uC2DC\uC791\uC190\uD328\uC218": 4
   "\uC801\uD134\uB9C8\uB2E4\uB4DC\uB85C\uC6B0\uC218": 2
   "\uC801\uAE30\uBCF8\uCCB4\uB825": 35
