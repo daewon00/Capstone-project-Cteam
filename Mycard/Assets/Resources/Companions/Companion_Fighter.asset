@@ -23,8 +23,12 @@ MonoBehaviour:
   - CARD_SWIFT_SCOUT
   - CARD_BANNER_BEARER
   - CARD_THORN_SENTINEL
+  - CARD_VIGILANT_GUARD
+  - CARD_AMBUSH_ARCHER
+  - CARD_TOWER_SHIELD
+  - CARD_VETERAN_SPEARMAN
   StartingRelicIds: []
   StartingPotionIds: []
   MaxHpBonus: 20
   GoldBonus: 0
-  EnergyMaxBonus: 0
+  EnergyMaxBonus: 1

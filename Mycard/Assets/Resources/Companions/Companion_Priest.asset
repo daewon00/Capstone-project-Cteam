@@ -22,9 +22,14 @@ MonoBehaviour:
   - CARD_HEALING_ACOLYTE
   - CARD_TRAINING_BLADE
   - CARD_VIGILANT_GUARD
-  - CARD_AEGIS_ARCHON
+  - CARD_ARCANIST
+  - CARD_BANNER_BEARER
+  - CARD_BLOOD_MAGE
+  - CARD_HOLY_KNIGHT
+  - CARD_RADIANT_WARDEN
+  - CARD_BLOOD_CHAMPION
   StartingRelicIds: []
   StartingPotionIds: []
   MaxHpBonus: 10
   GoldBonus: 0
-  EnergyMaxBonus: 0
+  EnergyMaxBonus: 1
