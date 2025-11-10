@@ -99,7 +99,7 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             return;
         }
 
-        Vector3 anchor = GetAnchorPosition(_activeCard.transform);
+        Vector3 anchor = GetAnchorPosition();
         Vector3 screen = cam.WorldToScreenPoint(anchor);
         if (screen.z <= 0f)
         {
@@ -129,12 +129,14 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         }
     }
 
-    private Vector3 GetAnchorPosition(Transform target)
+    private Vector3 GetAnchorPosition()
     {
-        if (target == null)
+        if (_activeCard == null)
             return Vector3.zero;
 
-        return target.position + target.TransformVector(worldAnchorOffset);
+        var basePos = _activeCard.TooltipAnchorWorldPos;
+        var target = _activeCard.transform;
+        return basePos + target.TransformVector(worldAnchorOffset);
     }
 
     private Vector2 ResolveScreenOffset(Vector3 screenPoint)
@@ -143,18 +145,19 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
         if (_activeCard == null)
             return offset;
 
+        float xNorm = Screen.width > 0 ? screenPoint.x / Screen.width : 0.5f;
+        float yNorm = Screen.height > 0 ? screenPoint.y / Screen.height : 0.5f;
+        float leftThreshold = _activeCard.inHand ? 0.18f : 0.25f;
+        float rightThreshold = _activeCard.inHand ? 0.7f : 0.75f;
+        float baseX = Mathf.Abs(offset.x) < 1f ? (_activeCard.inHand ? 140f : 140f) : Mathf.Abs(offset.x);
+        if (xNorm < leftThreshold)
+            offset.x = baseX;
+        else if (xNorm > rightThreshold)
+            offset.x = -baseX;
+
         if (!_activeCard.inHand)
         {
-            float xNorm = Screen.width > 0 ? screenPoint.x / Screen.width : 0.5f;
-            float yNorm = Screen.height > 0 ? screenPoint.y / Screen.height : 0.5f;
-            float baseX = Mathf.Abs(offset.x) < 1f ? 140f : Mathf.Abs(offset.x);
             float baseY = Mathf.Abs(offset.y) < 1f ? 90f : Mathf.Abs(offset.y);
-
-            if (xNorm < 0.25f)
-                offset.x = baseX;
-            else if (xNorm > 0.75f)
-                offset.x = -baseX;
-
             if (yNorm < 0.35f)
                 offset.y = baseY;
             else if (yNorm > 0.8f)

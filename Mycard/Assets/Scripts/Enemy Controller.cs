@@ -484,6 +484,8 @@ public class EnemyController : MonoBehaviour
                 card.SetInteractable(false);
                 card.assignedPlace = slot;
                 slot.activeCard = card;
+                if (HandController.instance != null)
+                    card.SetCardScale(HandController.instance.GetBoardScale());
                 effectService?.RegisterBoardCard(card, false, slotState.effectState);
             }
         }
@@ -510,6 +512,8 @@ public class EnemyController : MonoBehaviour
                 card.SetInteractable(false);
                 card.assignedPlace = slot;
                 slot.activeCard = card;
+                if (HandController.instance != null)
+                    card.SetCardScale(HandController.instance.GetBoardScale());
                 stagedCards.Add(card);
             }
         }
