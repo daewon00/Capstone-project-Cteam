@@ -25,7 +25,7 @@ MonoBehaviour:
       effects:
       - type: 7
         amount: 0
-        refId: CARD_ASTRAL_BLADE
+        refId: CARD_STORMBLADE_ADEPT
         quantity: 1
         upgrade: 0
       - type: 3
@@ -51,10 +51,15 @@ MonoBehaviour:
     - id: eye_cover_choice
       label: "\uB208\uC744 \uAC00\uB9AC\uACE0 \uB5A0\uB098\uAC04\uB2E4."
       effects:
+      - type: 2
+        amount: 0
+        refId: CARD_AEGIS_ARCHON
+        quantity: 1
+        upgrade: 0
       - type: 4
         amount: 0
-        refId: CARD_VISION_BLOCK
-        quantity: 1
+        refId: 
+        quantity: 0
         upgrade: 0
       nextStageId: 
   - stageId: eye_stare
