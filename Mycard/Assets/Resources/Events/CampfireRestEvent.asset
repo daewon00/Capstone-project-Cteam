@@ -32,7 +32,7 @@ MonoBehaviour:
         upgrade: 0
       nextStageId: rest_result
     - id: rest_upgrade
-      label: "\uCE74\uB4DC\uB97C \uB2E8\uB828\uD55C\uB2E4. (\uC900\uBE44 \uC911)"
+      label: "\uCE74\uB4DC\uB97C \uB2E8\uB828\uD55C\uB2E4."
       effects:
       - type: 9
         amount: 0

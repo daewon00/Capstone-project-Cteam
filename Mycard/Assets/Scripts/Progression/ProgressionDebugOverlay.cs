@@ -64,6 +64,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (!Application.isPlaying) return;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // PC/시뮬레이터: 특정 UI 텍스트(Txt_Title) 5회 클릭 시 토글
         TryHandleTitleClickToggle();
@@ -97,6 +98,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
     /// </summary>
     private void OnGUI()
     {
+        if (!Application.isPlaying) return;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (!_visible) return;
         GUI.depth = 0;
