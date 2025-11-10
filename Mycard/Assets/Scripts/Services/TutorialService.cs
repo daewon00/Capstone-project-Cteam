@@ -290,13 +290,18 @@ public sealed class TutorialService : ITutorialService
         }
 
         _targets[target.TargetId] = target;
+        if (target.Aliases != null)
+        {
+            foreach (var alias in target.Aliases)
+            {
+                if (string.IsNullOrEmpty(alias)) continue;
+                _targets[alias] = target;
+            }
+        }
         #if UNITY_EDITOR || DEVELOPMENT_BUILD
         GameLog.Info($"[TutorialService] RegisterTarget id='{target.TargetId}' focusRect={(target.FocusRect!=null?target.FocusRect.name:"<null>")} currentStep={CurrentStep} currentHighlightId='{CurrentConfig?.HighlightTargetId}'");
         #endif
-        if (CurrentConfig != null && string.Equals(CurrentConfig.HighlightTargetId, target.TargetId, StringComparison.OrdinalIgnoreCase))
-        {
-            RefreshVisuals();
-        }
+        TryRefreshForIds(target);
     }
 
     public void UnregisterTarget(TutorialTarget target)
@@ -306,16 +311,52 @@ public sealed class TutorialService : ITutorialService
             return;
         }
 
-        if (_targets.TryGetValue(target.TargetId, out var existing) && existing == target)
+        void RemoveKey(string key)
         {
-            _targets.Remove(target.TargetId);
-            #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            GameLog.Info($"[TutorialService] UnregisterTarget id='{target.TargetId}'");
-            #endif
-            if (CurrentConfig != null && string.Equals(CurrentConfig.HighlightTargetId, target.TargetId, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(key)) return;
+            if (_targets.TryGetValue(key, out var existing) && existing == target)
             {
-                RefreshVisuals();
+                _targets.Remove(key);
             }
+        }
+
+        RemoveKey(target.TargetId);
+        if (target.Aliases != null)
+        {
+            foreach (var alias in target.Aliases)
+            {
+                RemoveKey(alias);
+            }
+        }
+
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        GameLog.Info($"[TutorialService] UnregisterTarget id='{target.TargetId}'");
+        #endif
+        if (CurrentConfig != null && string.Equals(CurrentConfig.HighlightTargetId, target.TargetId, StringComparison.OrdinalIgnoreCase))
+        {
+            RefreshVisuals();
+        }
+    }
+
+    private void TryRefreshForIds(TutorialTarget target)
+    {
+        var currentId = CurrentConfig?.HighlightTargetId;
+        if (string.IsNullOrEmpty(currentId)) return;
+        bool matches = string.Equals(currentId, target.TargetId, StringComparison.OrdinalIgnoreCase);
+        if (!matches && target.Aliases != null)
+        {
+            for (int i = 0; i < target.Aliases.Count; i++)
+            {
+                if (string.Equals(currentId, target.Aliases[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    matches = true;
+                    break;
+                }
+            }
+        }
+        if (matches)
+        {
+            RefreshVisuals();
         }
     }
 

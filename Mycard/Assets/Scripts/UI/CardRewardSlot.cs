@@ -38,6 +38,9 @@ public class CardRewardSlot : MonoBehaviour
 
         EnsureCardDisplay();
 
+        _tooltipTitle = data != null ? data.GetDisplayName(upgraded) : (option != null && option.IsUpgraded ? $"{option.CardId}+" : option?.CardId ?? string.Empty);
+        _tooltipDescription = data != null ? data.actionDescription : string.Empty;
+
         if (cardDisplay != null)
         {
             if (data != null || previewState != null)
@@ -58,6 +61,7 @@ public class CardRewardSlot : MonoBehaviour
             }
 
             SetLegacyElementsActive(false);
+            EnsureTooltipComponents();
         }
         else
         {
@@ -70,26 +74,21 @@ public class CardRewardSlot : MonoBehaviour
             _hasDefaultNameColor = true;
         }
 
-        if (data != null && cardDisplay == null)
+        if (cardDisplay == null)
         {
             if (cardName != null)
             {
-                cardName.text = data.GetDisplayName(upgraded);
-                cardName.color = upgraded && data.UpgradeEnabled ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
-            }
-            if (cardDescription != null) cardDescription.text = data.actionDescription;
-            if (cardArt != null) cardArt.sprite = data.characterSprite;
-        }
-        else if (cardDisplay == null)
-        {
-            if (cardName != null)
-            {
-                string fallbackName = upgraded ? $"{option.CardId}+" : option.CardId;
-                cardName.text = fallbackName;
+                cardName.text = _tooltipTitle;
                 cardName.color = upgraded ? CardScriptableObject.UpgradeNameColor : _defaultNameColor;
             }
-            if (cardDescription != null && cardDisplay == null) cardDescription.text = string.Empty;
-            if (cardArt != null && cardDisplay == null) cardArt.sprite = null;
+
+            if (cardDescription != null)
+                cardDescription.text = _tooltipDescription;
+
+            if (cardArt != null)
+                cardArt.sprite = data != null ? data.characterSprite : null;
+
+            EnsureTriggerForLegacy();
         }
 
         if (selectButton != null)
@@ -97,6 +96,7 @@ public class CardRewardSlot : MonoBehaviour
             selectButton.onClick.RemoveAllListeners();
             selectButton.onClick.AddListener(() => OnCardSelected?.Invoke(_cardOption));
         }
+
     }
 
     private void EnsureCardDisplay()
@@ -153,5 +153,55 @@ public class CardRewardSlot : MonoBehaviour
         };
         state.SetUpgraded(option.IsUpgraded);
         return state;
+    }
+
+    [Header("Tooltip")]
+    [SerializeField] private RectTransform tooltipAnchor;
+    private CardTooltipTriggerUI _trigger;
+    private string _tooltipTitle;
+    private string _tooltipDescription;
+
+    private void EnsureTooltipComponents()
+    {
+        if (cardDisplay == null)
+            return;
+
+        var source = cardDisplay.GetComponent<CardDisplayTooltipSource>();
+        if (source == null)
+            source = cardDisplay.gameObject.AddComponent<CardDisplayTooltipSource>();
+        source.SetDisplay(cardDisplay);
+        source.SetUseHandOffsets(false);
+
+        var trigger = cardDisplay.GetComponent<CardTooltipTriggerUI>();
+        if (trigger == null)
+            trigger = cardDisplay.gameObject.AddComponent<CardTooltipTriggerUI>();
+        trigger.SetSource(source);
+    }
+
+    private void EnsureTriggerForLegacy()
+    {
+        if (cardDisplay != null)
+            return;
+
+        if (_trigger == null)
+        {
+            _trigger = gameObject.AddComponent<CardTooltipTriggerUI>();
+            _trigger.SetSource(new LegacyTooltipSource(this));
+        }
+    }
+
+    private class LegacyTooltipSource : ICardTooltipSource
+    {
+        private readonly CardRewardSlot _slot;
+        public LegacyTooltipSource(CardRewardSlot slot) => _slot = slot;
+        public CardTooltipData GetTooltipData() => new CardTooltipData(_slot._tooltipTitle ?? string.Empty, _slot._tooltipDescription ?? string.Empty);
+        public Vector3 GetTooltipAnchorWorldPos()
+        {
+            if (_slot.tooltipAnchor != null)
+                return _slot.tooltipAnchor.position;
+            return _slot.transform.position;
+        }
+        public bool ShouldUseHandOffset => false;
+        public bool IsTooltipValid => _slot.isActiveAndEnabled;
     }
 }

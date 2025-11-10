@@ -49,14 +49,20 @@ public class BattleSceneBootstrap : MonoBehaviour
         var deckService = ServiceRegistry.GetRequired<IDeckService>();
         var cardCatalog = ServiceRegistry.GetRequired<ICardCatalog>();
 
-        var cardTooltipService = FindAnyObjectByType<CardTooltipService>(FindObjectsInactive.Include);
-        if (cardTooltipService == null)
+        var tooltipService = ServiceRegistry.Get<ICardTooltipService>();
+        if (tooltipService == null)
         {
-            var tooltipGo = new GameObject("CardTooltipService");
-            tooltipGo.transform.SetParent(transform, false);
-            cardTooltipService = tooltipGo.AddComponent<CardTooltipService>();
+            var sceneService = FindAnyObjectByType<CardTooltipService>(FindObjectsInactive.Include);
+            if (sceneService == null)
+            {
+                var tooltipGo = new GameObject("CardTooltipService");
+                tooltipGo.transform.SetParent(transform, false);
+                sceneService = tooltipGo.AddComponent<CardTooltipService>();
+            }
+
+            tooltipService = sceneService;
+            ServiceRegistry.Register<ICardTooltipService>(tooltipService);
         }
-        ServiceRegistry.Register<ICardTooltipService>(cardTooltipService);
 
         if (deckService == null) GameLog.Warn("[BattleSceneBootstrap] IDeckService를 찾지 못했습니다.");
         if (cardCatalog == null) GameLog.Warn("[BattleSceneBootstrap] ICardCatalog를 찾지 못했습니다.");

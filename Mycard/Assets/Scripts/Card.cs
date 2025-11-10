@@ -7,7 +7,7 @@ using DG.Tweening;
 using UnityEngine.EventSystems;
 using BattleSnapshot;
 
-public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerUpHandler
+public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerUpHandler, ICardTooltipSource
 {
     public CardScriptableObject cardSO; //카드 설계도
 
@@ -88,6 +88,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     private bool _isPreviewPlacementValid;
     private static readonly Color PreviewAllowedTint = new Color(0.72f, 0.95f, 1f, 1f);
     private static readonly Color PreviewBlockedTint = new Color(1f, 0.78f, 0.78f, 1f);
+    private static readonly Vector3 TooltipWorldOffset = new Vector3(0f, 1.6f, 0f);
 
     // 이벤트 기반 입력 상태(탭/드래그 구분)
     private bool _isDragging;
@@ -970,8 +971,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (tooltipService == null)
             return;
 
-        var data = new CardTooltipData(string.Empty, BuildActionTooltipDescription());
-        tooltipService.Show(this, data);
+        tooltipService.Show(this);
         _tooltipVisible = true;
     }
 
@@ -1019,6 +1019,22 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         return allowed;
     }
+
+    public CardTooltipData GetTooltipData()
+    {
+        string title = cardSO != null ? cardSO.GetDisplayName(IsUpgraded) : name;
+        return new CardTooltipData(title, BuildActionTooltipDescription());
+    }
+
+    public Vector3 GetTooltipAnchorWorldPos()
+    {
+        Vector3 basePos = tooltipAnchor != null ? tooltipAnchor.position : _tooltipAnchorWorldPos;
+        return basePos + transform.TransformVector(TooltipWorldOffset);
+    }
+
+    public bool ShouldUseHandOffset => inHand;
+
+    public bool IsTooltipValid => isActiveAndEnabled;
 
     public Vector3 TooltipAnchorWorldPos => tooltipAnchor != null ? tooltipAnchor.position : _tooltipAnchorWorldPos;
 

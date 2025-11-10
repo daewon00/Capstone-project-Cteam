@@ -224,7 +224,7 @@ MonoBehaviour:
     HighlightTargetId: map-node-current
     HighlightOptional: 0
     SecondaryHighlightIds: []
-    InteractionGate: 2
+    InteractionGate: 0
     RequiredAction: 5
     ActionId: 
     TargetAct: -1
@@ -240,7 +240,7 @@ MonoBehaviour:
     HighlightTargetId: map-node-battle
     HighlightOptional: 0
     SecondaryHighlightIds: []
-    InteractionGate: 2
+    InteractionGate: 0
     RequiredAction: 5
     ActionId: 
     TargetAct: -1
@@ -256,7 +256,7 @@ MonoBehaviour:
     HighlightTargetId: map-node-event
     HighlightOptional: 0
     SecondaryHighlightIds: []
-    InteractionGate: 2
+    InteractionGate: 0
     RequiredAction: 5
     ActionId: 
     TargetAct: -1
@@ -272,45 +272,11 @@ MonoBehaviour:
     HighlightTargetId: map-node-shop
     HighlightOptional: 0
     SecondaryHighlightIds: []
-    InteractionGate: 2
-    RequiredAction: 5
-    ActionId: 
-    TargetAct: -1
-    TargetFloor: -1
-    TargetNodeIndex: -1
-    AllowTapToContinue: 1
-    AutoAdvance: 0
-  - Step: 31
-    Message: "\uCD94\uAC00\uB85C \uCE74\uB4DC \uC81C\uAC70 \uB178\uB4DC, \uC5B4\uB824\uC6B4
-      \uC804\uD22C \uB178\uB4DC\uAC00 \uC788\uC2B5\uB2C8\uB2E4."
-    PrimaryAnchor: 3
-    FallbackAnchor: 3
-    PreferFallback: 0
-    HighlightTargetId: map-node-cardremove
-    HighlightOptional: 1
-    SecondaryHighlightIds: []
-    InteractionGate: 2
-    RequiredAction: 5
-    ActionId: 
-    TargetAct: -1
-    TargetFloor: -1
-    TargetNodeIndex: -1
-    AllowTapToContinue: 1
-    AutoAdvance: 0
-  - Step: 32
-    Message: "\uAE38\uC744 \uD1B5\uD574 \uAC08 \uC218 \uC788\uB294 \uB178\uB4DC \uC911
-      \uC6D0\uD558\uB294 \uB178\uB4DC\uB97C \uD0C0\uCE58\uD574 \uC9C4\uD589\uD558\uC138\uC694."
-    PrimaryAnchor: 3
-    FallbackAnchor: 3
-    PreferFallback: 0
-    HighlightTargetId: map-node-current
-    HighlightOptional: 1
-    SecondaryHighlightIds: []
     InteractionGate: 0
-    RequiredAction: 2
+    RequiredAction: 5
     ActionId: 
     TargetAct: -1
     TargetFloor: -1
     TargetNodeIndex: -1
-    AllowTapToContinue: 0
+    AllowTapToContinue: 1
     AutoAdvance: 0

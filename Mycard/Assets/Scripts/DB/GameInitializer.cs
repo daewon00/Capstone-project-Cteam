@@ -29,6 +29,8 @@ public class GameInitializer : MonoBehaviour
         GameLog.Info("[BossFlow][GI] ServiceRegistry cleared. Bootstrapping...");
 #endif
 
+        EnsureCardTooltipService();
+
         // 1. [기반 시스템 준비] 데이터베이스에 먼저 연결합니다.
         DatabaseManager.Instance.Connect();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -313,5 +315,21 @@ public class GameInitializer : MonoBehaviour
         if (states == null) return;
         _db?.UpsertRngStates(runId, states);
         GameLog.Info("[GameInitializer] RNG states persisted.");
+    }
+
+    private void EnsureCardTooltipService()
+    {
+        if (ServiceRegistry.Get<ICardTooltipService>() != null)
+            return;
+
+        var existing = FindAnyObjectByType<CardTooltipService>(FindObjectsInactive.Include);
+        CardTooltipService service = existing;
+        if (service == null)
+        {
+            var tooltipGo = new GameObject("CardTooltipService");
+            tooltipGo.transform.SetParent(transform, false);
+            service = tooltipGo.AddComponent<CardTooltipService>();
+        }
+        ServiceRegistry.Register<ICardTooltipService>(service);
     }
 }
