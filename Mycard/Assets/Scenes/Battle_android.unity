@@ -962,6 +962,8 @@ GameObject:
   - component: {fileID: 618804035}
   - component: {fileID: 618804034}
   - component: {fileID: 618804036}
+  - component: {fileID: 618804037}
+  - component: {fileID: 618804038}
   m_Layer: 5
   m_Name: FieldGestureOverlay
   m_TagString: Untagged
@@ -1049,6 +1051,36 @@ MonoBehaviour:
   overlayCanvasGroup: {fileID: 0}
   overlayIgnoreRoot: {fileID: 0}
   allowedRegion: {fileID: 0}
+--- !u!114 &618804037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618804032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e117358725f4315a007e3945cf7ebec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetId: field-swipe-zone
+  explicitRect: {fileID: 618804033}
+--- !u!114 &618804038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618804032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e16eea6b45c94a21887dec02c22229b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  overlayImage: {fileID: 618804034}
+  targetId: field-swipe-zone
+  activeColor: {r: 1, g: 1, b: 1, a: 0.18}
+  inactiveColor: {r: 1, g: 1, b: 1, a: 0}
 --- !u!1 &621180540
 GameObject:
   m_ObjectHideFlags: 0

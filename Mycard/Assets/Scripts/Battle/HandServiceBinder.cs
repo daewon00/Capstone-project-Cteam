@@ -76,6 +76,7 @@ public class HandServiceBinder : MonoBehaviour
             if (result != null && result.Reason == DrawReason.TurnStart)
             {
                 BattleController.instance?.NotifyPlayerTurnStartReady();
+                SignalTutorialTurnStart();
             }
             return;
         }
@@ -113,12 +114,7 @@ public class HandServiceBinder : MonoBehaviour
         if (result.Reason == DrawReason.TurnStart)
         {
             BattleController.instance?.NotifyPlayerTurnStartReady();
-            // 튜토리얼: 초기 드로우가 끝났음을 한번만 신호합니다.
-            if (!_tutorialInitialDrawSignaled)
-            {
-                ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "initial-draw-complete");
-                _tutorialInitialDrawSignaled = true;
-            }
+            SignalTutorialTurnStart();
         }
     }
 
@@ -140,11 +136,23 @@ public class HandServiceBinder : MonoBehaviour
         if (result.Reason == DrawReason.TurnStart)
         {
             BattleController.instance?.NotifyPlayerTurnStartReady();
-            if (!_tutorialInitialDrawSignaled)
-            {
-                ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, "initial-draw-complete");
-                _tutorialInitialDrawSignaled = true;
-            }
+            SignalTutorialTurnStart();
+        }
+    }
+
+    private void SignalTutorialTurnStart()
+    {
+        var tutorial = ServiceRegistry.Get<ITutorialService>();
+        if (tutorial == null) return;
+
+        if (!_tutorialInitialDrawSignaled)
+        {
+            tutorial.ReportAction(TutorialRequiredActionType.ButtonClick, "initial-draw-complete");
+            _tutorialInitialDrawSignaled = true;
+        }
+        else
+        {
+            tutorial.ReportAction(TutorialRequiredActionType.ButtonClick, "turn-start-ready");
         }
     }
 
