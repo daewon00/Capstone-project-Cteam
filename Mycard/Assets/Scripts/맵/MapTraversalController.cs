@@ -66,11 +66,11 @@ public class MapTraversalController : MonoBehaviour
 
         _runId = PlayerPrefs.GetString("lastRunId", "");
         var data = string.IsNullOrEmpty(_runId) ? null : DatabaseManager.Instance.LoadCurrentRun(_runId);
-        if (data == null) { Debug.LogError("[Traversal] 런 로드 실패"); return; }
+        if (data == null) { GameLog.Error("[Traversal] 런 로드 실패"); return; }
 
         _run = data.Run;
 
-        Debug.Log($"[MapTraversalController] Start runId={_runId}, act={_run.Act}, floor={_run.Floor}, nodeIndex={_run.NodeIndex}");
+        GameLog.Info($"[MapTraversalController] Start runId={_runId}, act={_run.Act}, floor={_run.Floor}, nodeIndex={_run.NodeIndex}");
 
         // 씬의 모든 노드 수집
         var list = FindObjectsByType<NodeGoScene>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
@@ -90,7 +90,7 @@ public class MapTraversalController : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[MapTraversalController] 보상 처리 중 오류: {e.Message}");
+            GameLog.Warn($"[MapTraversalController] 보상 처리 중 오류: {e.Message}");
         }
 
         var stageService = ServiceRegistry.Get<IRunStageService>();
@@ -104,7 +104,7 @@ public class MapTraversalController : MonoBehaviour
             };
 
             var currentStage = stageService.Current;
-            Debug.Log($"[MapTraversalController] Stage on entry: {(currentStage != null ? currentStage.Stage.ToString() : "(null)")}, sceneHint='{currentStage?.SceneHint}'");
+            GameLog.Info($"[MapTraversalController] Stage on entry: {(currentStage != null ? currentStage.Stage.ToString() : "(null)")}, sceneHint='{currentStage?.SceneHint}'");
             if (currentStage == null)
             {
                 stageService.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
@@ -137,7 +137,7 @@ public class MapTraversalController : MonoBehaviour
 
                         if (!resumeLooksBattle || sameScene)
                         {
-                            Debug.Log("[MapTraversalController] Stage reported Battle but resume scene is invalid or current. Attempting to restore previous map position.");
+                            GameLog.Info("[MapTraversalController] Stage reported Battle but resume scene is invalid or current. Attempting to restore previous map position.");
 
                             if (!payloadParsed || !TryRestorePreviousMapPosition(stageService, currentStage.PayloadJson, locationPayload))
                             {
@@ -175,7 +175,7 @@ public class MapTraversalController : MonoBehaviour
         }
 
         var stageAfterInit = stageService?.Current?.Stage.ToString() ?? "null";
-        Debug.Log($"[MapTraversalController] Stage after Start: {stageAfterInit}, act={_run.Act}, floor={_run.Floor}, node={_run.NodeIndex}");
+        GameLog.Info($"[MapTraversalController] Stage after Start: {stageAfterInit}, act={_run.Act}, floor={_run.Floor}, node={_run.NodeIndex}");
 
         // 전투 돌입 시 로딩 지연을 줄이기 위해 전투 씬 프리로드를 시작합니다.
         ServiceRegistry.Get<RunStatOverlay>()?.RefreshFallback();
@@ -268,7 +268,7 @@ public class MapTraversalController : MonoBehaviour
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning($"[MapTraversalController] DB 조회 중 오류: {e.Message}");
+                    GameLog.Warn($"[MapTraversalController] DB 조회 중 오류: {e.Message}");
                 }
             }
 
@@ -280,7 +280,7 @@ public class MapTraversalController : MonoBehaviour
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning($"[MapTraversalController] 노드 상태 저장 중 오류: {e.Message}");
+                    GameLog.Warn($"[MapTraversalController] 노드 상태 저장 중 오류: {e.Message}");
                 }
             }
 
@@ -307,7 +307,7 @@ public class MapTraversalController : MonoBehaviour
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning($"[MapTraversalController] 위치 저장 중 오류: {e.Message}");
+                    GameLog.Warn($"[MapTraversalController] 위치 저장 중 오류: {e.Message}");
                 }
             }
 
@@ -331,7 +331,7 @@ public class MapTraversalController : MonoBehaviour
             return;
         }
 
-        Debug.Log($"--- Final Action --- Deciding action for node type: {target.nodeType}");
+        GameLog.Info($"--- Final Action --- Deciding action for node type: {target.nodeType}");
 
         var locationPayload = operation.LocationPayload ?? new RunStagePayloads.Location
         {
@@ -380,12 +380,12 @@ public class MapTraversalController : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning("[MapTraversalController] 이벤트 페이로드가 준비되지 않아 이벤트 씬으로 이동하지 않습니다.");
+                    GameLog.Warn("[MapTraversalController] 이벤트 페이로드가 준비되지 않아 이벤트 씬으로 이동하지 않습니다.");
                 }
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[MapTraversalController] EventManager 처리 중 오류: {e.Message}");
+                GameLog.Error($"[MapTraversalController] EventManager 처리 중 오류: {e.Message}");
             }
             return;
         }
@@ -423,7 +423,7 @@ public class MapTraversalController : MonoBehaviour
                 battlePayload.hasPrevLocation = true;
             }
 
-            Debug.Log($"[MapTraversalController] Battle pending -> prev act={battlePayload.prevAct}, floor={battlePayload.prevFloor}, index={battlePayload.prevNodeIndex}, kind={battlePayload.prevBattleKind}, scene={sceneToLoad}");
+            GameLog.Info($"[MapTraversalController] Battle pending -> prev act={battlePayload.prevAct}, floor={battlePayload.prevFloor}, index={battlePayload.prevNodeIndex}, kind={battlePayload.prevBattleKind}, scene={sceneToLoad}");
             operation.BattlePayload = battlePayload;
 
             stageService?.SetStage(RunStageType.BattlePending, sceneToLoad, RunStageService.ToJson(battlePayload));
@@ -443,7 +443,7 @@ public class MapTraversalController : MonoBehaviour
 
         if (!operation.IsMoveToChild)
         {
-            Debug.Log("<color=orange>WARNING: No action taken. isMoveToChild was false for a non-shop/event node.</color>");
+            GameLog.Info("<color=orange>WARNING: No action taken. isMoveToChild was false for a non-shop/event node.</color>");
         }
     }
 
@@ -451,7 +451,7 @@ public class MapTraversalController : MonoBehaviour
     {
         if (_run == null)
         {
-            Debug.LogError("[MapTraversalController] 런 데이터가 초기화되지 않았습니다.");
+            GameLog.Error("[MapTraversalController] 런 데이터가 초기화되지 않았습니다.");
             return null;
         }
 
@@ -588,13 +588,13 @@ public class MapTraversalController : MonoBehaviour
             var session = em.LoadActiveOrCreate(eventId);
             if (session == null)
             {
-                Debug.LogWarning($"[MapTraversalController] 이벤트 세션 생성 실패: {eventId}");
+                GameLog.Warn($"[MapTraversalController] 이벤트 세션 생성 실패: {eventId}");
             }
             return session;
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[MapTraversalController] 이벤트 준비 중 오류: {e.Message}");
+            GameLog.Error($"[MapTraversalController] 이벤트 준비 중 오류: {e.Message}");
             return null;
         }
     }
@@ -603,7 +603,7 @@ public class MapTraversalController : MonoBehaviour
     {
         if (!RunStageService.TryParse(serializedPayload, out RunStagePayloads.Battle pendingPayload) || pendingPayload == null)
         {
-            Debug.LogWarning("[MapTraversalController] Failed to parse pending battle payload; cannot restore.");
+            GameLog.Warn("[MapTraversalController] Failed to parse pending battle payload; cannot restore.");
             return false;
         }
 
@@ -614,14 +614,14 @@ public class MapTraversalController : MonoBehaviour
 
         if (!payloadHasPrev)
         {
-            Debug.LogWarning("[MapTraversalController] Pending battle payload lacks previous location; cannot restore.");
+            GameLog.Warn("[MapTraversalController] Pending battle payload lacks previous location; cannot restore.");
             return false;
         }
 
         var prevAct = pendingPayload.prevAct;
         var prevFloor = pendingPayload.prevFloor;
         var prevNodeIndex = pendingPayload.prevNodeIndex;
-        Debug.Log($"[MapTraversalController] Restoring pending battle -> prev act={prevAct}, floor={prevFloor}, index={prevNodeIndex}, kind={pendingPayload.prevBattleKind}");
+        GameLog.Info($"[MapTraversalController] Restoring pending battle -> prev act={prevAct}, floor={prevFloor}, index={prevNodeIndex}, kind={pendingPayload.prevBattleKind}");
 
         if (_run != null)
         {
@@ -646,7 +646,7 @@ public class MapTraversalController : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[MapTraversalController] 전투 대기 복원 중 위치 업데이트 실패: {e.Message}");
+                GameLog.Warn($"[MapTraversalController] 전투 대기 복원 중 위치 업데이트 실패: {e.Message}");
             }
         }
 
@@ -671,9 +671,9 @@ public class MapTraversalController : MonoBehaviour
         locationPayload.nodeIndex = prevNodeIndex;
 
         stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(locationPayload));
-        Debug.Log($"[MapTraversalController] Pending battle cleared. Stage => {stageService?.Current?.Stage}");
+        GameLog.Info($"[MapTraversalController] Pending battle cleared. Stage => {stageService?.Current?.Stage}");
         RunCacheSynchronizer.Sync();
-        Debug.Log("[MapTraversalController] Battle transition did not complete. Restored previous map position.");
+        GameLog.Info("[MapTraversalController] Battle transition did not complete. Restored previous map position.");
         PlaceMarker(_run.Floor, _run.NodeIndex);
         UpdateReachable(_run.Floor, _run.NodeIndex);
         return true;
@@ -741,7 +741,7 @@ public class MapTraversalController : MonoBehaviour
     {
         if (target == null)
         {
-            Debug.LogWarning("[MapTraversalController] OnNodeClicked가 null 타겟으로 호출되었습니다.");
+            GameLog.Warn("[MapTraversalController] OnNodeClicked가 null 타겟으로 호출되었습니다.");
             return;
         }
 
@@ -759,22 +759,22 @@ public class MapTraversalController : MonoBehaviour
 
         try
         {
-            Debug.Log($"--- OnNodeClicked --- Target: ({target.floor},{target.index}), Type: {target.nodeType}");
+            GameLog.Info($"--- OnNodeClicked --- Target: ({target.floor},{target.index}), Type: {target.nodeType}");
 
             if (!_nodes.TryGetValue((_run.Floor, _run.NodeIndex), out var curNode))
             {
-                Debug.LogWarning("[MapTraversalController] 현재 노드를 찾지 못했습니다.");
+                GameLog.Warn("[MapTraversalController] 현재 노드를 찾지 못했습니다.");
                 CleanupAfterFailure();
                 return;
             }
 
             bool isMoveToChild = curNode.children != null && curNode.children.Contains(target);
             bool isReclickSameNode = (_run.Floor == target.floor && _run.NodeIndex == target.index);
-            Debug.Log($"<color=yellow>ANALYSIS >> isMoveToChild: {isMoveToChild}, isReclickSameNode: {isReclickSameNode}</color>", this);
+            GameLog.Info($"<color=yellow>ANALYSIS >> isMoveToChild: {isMoveToChild}, isReclickSameNode: {isReclickSameNode}</color>", this);
 
             if (!isMoveToChild && !isReclickSameNode)
             {
-                Debug.Log("<color=red>INVALID CLICK: Action ignored.</color>");
+                GameLog.Info("<color=red>INVALID CLICK: Action ignored.</color>");
                 CleanupAfterFailure();
                 return;
             }
@@ -786,7 +786,7 @@ public class MapTraversalController : MonoBehaviour
                 {
                     if (!tutorialService.CanMoveToNode(_run.Act, target.floor, target.index))
                     {
-                        Debug.Log("[MapTraversalController] Tutorial gating prevented movement to this node.");
+                        GameLog.Info("[MapTraversalController] Tutorial gating prevented movement to this node.");
                         CleanupAfterFailure();
                         return;
                     }
@@ -795,14 +795,14 @@ public class MapTraversalController : MonoBehaviour
 
             if (isMoveToChild)
             {
-                Debug.Log("<color=cyan>ACTION >> Moving to a new node. Resetting shop/event session caches...</color>", this);
+                GameLog.Info("<color=cyan>ACTION >> Moving to a new node. Resetting shop/event session caches...</color>", this);
                 ResetSessionsForMove();
             }
 
             _pendingOperation = CreatePendingOperation(target, isMoveToChild, isReclickSameNode);
             if (_pendingOperation == null)
             {
-                Debug.LogWarning("[MapTraversalController] PendingStageOperation 생성에 실패했습니다.");
+                GameLog.Warn("[MapTraversalController] PendingStageOperation 생성에 실패했습니다.");
                 CleanupAfterFailure();
                 return;
             }
@@ -818,7 +818,7 @@ public class MapTraversalController : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[MapTraversalController] 노드 이동 처리 중 오류: {e.Message}");
+            GameLog.Error($"[MapTraversalController] 노드 이동 처리 중 오류: {e.Message}");
             CleanupAfterFailure();
         }
     }
@@ -890,7 +890,7 @@ public class MapTraversalController : MonoBehaviour
         try
         {
             var rewards = JsonUtility.FromJson<RewardContainer>(currentNode.RewardsJson);
-            Debug.Log("[MapTraversal] Pending rewards found. Showing reward UI...");
+            GameLog.Info("[MapTraversal] Pending rewards found. Showing reward UI...");
 
             var stageService = ServiceRegistry.Get<IRunStageService>();
             var rewardPayload = new RunStagePayloads.Reward
@@ -911,7 +911,7 @@ public class MapTraversalController : MonoBehaviour
 
             if (rewardUI == null)
             {
-                Debug.LogWarning("[MapTraversal] IRewardUI 구현체를 찾지 못했습니다. 기본 보상(골드) 자동 적용 후 JSON을 정리합니다.");
+                GameLog.Warn("[MapTraversal] IRewardUI 구현체를 찾지 못했습니다. 기본 보상(골드) 자동 적용 후 JSON을 정리합니다.");
                 ApplyNonCardRewards(rewards);
                 ClearRewardsJson(currentNode);
                 stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(new RunStagePayloads.Location
@@ -925,7 +925,7 @@ public class MapTraversalController : MonoBehaviour
 
             rewardUI.Show(rewards, () =>
             {
-                Debug.Log("[MapTraversal] Reward UI closed. Applying non-card rewards and clearing JSON.");
+                GameLog.Info("[MapTraversal] Reward UI closed. Applying non-card rewards and clearing JSON.");
                 ApplyNonCardRewards(rewards);
                 ClearRewardsJson(currentNode);
                 stageService?.SetStage(RunStageType.Map, SceneManager.GetActiveScene().name, RunStageService.ToJson(new RunStagePayloads.Location
@@ -938,7 +938,7 @@ public class MapTraversalController : MonoBehaviour
         }
         catch (System.Exception ex)
         {
-            Debug.LogWarning($"[MapTraversal] RewardsJson 파싱 실패: {ex.Message}");
+            GameLog.Warn($"[MapTraversal] RewardsJson 파싱 실패: {ex.Message}");
         }
     }
 
@@ -958,7 +958,7 @@ public class MapTraversalController : MonoBehaviour
         }
         catch (System.Exception applyEx)
         {
-            Debug.LogWarning($"[MapTraversal] ApplyNonCardRewards 오류: {applyEx.Message}");
+            GameLog.Warn($"[MapTraversal] ApplyNonCardRewards 오류: {applyEx.Message}");
         }
     }
 

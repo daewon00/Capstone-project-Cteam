@@ -124,7 +124,7 @@ public sealed class RunStatOverlay : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[RunStatOverlay] LoadCurrentRun 실패: {e.Message}");
+            GameLog.Warn($"[RunStatOverlay] LoadCurrentRun 실패: {e.Message}");
             UpdateTexts(default);
         }
     }

@@ -175,7 +175,7 @@ public class DeckController : MonoBehaviour
     public void DrawCardToHand()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning($"[DEPRECATED] DeckController.DrawCardToHand() 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
+        GameLog.Warn($"[DEPRECATED] DeckController.DrawCardToHand() 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
 #endif
         if (activeCards.Count == 0)
         {
@@ -199,7 +199,7 @@ public class DeckController : MonoBehaviour
     public void DrawCardForMana() //드로우 카드의 코스트 기제
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning($"[DEPRECATED] DeckController.DrawCardForMana() 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
+        GameLog.Warn($"[DEPRECATED] DeckController.DrawCardForMana() 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
 #endif
         if (BattleController.instance.playerMana >= drawCardCost)
         {
@@ -220,7 +220,7 @@ public class DeckController : MonoBehaviour
     public void DrawMulitpleCards(int amountToDraw)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning($"[DEPRECATED] DeckController.DrawMulitpleCards({amountToDraw}) 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
+        GameLog.Warn($"[DEPRECATED] DeckController.DrawMulitpleCards({amountToDraw}) 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
 #endif
        StartCoroutine(DrawMultipleCo(amountToDraw));
     }
@@ -288,7 +288,7 @@ public class DeckController : MonoBehaviour
 
         if (!dbById.TryGetValue(id, out var so))
         {
-            Debug.LogWarning($"[DeckController1] 알 수 없는 카드 Id: {id}");
+            GameLog.Warn($"[DeckController1] 알 수 없는 카드 Id: {id}");
             return false;
         }
         return AddCardToDeck(so, count, rebuildDrawpile);
@@ -325,7 +325,7 @@ public class DeckController : MonoBehaviour
         if (string.IsNullOrEmpty(id)) return 0;
         if (!dbById.TryGetValue(id, out var so))
         {
-            Debug.LogWarning($"[DeckController1] 알 수 없는 카드 Id: {id}");
+            GameLog.Warn($"[DeckController1] 알 수 없는 카드 Id: {id}");
             return 0;
         }
         return RemoveCardFromDeck(so, count, rebuildDrawPile);
@@ -348,7 +348,7 @@ public class DeckController : MonoBehaviour
     public void ShuffleDeckToUse()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning($"[DEPRECATED] DeckController.ShuffleDeckToUse() 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
+        GameLog.Warn($"[DEPRECATED] DeckController.ShuffleDeckToUse() 레거시 경로 호출. 서비스 전환 전 임시로 동작합니다. Stack: {Environment.StackTrace}");
 #endif
         // 덱 자체를 섞고 싶을 때
         System.Random RandomDeck = new System.Random();
@@ -376,7 +376,7 @@ public class DeckController : MonoBehaviour
     public void SaveDeck()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning($"[DEPRECATED] DeckController.SaveDeck() 호출은 무시됩니다. Stack: {Environment.StackTrace}");
+        GameLog.Warn($"[DEPRECATED] DeckController.SaveDeck() 호출은 무시됩니다. Stack: {Environment.StackTrace}");
 #endif
     }
     /// <summary>
@@ -387,7 +387,7 @@ public class DeckController : MonoBehaviour
     {
         // 레거시 호출 차단
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning($"[DEPRECATED] DeckController.LoadDeck() 호출은 무시됩니다. Stack: {Environment.StackTrace}");
+        GameLog.Warn($"[DEPRECATED] DeckController.LoadDeck() 호출은 무시됩니다. Stack: {Environment.StackTrace}");
 #endif
         return false;
     }
@@ -417,7 +417,7 @@ public class DeckController : MonoBehaviour
         if (so == null) return;
         if (string.IsNullOrEmpty(so.CardId))
         {
-            Debug.LogWarning($"[DeckController] 카드에 Id가 비어있습니다: {so.name}");
+            GameLog.Warn($"[DeckController] 카드에 Id가 비어있습니다: {so.name}");
             return;
         }
         dbById[so.CardId] = so; // 마지막 등록 우선

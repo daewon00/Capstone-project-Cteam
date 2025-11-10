@@ -13,7 +13,7 @@ public class ExtraDrawRelic : Relic
         var deck = GameServices.Deck;
         if (deck == null)
         {
-            Debug.LogWarning("[ExtraDrawRelic] GameServices.Deck¿Ã µÓ∑œµ«¡ˆ æ æ“Ω¿¥œ¥Ÿ.");
+            GameLog.Warn("[ExtraDrawRelic] GameServices.Deck œµ  æ“Ωœ¥.");
             return;
         }
 

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ShieldBannerRelic : Relic
 {
-    // Ä«µåº°·Î ¿ì¸®°¡ "º¸ÅÂÁØ HP"¸¦ ±â¾ï
+    // Ä«åº° ì¸® " HP" 
     private readonly Dictionary<Card, int> granted = new Dictionary<Card, int>();
     private int lastStacks = 0;
 
@@ -14,7 +14,7 @@ public class ShieldBannerRelic : Relic
     {
         lastStacks = Stacks;
         BuffAllPlayerBoardCards(Stacks);
-        Debug.Log($"[Relic] {Data.displayName} È¹µæ. ½ºÅÃ={Stacks}");
+        GameLog.Info($"[Relic] {Data.displayName} È¹. ={Stacks}");
     }
 
     protected override void OnStacksChanged()
@@ -23,12 +23,12 @@ public class ShieldBannerRelic : Relic
         lastStacks = Stacks;
         if (delta == 0) return;
 
-        if (delta > 0)  // ½ºÅÃ Áõ°¡ ¡æ Ã¼·Â Ãß°¡
+        if (delta > 0)  //    Ã¼ ß°
         {
             foreach (var kv in SnapshotAliveGranted())
                 ApplyHp(kv.Key, delta);
         }
-        else            // ½ºÅÃ °¨¼Ò/³ÊÇÁ ¡æ Ã¼·Â ÀÏºÎ È¸¼ö(ÃÖ¼Ò 1HP´Â º¸Àå)
+        else            //  /  Ã¼ Ïº È¸(Ö¼ 1HP )
         {
             foreach (var kv in SnapshotAliveGranted())
                 RemoveHpSafe(kv.Key, -delta);
@@ -38,11 +38,11 @@ public class ShieldBannerRelic : Relic
     public override void OnTurnStart(bool isPlayerTurn)
     {
         if (!isPlayerTurn) return;
-        // È¤½Ã ÅÏ Áß°£¿¡ »õ·Î ±ò¸° Ä«µå°¡ ÀÖ´Ù¸é ´ÙÀ½ ÅÏ ½ÃÀÛ ¶§¶óµµ º¸Á¤
+        // È¤  ß°   Ä«å°¡ Ö´Ù¸     
         BuffAllPlayerBoardCards(Stacks);
     }
 
-    // Ä«µå°¡ ±ò¸± ¶§ Áï½Ã ¹Ý¿µÇÏ°í ½ÍÀ» ¶§ »ç¿ë(¾Æ·¡ Card.cs ÈÅÀÌ ÀÖÀ» °æ¿ì)
+    // Ä«å°¡    Ý¿Ï°   (Æ· Card.cs   )
     public override void OnCardPlayed(Card card)
     {
         if (card != null && card.isPlayer)
@@ -51,11 +51,11 @@ public class ShieldBannerRelic : Relic
 
     public override void OnRemove()
     {
-        // ¿ì¸®°¡ ºÎ¿©Çß´ø ¾ç¸¸ ¾ÈÀüÇÏ°Ô È¸¼ö(ÃÖ¼Ò 1HP´Â À¯Áö)
+        // ì¸® Î¿ß´ ç¸¸ Ï° È¸(Ö¼ 1HP )
         foreach (var kv in SnapshotAliveGranted())
             RemoveHpSafe(kv.Key, kv.Value);
         granted.Clear();
-        Debug.Log($"[Relic] {Data.displayName} Á¦°Å.");
+        GameLog.Info($"[Relic] {Data.displayName} .");
     }
 
     // ---------------- helpers ----------------
@@ -70,7 +70,7 @@ public class ShieldBannerRelic : Relic
             var c = p?.activeCard;
             if (c == null || !c.isPlayer) continue;
 
-            // Áßº¹ Àû¿ë ¹æÁö: ¾ÆÁ÷ ÀÌ À¯¹°·Î HP¸¦ ¾È ¿Ã·ÁÁá´Ù¸é ¿Ã·ÁÁØ´Ù
+            // ßº  :    HP  Ã·Ù¸ Ã·Ø´
             if (!granted.ContainsKey(c))
                 ApplyHp(c, amount);
         }
@@ -85,7 +85,7 @@ public class ShieldBannerRelic : Relic
             granted[card] = already + amount;
         else
             granted[card] = amount;
-        // ÇÊ¿äÇÏ¸é ÀÌÆåÆ®/»ç¿îµå Ãß°¡ °¡´É
+        // Ê¿Ï¸ Æ®/ ß° 
     }
 
     private void RemoveHpSafe(Card card, int amount)
@@ -94,7 +94,7 @@ public class ShieldBannerRelic : Relic
         if (!granted.TryGetValue(card, out var gave)) return;
 
         int toTake = Mathf.Min(amount, gave);
-        // ÃÖ¼Ò 1HP º¸Àå(¿øÇÏ¸é Á¦°Å ½Ã Áï»ç Çã¿ëÀ¸·Î ¹Ù²Ù¼¼¿ä)
+        // Ö¼ 1HP (Ï¸     Ù²Ù¼)
         int minLeft = Mathf.Max(1, card.currentHealth - toTake);
         int realTake = card.currentHealth - minLeft;
 
@@ -109,7 +109,7 @@ public class ShieldBannerRelic : Relic
 
     private void CleanupDead()
     {
-        // ÆÄ±«µÈ Ä«µå/ÂüÁ¶ Á¤¸®
+        // Ä± Ä«/ 
         var dead = new List<Card>();
         foreach (var kv in granted)
             if (kv.Key == null) dead.Add(kv.Key);
@@ -119,7 +119,7 @@ public class ShieldBannerRelic : Relic
     private IEnumerable<KeyValuePair<Card, int>> SnapshotAliveGranted()
     {
         CleanupDead();
-        // foreach ¼øÈ¸ Áß ¼öÁ¤ ¹æÁö¿ë ½º³À¼¦
+        // foreach È¸    
         return new List<KeyValuePair<Card, int>>(granted);
     }
 }

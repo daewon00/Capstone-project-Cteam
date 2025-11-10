@@ -43,7 +43,7 @@ public sealed class CardCatalog : ICardCatalog
         var allCardData = Resources.LoadAll<CardScriptableObject>(resourcePath);
         if (allCardData == null || allCardData.Length == 0)
         {
-            Debug.LogWarning($"[CardCatalog] 지정된 경로(Resources/{resourcePath})에서 카드 데이터를 찾을 수 없습니다.");
+            GameLog.Warn($"[CardCatalog] 지정된 경로(Resources/{resourcePath})에서 카드 데이터를 찾을 수 없습니다.");
             return;
         }
 
@@ -55,18 +55,18 @@ public sealed class CardCatalog : ICardCatalog
             var id = cardData.CardId;
             if (string.IsNullOrEmpty(id))
             {
-                Debug.LogError($"[CardCatalog] CardId가 비어있는 카드 에셋: {cardData.name}", cardData);
+                GameLog.Error($"[CardCatalog] CardId가 비어있는 카드 에셋: {cardData.name}", cardData);
                 continue;
             }
             if (_database.ContainsKey(id))
             {
-                Debug.LogError($"[CardCatalog] 중복된 CardId가 감지되었습니다: {id}", cardData);
+                GameLog.Error($"[CardCatalog] 중복된 CardId가 감지되었습니다: {id}", cardData);
                 continue;
             }
             _database.Add(id, cardData);
         }
 
-        Debug.Log($"[CardCatalog] {_database.Count}개의 카드 데이터를 로드했습니다.");
+        GameLog.Info($"[CardCatalog] {_database.Count}개의 카드 데이터를 로드했습니다.");
     }
 
     public CardScriptableObject GetCardData(string cardId)

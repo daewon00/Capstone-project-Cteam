@@ -359,6 +359,6 @@ partial class TutorialOverlayView
     private void D(string msg)
     {
         if (!enableDebugLogs) return;
-        Debug.Log($"[TutorialOverlayView] {msg}", this);
+        GameLog.Info($"[TutorialOverlayView] {msg}", this);
     }
 }

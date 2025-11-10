@@ -24,7 +24,7 @@ public static class CardRemovalRules
 
         if (catalog == null)
         {
-            Debug.LogWarning("[CardRemovalRules] 카드 카탈로그가 없어 제거 가능 여부를 판별할 수 없습니다.");
+            GameLog.Warn("[CardRemovalRules] 카드 카탈로그가 없어 제거 가능 여부를 판별할 수 없습니다.");
             return false;
         }
 

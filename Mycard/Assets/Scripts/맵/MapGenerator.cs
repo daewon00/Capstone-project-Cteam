@@ -153,23 +153,23 @@ public class MapGenerator : MonoBehaviour
 
     public void GenerateMap()
     {
-        Debug.Log($"[MapGen] 맵 생성이 {Time.frameCount} 프레임에서 시작됩니다.");
+        GameLog.Info($"[MapGen] 맵 생성이 {Time.frameCount} 프레임에서 시작됩니다.");
 
 
         // 파라미터 유효성 검사
         if (numberOfLayers < 8)
         {
-            Debug.LogError("numberOfLayers는 최소 8 이상이어야 합니다. (설계 전제)");
+            GameLog.Error("numberOfLayers는 최소 8 이상이어야 합니다. (설계 전제)");
             return;
         }
         if (minNodesPerLayer < 1)
         {
-            Debug.LogError("minNodesPerLayer는 1 이상이어야 합니다.");
+            GameLog.Error("minNodesPerLayer는 1 이상이어야 합니다.");
             return;
         }
         if (minNodesPerLayer > maxNodesPerLayer)
         {
-            Debug.LogError("minNodesPerLayer는 maxNodesPerLayer보다 클 수 없습니다.");
+            GameLog.Error("minNodesPerLayer는 maxNodesPerLayer보다 클 수 없습니다.");
             return;
         }
         // 랜덤 시드 초기화: 고정 시드 제공 시 재현성 보장, 미지정 시 보안 난수 기반 시드 사용
@@ -213,7 +213,7 @@ public class MapGenerator : MonoBehaviour
     {
         if (_isMapBuilt)
         {
-            Debug.LogWarning("[MapGen] BuildWithSeed가 중복 호출되었습니다. 현재 레이아웃 스냅샷을 반환합니다.");
+            GameLog.Warn("[MapGen] BuildWithSeed가 중복 호출되었습니다. 현재 레이아웃 스냅샷을 반환합니다.");
             return CaptureLayoutSnapshot();
         }
 
@@ -231,7 +231,7 @@ public class MapGenerator : MonoBehaviour
     {
         if (snapshot == null)
         {
-            Debug.LogError("[MapGen] BuildFromSnapshot가 null 스냅샷으로 호출되었습니다.");
+            GameLog.Error("[MapGen] BuildFromSnapshot가 null 스냅샷으로 호출되었습니다.");
             return;
         }
 
@@ -370,7 +370,7 @@ public class MapGenerator : MonoBehaviour
                     var fallback = new MapDataNode(NodeType.Battle, Vector2.zero, ordered.First().Floor);
                     layerList[idx] = fallback;
                     lookup[(fallback.layerIndex, idx)] = fallback;
-                    Debug.LogWarning($"[MapGen] 스냅샷에 비어 있는 노드가 감지되어 기본 Battle 노드로 보정했습니다. floor={ordered.First().Floor}, index={idx}");
+                    GameLog.Warn($"[MapGen] 스냅샷에 비어 있는 노드가 감지되어 기본 Battle 노드로 보정했습니다. floor={ordered.First().Floor}, index={idx}");
                 }
             }
 
@@ -493,7 +493,7 @@ public class MapGenerator : MonoBehaviour
                 if (string.IsNullOrEmpty(eventId))
                 {
                     eventId = ResolveFallbackEventId();
-                    Debug.LogWarning($"[MapGen] 이벤트 풀 소진 또는 조건 불일치로 기본 이벤트를 사용합니다. layer={node.layerIndex}, eventId='{eventId}'");
+                    GameLog.Warn($"[MapGen] 이벤트 풀 소진 또는 조건 불일치로 기본 이벤트를 사용합니다. layer={node.layerIndex}, eventId='{eventId}'");
                 }
 
                 node.eventIdOverride = eventId;
@@ -571,7 +571,7 @@ public class MapGenerator : MonoBehaviour
     #region --- 1단계: 맵 뼈대 생성 함수 ---
     void CreateNodePositions()
     {
-        Debug.Log("1단계: 맵 뼈대 생성을 시작합니다.");
+        GameLog.Info("1단계: 맵 뼈대 생성을 시작합니다.");
 
         mapData.Clear(); // 맵 다시 생성시 초기화
 
@@ -606,10 +606,10 @@ public class MapGenerator : MonoBehaviour
             int targetLayer = adjustableLayers[random.Next(0, adjustableLayers.Count)];
             mapData[targetLayer] = GenerateLayerNodes(targetLayer, 3);
             hasLayerWithThreeNodes = true;
-            Debug.Log($"[MapGen] 모든 조정 가능 층이 2개 노드여서 {targetLayer}층을 3개 노드로 재생성했습니다.");
+            GameLog.Info($"[MapGen] 모든 조정 가능 층이 2개 노드여서 {targetLayer}층을 3개 노드로 재생성했습니다.");
         }
 
-        Debug.Log("맵 뼈대 생성 완료! 총 " + mapData.Count + "개의 층이 생성되었습니다.");
+        GameLog.Info("맵 뼈대 생성 완료! 총 " + mapData.Count + "개의 층이 생성되었습니다.");
     }
 
     private List<MapDataNode> GenerateLayerNodes(int layerIndex, int nodeCount)
@@ -643,7 +643,7 @@ public class MapGenerator : MonoBehaviour
     #region 2단계: 경로 생성 (선 긋기)
     void CreatePaths()
     {
-        Debug.Log("2단계: 경로 생성을 시작합니다.");
+        GameLog.Info("2단계: 경로 생성을 시작합니다.");
 
         // --- 규칙 2.3 & 2.4: 보스 경로 보장 (거꾸로 연결) ---
         // 마지막 층 바로 앞(mapData.Count - 2)부터 시작해서 0층까지 거꾸로 반복합니다.
@@ -747,7 +747,7 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        Debug.Log("경로 생성 완료!");
+        GameLog.Info("경로 생성 완료!");
 
     }
     #endregion
@@ -903,7 +903,7 @@ public class MapGenerator : MonoBehaviour
     #region 3단계: 노드 타입 결정 (아이콘 정하기)
     void SetNodeTypes()
     {
-        Debug.Log("3단계: 노드 타입 결정을 시작합니다.");
+        GameLog.Info("3단계: 노드 타입 결정을 시작합니다.");
 
         // 노드가 생성 시점에 layerIndex를 확정하므로 별도 동기화 루프가 필요 없습니다.
 
@@ -941,7 +941,7 @@ public class MapGenerator : MonoBehaviour
         // 모든 타입 할당이 끝난 후, 제약 조건에 맞지 않는 부분을 수정합니다.
         EnforceConstraints();
 
-        Debug.Log("노드 타입 결정 완료!");
+        GameLog.Info("노드 타입 결정 완료!");
     }
 
     /// <summary>
@@ -962,11 +962,11 @@ public class MapGenerator : MonoBehaviour
             var nodeToPlace = candidates[random.Next(0, candidates.Count)];
             nodeToPlace.nodeType = type;
             availableNodes.Remove(nodeToPlace); // 배치된 노드는 목록에서 제거
-            Debug.Log($"{nodeToPlace.layerIndex}층에 {type} 노드 배치 완료.");
+            GameLog.Info($"{nodeToPlace.layerIndex}층에 {type} 노드 배치 완료.");
         }
         else
         {
-            Debug.LogWarning($"{type} 타입을 배치할 후보 노드가 {minLayer}~{maxLayer}층 사이에 없습니다.");
+            GameLog.Warn($"{type} 타입을 배치할 후보 노드가 {minLayer}~{maxLayer}층 사이에 없습니다.");
         }
     }
 
@@ -1005,7 +1005,7 @@ public class MapGenerator : MonoBehaviour
             var firstElite = elite1Candidates[random.Next(0, elite1Candidates.Count)];
             firstElite.nodeType = NodeType.Elite;
             availableNodes.Remove(firstElite);
-            Debug.Log($"{firstElite.layerIndex}층에 첫 번째 엘리트 배치 완료.");
+            GameLog.Info($"{firstElite.layerIndex}층에 첫 번째 엘리트 배치 완료.");
             firstEliteLayer = firstElite.layerIndex;
 
             // --- 엘리트 후 휴식 배치 (규칙 3.3) ---
@@ -1016,7 +1016,7 @@ public class MapGenerator : MonoBehaviour
                 var restAfterElite = restCandidates[random.Next(0, restCandidates.Count)];
                 restAfterElite.nodeType = NodeType.Rest;
                 availableNodes.Remove(restAfterElite);
-                Debug.Log($"{restAfterElite.layerIndex}층에 '엘리트 후 휴식' 노드 배치 완료.");
+                GameLog.Info($"{restAfterElite.layerIndex}층에 '엘리트 후 휴식' 노드 배치 완료.");
 
                 // --- 조건부 상점 배치 (규칙 3.4) ---
                 int shopLayerIndex = restAfterElite.layerIndex + 1;
@@ -1031,23 +1031,23 @@ public class MapGenerator : MonoBehaviour
                             var conditionalShop = shopCandidates[random.Next(0, shopCandidates.Count)];
                             conditionalShop.nodeType = NodeType.Shop;
                             availableNodes.Remove(conditionalShop);
-                            Debug.Log($"{conditionalShop.layerIndex}층에 '조건부 상점' 노드 배치 완료.");
+                            GameLog.Info($"{conditionalShop.layerIndex}층에 '조건부 상점' 노드 배치 완료.");
                         }
                         else
                         {
-                            Debug.LogWarning("조건부 상점을 배치할 공간이 없습니다.");
+                            GameLog.Warn("조건부 상점을 배치할 공간이 없습니다.");
                         }
                     }
                 }
             }
             else
             {
-                Debug.LogWarning("엘리트 후 휴식 노드를 배치할 공간이 없습니다. 스킵합니다.");
+                GameLog.Warn("엘리트 후 휴식 노드를 배치할 공간이 없습니다. 스킵합니다.");
             }
         }
         else
         {
-            Debug.LogWarning("첫 번째 엘리트를 배치할 후보가 없습니다. 스킵합니다.");
+            GameLog.Warn("첫 번째 엘리트를 배치할 후보가 없습니다. 스킵합니다.");
         }
 
         // --- 두 번째 엘리트 배치 (규칙 3.2) ---
@@ -1060,11 +1060,11 @@ public class MapGenerator : MonoBehaviour
             var secondElite = elite2Candidates[random.Next(0, elite2Candidates.Count)];
             secondElite.nodeType = NodeType.Elite;
             availableNodes.Remove(secondElite);
-            Debug.Log($"{GetLayerIndex(secondElite)}층에 두 번째 엘리트 배치 완료.");
+            GameLog.Info($"{GetLayerIndex(secondElite)}층에 두 번째 엘리트 배치 완료.");
         }
         else
         {
-            Debug.LogWarning("두 번째 엘리트를 배치할 후보가 없습니다. 스킵합니다.");
+            GameLog.Warn("두 번째 엘리트를 배치할 후보가 없습니다. 스킵합니다.");
         }
     }
 
@@ -1130,7 +1130,7 @@ public class MapGenerator : MonoBehaviour
                     {
                         var prevType = nodeToChange.nodeType;
                         nodeToChange.nodeType = NodeType.Battle;
-                        Debug.Log($"규칙 3.8 적용: {i}층에 전투 노드가 없어 {prevType}를 Battle로 변경.");
+                        GameLog.Info($"규칙 3.8 적용: {i}층에 전투 노드가 없어 {prevType}를 Battle로 변경.");
                     }
                 }
             }
@@ -1148,7 +1148,7 @@ public class MapGenerator : MonoBehaviour
                     if (node.parents.Any(p => p.nodeType == NodeType.Shop))
                     {
                         node.nodeType = NodeType.Event; // 현재 노드를 이벤트로 변경
-                        Debug.Log($"규칙 3.7 적용: {node.layerIndex}층의 연속된 상점을 이벤트로 변경.");
+                        GameLog.Info($"규칙 3.7 적용: {node.layerIndex}층의 연속된 상점을 이벤트로 변경.");
                     }
                 }
                 
@@ -1172,7 +1172,7 @@ public class MapGenerator : MonoBehaviour
                     if (hasThreeBattleChain)
                     {
                         node.nodeType = NodeType.Event; // 3번째 전투인 현재 노드를 이벤트로 변경
-                        Debug.Log($"규칙 3.7 적용: {node.layerIndex}층의 3연속 전투를 이벤트로 변경.");
+                        GameLog.Info($"규칙 3.7 적용: {node.layerIndex}층의 3연속 전투를 이벤트로 변경.");
                         continue; // 다음 노드로 진행
                     }
                 }
@@ -1192,7 +1192,7 @@ public class MapGenerator : MonoBehaviour
     #region 4단계: 화면에 실제 오브젝트 생성
     void InstantiateMapObjects()
     {
-        Debug.Log("4단계: 실제 맵 오브젝트를 생성합니다.");
+        GameLog.Info("4단계: 실제 맵 오브젝트를 생성합니다.");
 
         // 이전 실행 결과가 씬에 남아있다면 정리
         foreach (var go in nodeObjects)
@@ -1229,7 +1229,7 @@ public class MapGenerator : MonoBehaviour
                 GameObject prefab = GetPrefabFor(node.nodeType);
                 if (prefab == null)
                 {
-                    Debug.LogWarning($"프리팹이 설정되지 않은 노드 타입입니다: {node.nodeType}");
+                    GameLog.Warn($"프리팹이 설정되지 않은 노드 타입입니다: {node.nodeType}");
                     continue;
                 }
 
@@ -1336,7 +1336,7 @@ public class MapGenerator : MonoBehaviour
 
         if (pathLinePrefab == null)
         {
-            Debug.LogWarning("pathLinePrefab이 설정되지 않아 경로를 그릴 수 없습니다.");
+            GameLog.Warn("pathLinePrefab이 설정되지 않아 경로를 그릴 수 없습니다.");
             return;
         }
 

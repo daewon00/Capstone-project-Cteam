@@ -70,7 +70,7 @@ public static class MetaEvents
     public static void RaiseCombatVictory(CombatVictoryPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[MetaEvents] CombatVictory: run={payload.RunId} @ {payload.Act}-{payload.Floor}:{payload.NodeIndex}");
+        GameLog.Info($"[MetaEvents] CombatVictory: run={payload.RunId} @ {payload.Act}-{payload.Floor}:{payload.NodeIndex}");
 #endif
         OnCombatVictory?.Invoke(payload);
     }
@@ -78,7 +78,7 @@ public static class MetaEvents
     public static void RaiseRunEnded(RunEndedPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[MetaEvents] RunEnded: run={payload.RunId}, cleared={payload.Cleared}");
+        GameLog.Info($"[MetaEvents] RunEnded: run={payload.RunId}, cleared={payload.Cleared}");
 #endif
         OnRunEnded?.Invoke(payload);
     }
@@ -86,7 +86,7 @@ public static class MetaEvents
     public static void RaiseFloorReached(FloorReachedPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[MetaEvents] FloorReached: run={payload.RunId} @ {payload.Act}-{payload.Floor}");
+        GameLog.Info($"[MetaEvents] FloorReached: run={payload.RunId} @ {payload.Act}-{payload.Floor}");
 #endif
         OnFloorReached?.Invoke(payload);
     }
@@ -94,7 +94,7 @@ public static class MetaEvents
     public static void RaiseGoldChanged(GoldChangedPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[MetaEvents] GoldChanged: run={payload.RunId}, delta={payload.Delta}, after={payload.After}");
+        GameLog.Info($"[MetaEvents] GoldChanged: run={payload.RunId}, delta={payload.Delta}, after={payload.After}");
 #endif
         OnGoldChanged?.Invoke(payload);
     }
@@ -102,7 +102,7 @@ public static class MetaEvents
     public static void RaiseEnemyCardDestroyed(EnemyCardDestroyedPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[MetaEvents] EnemyCardDestroyed: run={payload.RunId}, card={payload.CardId}, inst={payload.InstanceId}");
+        GameLog.Info($"[MetaEvents] EnemyCardDestroyed: run={payload.RunId}, card={payload.CardId}, inst={payload.InstanceId}");
 #endif
         OnEnemyCardDestroyed?.Invoke(payload);
     }
@@ -110,7 +110,7 @@ public static class MetaEvents
     public static void RaiseAchievementUnlocked(AchievementUnlockedPayload payload)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[MetaEvents] AchievementUnlocked: id={payload.AchievementId}, tier={payload.TierIndex}/{payload.TierCount}, final={payload.IsFinalTier}, +{payload.Points}pt");
+        GameLog.Info($"[MetaEvents] AchievementUnlocked: id={payload.AchievementId}, tier={payload.TierIndex}/{payload.TierCount}, final={payload.IsFinalTier}, +{payload.Points}pt");
 #endif
         OnAchievementUnlocked?.Invoke(payload);
     }

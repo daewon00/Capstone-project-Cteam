@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SQLite;
-using UnityEngine; // Unity의 Debug.Log, Application.persistentDataPath 등을 사용하기 위해 필요합니다.
+using UnityEngine; // Unity의 GameLog.Info, Application.persistentDataPath 등을 사용하기 위해 필요합니다.
 using Game.Save;  // \SaveData.cs의 데이터 구조를 사용 선언
 
 /// <summary>
@@ -49,7 +49,7 @@ public sealed class DatabaseManager
 
         // SaveData.cs에 정의된 모든 테이블이 DB에 존재하는지 확인하고, 없으면 생성합니다.
         EnsureSchema();
-        Debug.Log($"[DB] 데이터베이스 연결 성공: {_dbPath}");
+        GameLog.Info($"[DB] 데이터베이스 연결 성공: {_dbPath}");
     }
 
     private void TryPragmaScalar(string sql)
@@ -62,7 +62,7 @@ public sealed class DatabaseManager
         catch (SQLiteException e)
         {
             // 플랫폼/드라이버에 따라 미지원일 수 있으니 경고만 남기고 무시
-            Debug.LogWarning($"[DB] PRAGMA ignored ({sql}): {e.Message}");
+            GameLog.Warn($"[DB] PRAGMA ignored ({sql}): {e.Message}");
         }
     }
 
@@ -119,21 +119,21 @@ public sealed class DatabaseManager
         }
         catch (SQLiteException e)
         {
-            Debug.LogWarning($"[DB] CardRuntimeState 인덱스 생성 경고: {e.Message}");
+            GameLog.Warn($"[DB] CardRuntimeState 인덱스 생성 경고: {e.Message}");
         }
 
         // ==== 무결성/성능 인덱스 및 유니크 제약 ====
         try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_PerkAllocation ON PerkAllocation (ProfileId, PerkId)"); }
-        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_PerkAllocation 생성 경고: {e.Message}"); }
+        catch (SQLiteException e) { GameLog.Warn($"[DB] UX_PerkAllocation 생성 경고: {e.Message}"); }
 
         try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_AchievementProgress ON AchievementProgress (ProfileId, AchievementId)"); }
-        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_AchievementProgress 생성 경고: {e.Message}"); }
+        catch (SQLiteException e) { GameLog.Warn($"[DB] UX_AchievementProgress 생성 경고: {e.Message}"); }
 
         try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_RunPerkSnapshot ON RunPerkSnapshot (RunId, EffectKey)"); }
-        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_RunPerkSnapshot 생성 경고: {e.Message}"); }
+        catch (SQLiteException e) { GameLog.Warn($"[DB] UX_RunPerkSnapshot 생성 경고: {e.Message}"); }
 
         try { _conn.Execute("CREATE UNIQUE INDEX IF NOT EXISTS UX_TutorialProgress_ProfileTutorial ON TutorialProgress (ProfileId, TutorialId)"); }
-        catch (SQLiteException e) { Debug.LogWarning($"[DB] UX_TutorialProgress 생성 경고: {e.Message}"); }
+        catch (SQLiteException e) { GameLog.Warn($"[DB] UX_TutorialProgress 생성 경고: {e.Message}"); }
     }
 
     private void EnsureCurrentRunCompanionColumn()
@@ -146,7 +146,7 @@ public sealed class DatabaseManager
             {
                 _conn.Execute("ALTER TABLE CurrentRun ADD COLUMN CompanionId TEXT NOT NULL DEFAULT '';");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[DB] Added CompanionId column to CurrentRun.");
+                GameLog.Info("[DB] Added CompanionId column to CurrentRun.");
 #endif
             }
 
@@ -154,7 +154,7 @@ public sealed class DatabaseManager
         }
         catch (Exception e)
         {
-            Debug.LogError($"[DB] EnsureCurrentRunCompanionColumn failed: {e.Message}");
+            GameLog.Error($"[DB] EnsureCurrentRunCompanionColumn failed: {e.Message}");
         }
     }
 
@@ -168,13 +168,13 @@ public sealed class DatabaseManager
             {
                 _conn.Execute("ALTER TABLE AchievementProgress ADD COLUMN HighestTierUnlocked INTEGER NOT NULL DEFAULT 0;");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[DB] Added HighestTierUnlocked column to AchievementProgress.");
+                GameLog.Info("[DB] Added HighestTierUnlocked column to AchievementProgress.");
 #endif
             }
         }
         catch (Exception e)
         {
-            Debug.LogError($"[DB] EnsureAchievementProgressTierColumn failed: {e.Message}");
+            GameLog.Error($"[DB] EnsureAchievementProgressTierColumn failed: {e.Message}");
         }
     }
 
@@ -188,13 +188,13 @@ public sealed class DatabaseManager
             {
                 _conn.Execute("ALTER TABLE CurrentRun ADD COLUMN IsTutorialRun INTEGER NOT NULL DEFAULT 0;");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[DB] Added IsTutorialRun column to CurrentRun.");
+                GameLog.Info("[DB] Added IsTutorialRun column to CurrentRun.");
 #endif
             }
         }
         catch (Exception e)
         {
-            Debug.LogError($"[DB] EnsureCurrentRunTutorialColumn failed: {e.Message}");
+            GameLog.Error($"[DB] EnsureCurrentRunTutorialColumn failed: {e.Message}");
         }
     }
 
@@ -210,22 +210,22 @@ public sealed class DatabaseManager
 
             var quoted = _bakPath.Replace("'", "''");
             _conn.Execute($"VACUUM INTO '{quoted}';");   // 일관된 스냅샷 백업
-            Debug.Log($"[DB] 백업 완료(VACUUM INTO): {_bakPath}");
+            GameLog.Info($"[DB] 백업 완료(VACUUM INTO): {_bakPath}");
             return;
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[DB] VACUUM INTO 불가 → File.Copy 폴백: {e.Message}");
+            GameLog.Warn($"[DB] VACUUM INTO 불가 → File.Copy 폴백: {e.Message}");
         }
 
         try
         {
             File.Copy(_dbPath, _bakPath, true);
-            Debug.Log($"[DB] 백업 완료(File.Copy): {_bakPath}");
+            GameLog.Info($"[DB] 백업 완료(File.Copy): {_bakPath}");
         }
         catch (Exception e2)
         {
-            Debug.LogWarning($"[DB] 백업 실패(File.Copy): {e2.Message}");
+            GameLog.Warn($"[DB] 백업 실패(File.Copy): {e2.Message}");
         }
     }
 
@@ -244,7 +244,7 @@ public sealed class DatabaseManager
         catch (Exception e)
         {
             _conn.Rollback();
-            Debug.LogError($"[DB] 트랜잭션 실패: {e.Message}");
+            GameLog.Error($"[DB] 트랜잭션 실패: {e.Message}");
             throw; // 에러를 다시 던져서 호출한 쪽에서 알 수 있게 함
         }
     }
@@ -326,7 +326,7 @@ public sealed class DatabaseManager
             }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             var count = conn.Table<PerkAllocation>().Count(p => p.ProfileId == profileId);
-            Debug.Log($"[DB] ApplyPerkAdjustments committed: profile={profileId}, pointsDelta={pointsDelta}, allocCount={count}");
+            GameLog.Info($"[DB] ApplyPerkAdjustments committed: profile={profileId}, pointsDelta={pointsDelta}, allocCount={count}");
 #endif
         });
         BackupDatabaseAtomic();
@@ -400,7 +400,7 @@ public sealed class DatabaseManager
         });
 
         BackupDatabaseAtomic();
-        Debug.Log($"[DB] 현재 런 삭제 완료: {runId}");
+        GameLog.Info($"[DB] 현재 런 삭제 완료: {runId}");
     }
 
     // 같은 트랜잭션 내에서 합성 호출을 가능하게 하기 위한 내부 헬퍼(별도 Begin/Commit 없음)
@@ -450,7 +450,7 @@ public sealed class DatabaseManager
             // 요약에 사용된 RunId를 기준으로 '이어하기' 데이터를 삭제합니다. (동일 트랜잭션 내에서 처리)
             DeleteCurrentRun_NoTx(conn, summary.RunId);
         });
-        Debug.Log($"[DB] 런 종료 및 요약 저장 완료: {summary.RunId}");
+        GameLog.Info($"[DB] 런 종료 및 요약 저장 완료: {summary.RunId}");
     }
 
     
@@ -472,7 +472,7 @@ public sealed class DatabaseManager
         run.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
 
         _conn.Update(run);
-        Debug.Log($"[DB] 골드 업데이트 완료: {run.Gold}");
+        GameLog.Info($"[DB] 골드 업데이트 완료: {run.Gold}");
     }
 
     /// <summary>
@@ -502,7 +502,7 @@ public sealed class DatabaseManager
             existing.ShopInventoryJson = shopJson;
             _conn.Update(existing);
         }
-        Debug.Log($"[DB] 상점 세션 저장 완료: ({floor}, {index})");
+        GameLog.Info($"[DB] 상점 세션 저장 완료: ({floor}, {index})");
     }
     */
 

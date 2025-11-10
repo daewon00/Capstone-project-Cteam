@@ -48,7 +48,7 @@ public class HandServiceBinder : MonoBehaviour
             _subscribed = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             string spName = _drawSpawnPoint != null ? _drawSpawnPoint.name : "<null>";
-            Debug.Log($"[HandServiceBinder] Initialize: hand={_hand!=null}, deckService={_deckService!=null}, catalog={_cardCatalog!=null}, cardPrefab={_cardPrefab!=null}, spawnPoint={spName}, stagger={_initialDrawStagger:F2}, subscribed={_subscribed}");
+            GameLog.Info($"[HandServiceBinder] Initialize: hand={_hand!=null}, deckService={_deckService!=null}, catalog={_cardCatalog!=null}, cardPrefab={_cardPrefab!=null}, spawnPoint={spName}, stagger={_initialDrawStagger:F2}, subscribed={_subscribed}");
 #endif
         }
     }
@@ -80,12 +80,12 @@ public class HandServiceBinder : MonoBehaviour
             return;
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandServiceBinder] Draw event: count={result.DrawnCards.Count}, reason={result.Reason}, reshuffle={result.DidReshuffle}");
+        GameLog.Info($"[HandServiceBinder] Draw event: count={result.DrawnCards.Count}, reason={result.Reason}, reshuffle={result.DidReshuffle}");
 #endif
 
         if (result.DidReshuffle)
         {
-            Debug.Log("[HandServiceBinder] 리셔플 발생! 셔플 효과를 재생합니다.");
+            GameLog.Info("[HandServiceBinder] 리셔플 발생! 셔플 효과를 재생합니다.");
             // TODO: 시각/청각 효과 트리거 (셔플 애니메이션, 사운드 등)
         }
 
@@ -96,7 +96,7 @@ public class HandServiceBinder : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Vector3 sp = (_drawSpawnPoint != null ? _drawSpawnPoint.position : _hand.transform.position);
             string spName = _drawSpawnPoint != null ? _drawSpawnPoint.name : "<hand.transform>";
-            Debug.Log($"[HandServiceBinder] Initial draw path: spawnPoint={spName} pos={sp}");
+            GameLog.Info($"[HandServiceBinder] Initial draw path: spawnPoint={spName} pos={sp}");
 #endif
             StartCoroutine(SpawnDrawnCardsStaggered(result));
             return;
@@ -156,12 +156,12 @@ public class HandServiceBinder : MonoBehaviour
         var so = _cardCatalog.GetCardData(state.CardId);
         if (so == null)
         {
-            Debug.LogError($"[HandServiceBinder] CardId({state.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다!");
+            GameLog.Error($"[HandServiceBinder] CardId({state.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다!");
             return;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandServiceBinder] Spawn view: instance={state.InstanceId}, cardId={state.CardId}");
+        GameLog.Info($"[HandServiceBinder] Spawn view: instance={state.InstanceId}, cardId={state.CardId}");
 #endif
 
         // 풀에서 가져오거나 새로 생성합니다.
@@ -177,11 +177,11 @@ public class HandServiceBinder : MonoBehaviour
         // 스폰 위치와 목표(핸드 인덱스) 위치 비교 로그
         int idx = newCard.handPosition;
         Vector3 target = (idx >= 0 && idx < _hand.cardPositions.Count) ? _hand.cardPositions[idx] : new Vector3(float.NaN, float.NaN, float.NaN);
-        Debug.Log($"[HandServiceBinder] SpawnAndRegister: instance={state.InstanceId}, spawnPos={immediateSpawnAt}, targetPos={target}, handIndex={idx}");
+        GameLog.Info($"[HandServiceBinder] SpawnAndRegister: instance={state.InstanceId}, spawnPos={immediateSpawnAt}, targetPos={target}, handIndex={idx}");
 #endif
         if (_viewsById.ContainsKey(state.InstanceId))
         {
-            Debug.LogWarning($"[HandServiceBinder] Duplicate view mapping for instance={state.InstanceId}. Overwriting.");
+            GameLog.Warn($"[HandServiceBinder] Duplicate view mapping for instance={state.InstanceId}. Overwriting.");
             _viewsById[state.InstanceId] = newCard;
         }
         else
@@ -189,7 +189,7 @@ public class HandServiceBinder : MonoBehaviour
             _viewsById.Add(state.InstanceId, newCard);
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandServiceBinder] View registered: go={newCard.name}, parent={(newCard.transform.parent!=null?newCard.transform.parent.name:"<none>")}, active={newCard.gameObject.activeSelf}, layer={newCard.gameObject.layer}, handCount={_hand.heldCards?.Count}");
+        GameLog.Info($"[HandServiceBinder] View registered: go={newCard.name}, parent={(newCard.transform.parent!=null?newCard.transform.parent.name:"<none>")}, active={newCard.gameObject.activeSelf}, layer={newCard.gameObject.layer}, handCount={_hand.heldCards?.Count}");
 #endif
         GameEvents.RaiseCardDrawn(newCard);
         BattleDeckRuntimeSync.UpdateCardState(newCard);
@@ -221,14 +221,14 @@ public class HandServiceBinder : MonoBehaviour
             }
             if (view == null)
             {
-                Debug.LogWarning($"[HandServiceBinder] OnCardPlayed: view 매핑을 찾지 못했습니다. InstanceId={result.PlayedInstanceId}");
+                GameLog.Warn($"[HandServiceBinder] OnCardPlayed: view 매핑을 찾지 못했습니다. InstanceId={result.PlayedInstanceId}");
                 return;
             }
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         bool wasAssigned = view != null && view.assignedPlace != null;
-        Debug.Log($"[HandServiceBinder] OnCardPlayed: id={result.PlayedInstanceId}, viewFound={view!=null}, assignedPlace={wasAssigned}");
+        GameLog.Info($"[HandServiceBinder] OnCardPlayed: id={result.PlayedInstanceId}, viewFound={view!=null}, assignedPlace={wasAssigned}");
 #endif
 
         // 3) 뷰 제거를 수행합니다.
@@ -237,13 +237,13 @@ public class HandServiceBinder : MonoBehaviour
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             int before = _hand.heldCards != null ? _hand.heldCards.Count : -1;
-            Debug.Log($"[HandServiceBinder] Removing from hand: instance={result.PlayedInstanceId}, beforeCount={before}, viewGo={view.name}");
+            GameLog.Info($"[HandServiceBinder] Removing from hand: instance={result.PlayedInstanceId}, beforeCount={before}, viewGo={view.name}");
 #endif
             _hand.RemoveCardFromHand(view);
             _hand.SetCardPositionsInHand();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             int after = _hand.heldCards != null ? _hand.heldCards.Count : -1;
-            Debug.Log($"[HandServiceBinder] Removed from hand: instance={result.PlayedInstanceId}, afterCount={after}");
+            GameLog.Info($"[HandServiceBinder] Removed from hand: instance={result.PlayedInstanceId}, afterCount={after}");
 #endif
         }
 
@@ -252,14 +252,14 @@ public class HandServiceBinder : MonoBehaviour
         {
             // 보드에 남겨둔다(카드 뷰는 배치 로직에서 부모/위치가 설정됨)
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HandServiceBinder] Action: keep-on-board (no pooling) for {result.PlayedInstanceId}");
+            GameLog.Info($"[HandServiceBinder] Action: keep-on-board (no pooling) for {result.PlayedInstanceId}");
 #endif
         }
         else
         {
             ReleaseToPool(view);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HandServiceBinder] Action: release-to-pool for {result.PlayedInstanceId}");
+            GameLog.Info($"[HandServiceBinder] Action: release-to-pool for {result.PlayedInstanceId}");
 #endif
         }
     }
@@ -306,7 +306,7 @@ public class HandServiceBinder : MonoBehaviour
         _iconDatabase = Resources.Load<EffectIconDatabase>("Cards/EffectIconDatabase");
         if (_iconDatabase == null)
         {
-            Debug.LogWarning("[HandServiceBinder] EffectIconDatabase를 찾을 수 없습니다. 아이콘이 표시되지 않습니다.");
+            GameLog.Warn("[HandServiceBinder] EffectIconDatabase를 찾을 수 없습니다. 아이콘이 표시되지 않습니다.");
         }
         else
         {

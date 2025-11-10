@@ -54,20 +54,20 @@ public class DeckService : IDeckService
         {
             _runtimeDeck = existingCards;
             BuildInternalCache(_runtimeDeck);
-            Debug.Log($"[DeckService] 런({_currentRunId}) 덱 런타임 상태 로드 완료: {_runtimeDeck.Count}장");
+            GameLog.Info($"[DeckService] 런({_currentRunId}) 덱 런타임 상태 로드 완료: {_runtimeDeck.Count}장");
             // 초기 카운트 방송으로 UI가 정확히 시작하도록 보장
             OnPileCountsChanged?.Invoke(GetPileCounts());
             return;
         }
 
         // 2) 백필: 구버전 CardInDeck → CardRuntimeState
-        Debug.LogWarning("[DeckService] 런타임 상태가 없어 구버전 덱(CardInDeck)에서 백필을 진행합니다.");
+        GameLog.Warn("[DeckService] 런타임 상태가 없어 구버전 덱(CardInDeck)에서 백필을 진행합니다.");
 
         var runLoad = _db.LoadCurrentRun(_currentRunId);
         var legacy = runLoad?.Cards;
         if (legacy == null || legacy.Count == 0)
         {
-            Debug.Log("[DeckService] 백필할 구버전 덱 데이터가 없습니다. 빈 덱으로 시작합니다.");
+            GameLog.Info("[DeckService] 백필할 구버전 덱 데이터가 없습니다. 빈 덱으로 시작합니다.");
             return;
         }
 
@@ -77,7 +77,7 @@ public class DeckService : IDeckService
         {
             if (!dupCheck.Add(row.InstanceId))
             {
-                Debug.LogError($"[DeckService] 백필 입력에 중복 InstanceId: {row.InstanceId}");
+                GameLog.Error($"[DeckService] 백필 입력에 중복 InstanceId: {row.InstanceId}");
             }
         }
 #endif
@@ -109,7 +109,7 @@ public class DeckService : IDeckService
         _db.UpsertCardRuntimeStates(_currentRunId, newDeck);
         _runtimeDeck = newDeck;
         BuildInternalCache(_runtimeDeck);
-        Debug.Log($"[DeckService] 백필 완료: {_runtimeDeck.Count}장");
+        GameLog.Info($"[DeckService] 백필 완료: {_runtimeDeck.Count}장");
         // 초기 카운트를 방송해 UI가 싱크되도록 합니다.
         OnPileCountsChanged?.Invoke(GetPileCounts());
     }
@@ -198,7 +198,7 @@ public class DeckService : IDeckService
         PersistAndBroadcast();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         var counts = GetCurrentPileCounts();
-        Debug.Log($"[DeckService] PrepareNewCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
+        GameLog.Info($"[DeckService] PrepareNewCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
 #endif
     }
 
@@ -223,7 +223,7 @@ public class DeckService : IDeckService
         PersistAndBroadcast();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         var counts = GetCurrentPileCounts();
-        Debug.Log($"[DeckService] CleanupAfterCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
+        GameLog.Info($"[DeckService] CleanupAfterCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
 #endif
     }
 
@@ -233,7 +233,7 @@ public class DeckService : IDeckService
         if (catalog == null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[DeckService] RemoveTemporaryCards: ICardCatalog를 찾을 수 없어 정리를 건너뜁니다.");
+            GameLog.Warn("[DeckService] RemoveTemporaryCards: ICardCatalog를 찾을 수 없어 정리를 건너뜁니다.");
 #endif
             return;
         }
@@ -261,7 +261,7 @@ public class DeckService : IDeckService
         SortAllPiles();
         RecomputeNextOrderInPiles();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[DeckService] RemoveTemporaryCards: {toRemove.Count}장 제거 완료");
+        GameLog.Info($"[DeckService] RemoveTemporaryCards: {toRemove.Count}장 제거 완료");
 #endif
     }
 
@@ -273,7 +273,7 @@ public class DeckService : IDeckService
         EnsureInitialized();
         var result = new PlayResult { PlayedInstanceId = instanceId };
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[DeckService] PlayCard request: id={instanceId}");
+        GameLog.Info($"[DeckService] PlayCard request: id={instanceId}");
 #endif
 
         if (string.IsNullOrEmpty(instanceId) || !_handIds.Contains(instanceId))
@@ -291,7 +291,7 @@ public class DeckService : IDeckService
         PersistAndBroadcast(playedResult: result);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         var counts = GetCurrentPileCounts();
-        Debug.Log($"[DeckService] PlayCard done: id={instanceId}, counts: draw={counts.Draw}, hand={counts.Hand}, discard={counts.Discard}, exhaust={counts.Exhaust}");
+        GameLog.Info($"[DeckService] PlayCard done: id={instanceId}, counts: draw={counts.Draw}, hand={counts.Hand}, discard={counts.Discard}, exhaust={counts.Exhaust}");
 #endif
         return result;
     }
@@ -341,7 +341,7 @@ public class DeckService : IDeckService
 
         // 스냅샷을 저장하고 변경 사항을 방송합니다.
         PersistAndBroadcast();
-        Debug.Log($"[DeckService] Card '{cardId}' added to deck (DiscardPile). counts={GetPileCounts().Discard}");
+        GameLog.Info($"[DeckService] Card '{cardId}' added to deck (DiscardPile). counts={GetPileCounts().Discard}");
     }
 
     public bool RemoveCardFromRun(string instanceId)
@@ -371,7 +371,7 @@ public class DeckService : IDeckService
 
         // 4) 변경 사항 저장 및 방송
         PersistAndBroadcast();
-        Debug.Log($"[DeckService] RemoveCardFromRun: instance={instanceId} removed from run deck.");
+        GameLog.Info($"[DeckService] RemoveCardFromRun: instance={instanceId} removed from run deck.");
         return true;
     }
 
@@ -443,7 +443,7 @@ public class DeckService : IDeckService
         {
             if (string.IsNullOrEmpty(state.cardId))
             {
-                Debug.LogWarning("[DeckService] UpdateBattleCardState: cardId missing for new instance; ignored.");
+                GameLog.Warn("[DeckService] UpdateBattleCardState: cardId missing for new instance; ignored.");
                 return;
             }
 
@@ -495,7 +495,7 @@ public class DeckService : IDeckService
         EnsureInitialized();
         if (string.IsNullOrEmpty(targetCardId))
         {
-            Debug.LogWarning("[DeckService] TransformCards 호출 시 targetCardId가 비어 있습니다.");
+            GameLog.Warn("[DeckService] TransformCards 호출 시 targetCardId가 비어 있습니다.");
             return 0;
         }
         if (count <= 0) return 0;
@@ -508,7 +508,7 @@ public class DeckService : IDeckService
 
         if (candidateIds.Count == 0)
         {
-            Debug.Log("[DeckService] TransformCards 후보 카드가 없습니다.");
+            GameLog.Info("[DeckService] TransformCards 후보 카드가 없습니다.");
             return 0;
         }
 
@@ -530,7 +530,7 @@ public class DeckService : IDeckService
         if (transformed > 0)
         {
             PersistAndBroadcast();
-            Debug.Log($"[DeckService] TransformCards → {transformed}장 변환 대상 카드ID='{targetCardId}' (upgrade flag={upgrade})");
+            GameLog.Info($"[DeckService] TransformCards → {transformed}장 변환 대상 카드ID='{targetCardId}' (upgrade flag={upgrade})");
         }
 
         return transformed;
@@ -629,7 +629,7 @@ public class DeckService : IDeckService
 
         GetPileList(to).Add(instanceId);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[DeckService] MoveCard instance={instanceId} -> {to}");
+        GameLog.Info($"[DeckService] MoveCard instance={instanceId} -> {to}");
 #endif
     }
 
@@ -643,7 +643,7 @@ public class DeckService : IDeckService
         }
         catch (Exception e)
         {
-            Debug.LogError($"[DeckService] DB 상태 저장 실패: {e.Message}");
+            GameLog.Error($"[DeckService] DB 상태 저장 실패: {e.Message}");
             throw;
         }
 
@@ -677,7 +677,7 @@ public class DeckService : IDeckService
             case CardLocation.PlayerField: return _playerFieldIds;
             case CardLocation.EnemyField: return _enemyFieldIds;
             default:
-                Debug.LogWarning($"[DeckService] 알 수 없는 CardLocation: {loc}");
+                GameLog.Warn($"[DeckService] 알 수 없는 CardLocation: {loc}");
                 return _drawPileIds;
         }
     }

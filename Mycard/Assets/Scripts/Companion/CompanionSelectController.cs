@@ -55,9 +55,16 @@ public class CompanionSelectController : MonoBehaviour
         int initialIndex = 0;
         if (_all != null && _all.Length > 0)
         {
-            var previouslySelectedId = GameContext.I != null
-                ? GameContext.I.SelectedCompanionId
-                : PlayerPrefs.GetString("selectedCompanionId", string.Empty);
+            string previouslySelectedId = string.Empty;
+            if (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.SelectedCompanionId))
+            {
+                previouslySelectedId = GameContext.I.SelectedCompanionId;
+            }
+            else
+            {
+                previouslySelectedId = PlayerPrefs.GetString("selectedCompanionId",
+                    PlayerPrefs.GetString("preferredCompanionId", string.Empty));
+            }
 
             if (!string.IsNullOrEmpty(previouslySelectedId))
             {
@@ -120,6 +127,8 @@ public class CompanionSelectController : MonoBehaviour
         {
             GameContext.I.SelectedCompanionId = data.CompanionId;
         }
+        PlayerPrefs.SetString("preferredCompanionId", data.CompanionId);
+        PlayerPrefs.Save();
         if (_allowTutorialSelectionReport)
         {
             ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, $"companion-select:{data.CompanionId}");
@@ -204,7 +213,7 @@ public class CompanionSelectController : MonoBehaviour
     {
         if (_selected == null)
         {
-            Debug.LogWarning("[CompanionSelect] Detail button pressed without an active selection.");
+            GameLog.Warn("[CompanionSelect] Detail button pressed without an active selection.");
             return;
         }
 
@@ -213,21 +222,21 @@ public class CompanionSelectController : MonoBehaviour
             ? "추가 설명이 아직 준비되지 않았습니다."
             : _selected.Description;
 
-        Debug.Log($"[CompanionSelect] Detail\n{summary}\n{description}");
+        GameLog.Info($"[CompanionSelect] Detail\n{summary}\n{description}");
     }
 
     void OnClickDeck()
     {
         if (_selected == null)
         {
-            Debug.LogWarning("[CompanionSelect] Deck button pressed without an active selection.");
+            GameLog.Warn("[CompanionSelect] Deck button pressed without an active selection.");
             return;
         }
 
         EnsureDeckUiReferences();
         if (deckOverlay == null)
         {
-            Debug.LogWarning("[CompanionSelect] DeckOverlayController를 찾지 못했습니다. Scene에 DeckOverlay 프리팹이 배치되어 있는지 확인하세요.");
+            GameLog.Warn("[CompanionSelect] DeckOverlayController를 찾지 못했습니다. Scene에 DeckOverlay 프리팹이 배치되어 있는지 확인하세요.");
             return;
         }
 
@@ -253,7 +262,7 @@ public class CompanionSelectController : MonoBehaviour
     {
         if (_selected == null)
         {
-            Debug.LogWarning("[CompanionSelect] BeginNewRun called without a selected companion.");
+            GameLog.Warn("[CompanionSelect] BeginNewRun called without a selected companion.");
             return;
         }
 
@@ -315,7 +324,7 @@ public class CompanionSelectController : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"[CompanionSelect] Starting deck is empty for companion {_selected.CompanionId}. 런이 비어 있는 덱으로 시작합니다.");
+                GameLog.Warn($"[CompanionSelect] Starting deck is empty for companion {_selected.CompanionId}. 런이 비어 있는 덱으로 시작합니다.");
             }
 
             var relics = _selected.StartingRelicIds
@@ -374,12 +383,12 @@ public class CompanionSelectController : MonoBehaviour
                 var em = new EventManager(db, runId);
                 ServiceRegistry.Register<IEventManager>(em);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[BossFlow][CompanionSelect] Registered IEventManager for runId='{runId}'");
+                GameLog.Info($"[BossFlow][CompanionSelect] Registered IEventManager for runId='{runId}'");
 #endif
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[CompanionSelect] EventManager registration failed: {e.Message}");
+                GameLog.Warn($"[CompanionSelect] EventManager registration failed: {e.Message}");
             }
 
             if (GameContext.I != null)
@@ -397,14 +406,14 @@ public class CompanionSelectController : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[CompanionSelect] Failed to persist currentBattleKind: {e.Message}");
+                GameLog.Warn($"[CompanionSelect] Failed to persist currentBattleKind: {e.Message}");
             }
 
             SceneManager.LoadScene(battleSceneToLoad);
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[CompanionSelect] Failed to start new run: {e.Message}");
+            GameLog.Error($"[CompanionSelect] Failed to start new run: {e.Message}");
             if (startButton != null)
             {
                 startButton.interactable = true;
@@ -549,7 +558,7 @@ public class CompanionSelectController : MonoBehaviour
             catch (Exception e)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[CompanionSelect] Failed to seed RNG domain '{domain}': {e.Message}");
+                GameLog.Warn($"[CompanionSelect] Failed to seed RNG domain '{domain}': {e.Message}");
 #endif
             }
         }

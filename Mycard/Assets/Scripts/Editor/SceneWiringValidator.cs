@@ -25,13 +25,13 @@ public static class SceneWiringValidator
         {
             if (!File.Exists(BattleScenePath))
             {
-                Debug.LogError($"[검증 실패] 배틀 씬 경로를 찾을 수 없습니다: {BattleScenePath}");
+                GameLog.Error($"[검증 실패] 배틀 씬 경로를 찾을 수 없습니다: {BattleScenePath}");
                 return;
             }
             EditorSceneManager.OpenScene(BattleScenePath, OpenSceneMode.Single);
             bool ok = RunChecks();
-            if (ok) Debug.Log("✅ Battle Scene 검증 성공");
-            else Debug.LogWarning("❌ Battle Scene 검증 실패 — Console 로그를 확인하세요.");
+            if (ok) GameLog.Info("✅ Battle Scene 검증 성공");
+            else GameLog.Warn("❌ Battle Scene 검증 실패 — Console 로그를 확인하세요.");
         }
         finally
         {
@@ -97,7 +97,7 @@ public static class SceneWiringValidator
     /// </summary>
     private static bool Assert(bool cond, string msg, Object ctx = null)
     {
-        if (!cond) Debug.LogError($"[씬 연결 검증 실패] {msg}", ctx);
+        if (!cond) GameLog.Error($"[씬 연결 검증 실패] {msg}", ctx);
         return cond;
     }
 }

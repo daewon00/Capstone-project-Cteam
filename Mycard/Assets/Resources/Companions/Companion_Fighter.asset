@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e4e51ebb68bed044857706078ea19bc, type: 3}
+  m_Name: Companion_Fighter
+  m_EditorClassIdentifier: 
+  CompanionId: COMP_Fighter
+  DisplayName: "\uACA9\uD22C\uAC00"
+  Description: "\uAC15\uB825\uD55C \uACF5\uACA9\uB825\uC744 \uAC00\uC9C4 \uB3D9\uB8CC"
+  Portrait: {fileID: 21300000, guid: c3bd35fb33626e84eab7876a8891746b, type: 3}
+  StartingCardIds:
+  - CARD_VENOM_ASSASSIN
+  - CARD_BERSERKER
+  - CARD_THORN_WALL
+  - CARD_SWIFT_SCOUT
+  - CARD_BANNER_BEARER
+  - CARD_THORN_SENTINEL
+  StartingRelicIds: []
+  StartingPotionIds: []
+  MaxHpBonus: 20
+  GoldBonus: 0
+  EnergyMaxBonus: 0

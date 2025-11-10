@@ -8,13 +8,13 @@ public class WarBannerRelic : Relic
     
     public override int ModifyPlayerAttack(int baseAttack)
     {
-        // Ω∫≈√¥Á +1
+        // √¥ +1
         return baseAttack + Stacks;
     }
 
     public override void OnAdd()
     {
-        Debug.Log($"[Relic] {Data.displayName} »πµÊ. Ω∫≈√: {Stacks}");
+        GameLog.Info($"[Relic] {Data.displayName} »π. : {Stacks}");
     }
 
 }

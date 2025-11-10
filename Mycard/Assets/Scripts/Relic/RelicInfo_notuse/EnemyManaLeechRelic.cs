@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class EnemyManaLeechRelic : Relic
 {
-    // Áö±Ý±îÁö Àû¿ëÇÑ ÃÑ °¨¼Ò·®(½ºÅÃ º¯È­/Á¦°Å ´ëÀÀ)
+    // Ý±   Ò·( È­/ )
     private int applied = 0;
 
     public EnemyManaLeechRelic(RelicData data) : base(data) { }
@@ -19,12 +19,12 @@ public class EnemyManaLeechRelic : Relic
 
         if (applied != 0)
         {
-            // ¿øº¹
+            // 
             bc.currentEnemyMaxMana = Mathf.Max(0, bc.enemyMana + applied);
             bc.enemymaxMana = Mathf.Max(0, bc.enemymaxMana + applied);
             bc.startingEnemeyMana = Mathf.Max(0, bc.startingEnemeyMana + applied);
             applied = 0;
-            Debug.Log($"[Relic] {Data.displayName} Á¦°Å ¡æ enemymaxMana/startingEnemeyMana º¹±¸");
+            GameLog.Info($"[Relic] {Data.displayName}   enemymaxMana/startingEnemeyMana ");
         }
     }
 
@@ -33,18 +33,18 @@ public class EnemyManaLeechRelic : Relic
         var bc = BattleController.instance;
         if (bc == null) return;
 
-        // ¸ñÇ¥ °¨¼Ò·® = ½ºÅÃ ¼ö(½ºÅÃ´ç -1)
+        // Ç¥ Ò· =  (Ã´ -1)
         int target = Mathf.Max(0, Stacks);
-        int delta = target - applied;   // (+¸é ´õ ³·Ãã, -¸é ÀÏºÎ º¹±¸)
+        int delta = target - applied;   // (+  , - Ïº )
         if (delta == 0) return;
 
-        // µÎ ¼öÄ¡¸¦ µ¿ÀÏÇÑ ¾ç¸¸Å­ Á¶Á¤
+        //  Ä¡  ç¸¸Å­ 
         bc.enemymaxMana = Mathf.Max(0, bc.enemymaxMana - delta);
         bc.startingEnemeyMana = Mathf.Max(0, bc.startingEnemeyMana - delta);
         bc.currentEnemyMaxMana = Mathf.Max(0, bc.enemyMana - delta);
 
         applied = target;
 
-        Debug.Log($"[Relic] {Data.displayName} Àû¿ë: enemymaxMana={bc.enemymaxMana}, startingEnemeyMana={bc.startingEnemeyMana} (½ºÅÃ={Stacks})");
+        GameLog.Info($"[Relic] {Data.displayName} : enemymaxMana={bc.enemymaxMana}, startingEnemeyMana={bc.startingEnemeyMana} (={Stacks})");
     }
 }

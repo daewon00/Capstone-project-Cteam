@@ -150,7 +150,7 @@ public partial class ShopUI : MonoBehaviour
         string cardId = null;
         if (isCardSlot && !TryResolveCardId(in vm, out cardId))
         {
-            Debug.LogWarning($"[ShopUI] 카드 ID 확인 실패: slot={index}, title={vm.title}", this);
+            GameLog.Warn($"[ShopUI] 카드 ID 확인 실패: slot={index}, title={vm.title}", this);
             return;
         }
 
@@ -158,14 +158,14 @@ public partial class ShopUI : MonoBehaviour
         {
             if (string.IsNullOrEmpty(vm.itemId))
             {
-                Debug.LogError($"[ShopUI] 유물 ID가 비어 있어 구매를 취소합니다. slot={index}", this);
+                GameLog.Error($"[ShopUI] 유물 ID가 비어 있어 구매를 취소합니다. slot={index}", this);
                 RefreshViews();
                 return;
             }
 
             if (RelicSystem.Instance == null)
             {
-                Debug.LogError("[ShopUI] RelicSystem 인스턴스를 찾을 수 없어 유물 구매를 취소합니다.", this);
+                GameLog.Error("[ShopUI] RelicSystem 인스턴스를 찾을 수 없어 유물 구매를 취소합니다.", this);
                 RefreshViews();
                 RefreshTopbar();
                 return;
@@ -173,7 +173,7 @@ public partial class ShopUI : MonoBehaviour
 
             if (RelicSystem.Instance.HasRelic(vm.itemId))
             {
-                Debug.LogWarning($"[ShopUI] 이미 보유 중인 유물입니다: relicId={vm.itemId}. 구매를 차단합니다.", this);
+                GameLog.Warn($"[ShopUI] 이미 보유 중인 유물입니다: relicId={vm.itemId}. 구매를 차단합니다.", this);
                 RefreshViews();
                 RefreshTopbar();
                 return;
@@ -182,7 +182,7 @@ public partial class ShopUI : MonoBehaviour
 
         if (!TrySpendGold(cost))
         {
-            Debug.LogWarning($"[ShopUI] 골드 차감 실패: cost={cost}", this);
+            GameLog.Warn($"[ShopUI] 골드 차감 실패: cost={cost}", this);
             RefreshTopbar();
             return;
         }
@@ -193,7 +193,7 @@ public partial class ShopUI : MonoBehaviour
         {
             if (TryAddCardToDeck == null)
             {
-                Debug.LogError($"[ShopUI] 덱 서비스가 연결되지 않아 카드 구매를 취소합니다. cardId={cardId ?? "<null>"}", this);
+                GameLog.Error($"[ShopUI] 덱 서비스가 연결되지 않아 카드 구매를 취소합니다. cardId={cardId ?? "<null>"}", this);
                 RefundGold(cost);
                 RefreshTopbar();
                 return;
@@ -201,7 +201,7 @@ public partial class ShopUI : MonoBehaviour
 
             if (string.IsNullOrEmpty(cardId) || !TryAddCardToDeck(cardId))
             {
-                Debug.LogError($"[ShopUI] 카드 추가 실패: cardId={cardId ?? "<null>"}, slot={index}", this);
+                GameLog.Error($"[ShopUI] 카드 추가 실패: cardId={cardId ?? "<null>"}, slot={index}", this);
                 RefundGold(cost);
                 RefreshTopbar();
                 return;
@@ -213,7 +213,7 @@ public partial class ShopUI : MonoBehaviour
         {
             if (!RelicSystem.Instance.AddRelicById(vm.itemId))
             {
-                Debug.LogError($"[ShopUI] 유물 추가 실패: relicId={vm.itemId}, slot={index}", this);
+                GameLog.Error($"[ShopUI] 유물 추가 실패: relicId={vm.itemId}, slot={index}", this);
                 RefundGold(cost);
                 RefreshTopbar();
                 return;

@@ -383,7 +383,7 @@ partial class TutorialDimmer
     private void D(string msg)
     {
         if (!enableDebugLogs) return;
-        Debug.Log($"[TutorialDimmer] {msg}", this);
+        GameLog.Info($"[TutorialDimmer] {msg}", this);
     }
 }
 #endif

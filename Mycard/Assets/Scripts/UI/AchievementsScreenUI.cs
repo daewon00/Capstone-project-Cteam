@@ -79,7 +79,7 @@ public class AchievementsScreenUI : MonoBehaviour
         EnsureInitialized();
         if (slotsContainer == null || slotPrefab == null)
         {
-            Debug.LogWarning("[AchievementsScreenUI] Missing bindings");
+            GameLog.Warn("[AchievementsScreenUI] Missing bindings");
             return;
         }
 

@@ -49,14 +49,14 @@ public sealed class CardSortingBinder : MonoBehaviour
             }
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[CardSortingBinder] ApplyOrder order={order}, canvases={canvasCount}, sprites={spriteCount}, name={gameObject.name}", this);
+        GameLog.Info($"[CardSortingBinder] ApplyOrder order={order}, canvases={canvasCount}, sprites={spriteCount}, name={gameObject.name}", this);
 #endif
     }
 
     public void ElevateForDrag(int topOrder)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[CardSortingBinder] ElevateForDrag topOrder={topOrder}, name={gameObject.name}", this);
+        GameLog.Info($"[CardSortingBinder] ElevateForDrag topOrder={topOrder}, name={gameObject.name}", this);
 #endif
         if (!_hasSavedOrder)
         {
@@ -71,7 +71,7 @@ public sealed class CardSortingBinder : MonoBehaviour
         if (_hasSavedOrder)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[CardSortingBinder] RestoreAfterDrag restoring={_savedOrder}, name={gameObject.name}", this);
+            GameLog.Info($"[CardSortingBinder] RestoreAfterDrag restoring={_savedOrder}, name={gameObject.name}", this);
 #endif
             ApplyOrder(_savedOrder);
             _hasSavedOrder = false;

@@ -51,7 +51,7 @@ public class TopBarUI : MonoBehaviour
 
         if (!TryBindWallet())
         {
-            Debug.LogWarning("[TopBarUI] IWalletService를 찾을 수 없습니다. 골드 UI가 비어있을 수 있습니다.");
+            GameLog.Warn("[TopBarUI] IWalletService를 찾을 수 없습니다. 골드 UI가 비어있을 수 있습니다.");
         }
     }
 

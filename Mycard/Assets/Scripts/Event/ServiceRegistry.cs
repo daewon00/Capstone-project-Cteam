@@ -16,7 +16,7 @@ public static class ServiceRegistry
     {
         _services[typeof(T)] = service;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log($"[BossFlow][ServiceRegistry] Register: {typeof(T).Name} => {(service!=null ? "ok" : "null")}");
+        GameLog.Info($"[BossFlow][ServiceRegistry] Register: {typeof(T).Name} => {(service!=null ? "ok" : "null")}");
 #endif
     }
 
@@ -38,7 +38,7 @@ public static class ServiceRegistry
         if (svc == null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogWarning($"[BossFlow][ServiceRegistry] GetRequired FAILED: {typeof(T).Name} not registered.");
+            GameLog.Warn($"[BossFlow][ServiceRegistry] GetRequired FAILED: {typeof(T).Name} not registered.");
 #endif
             throw new InvalidOperationException($"[ServiceRegistry] 필수 서비스인 {typeof(T).Name}가 등록되지 않았습니다.");
         }
@@ -51,7 +51,7 @@ public static class ServiceRegistry
     public static void ClearAll()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        UnityEngine.Debug.Log("[BossFlow][ServiceRegistry] ClearAll called.");
+        GameLog.Info("[BossFlow][ServiceRegistry] ClearAll called.");
 #endif
         _services.Clear();
     }

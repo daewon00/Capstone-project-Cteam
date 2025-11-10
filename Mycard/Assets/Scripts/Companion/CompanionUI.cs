@@ -45,9 +45,9 @@ public class CompanionUI : MonoBehaviour
         var deckService = ServiceRegistry.Get<IDeckService>();
         if (deckService == null)
         {
-            Debug.LogWarning("[CompanionUI] IDeckService를 찾지 못했습니다. 덱 추가는 CompanionSelectController/IDatabase 경로를 사용하세요.");
+            GameLog.Warn("[CompanionUI] IDeckService를 찾지 못했습니다. 덱 추가는 CompanionSelectController/IDatabase 경로를 사용하세요.");
             return;
         }
-        Debug.Log("[CompanionUI] 카드 추가는 신규 경로로 통합되어야 합니다. (예: 보상/상점/동료 선택 로직에서 DB/IDeckService 사용)");
+        GameLog.Info("[CompanionUI] 카드 추가는 신규 경로로 통합되어야 합니다. (예: 보상/상점/동료 선택 로직에서 DB/IDeckService 사용)");
     }
 }

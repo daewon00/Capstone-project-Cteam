@@ -209,7 +209,7 @@ public sealed class EffectDrivenRelic : Relic
                 }
                 break;
             default:
-                Debug.LogWarning($"[EffectDrivenRelic] Persistent effect type {effect.Type} is not supported.");
+                GameLog.Warn($"[EffectDrivenRelic] Persistent effect type {effect.Type} is not supported.");
                 break;
         }
 
@@ -327,7 +327,7 @@ public sealed class EffectDrivenRelic : Relic
             case RelicEffectType.ModifyPlayerManaFlat:
                 return current + amount;
             default:
-                Debug.LogWarning($"[EffectDrivenRelic] Unsupported modifier type {effect.Type} on trigger {effect.Trigger}.");
+                GameLog.Warn($"[EffectDrivenRelic] Unsupported modifier type {effect.Type} on trigger {effect.Trigger}.");
                 return current;
         }
     }
@@ -344,7 +344,7 @@ public sealed class EffectDrivenRelic : Relic
             case RelicEffectType.ModifyCardAttackFlat:
                 return Mathf.Max(0, current + amount);
             default:
-                Debug.LogWarning($"[EffectDrivenRelic] Unsupported card modifier type {effect.Type} on trigger {effect.Trigger}.");
+                GameLog.Warn($"[EffectDrivenRelic] Unsupported card modifier type {effect.Type} on trigger {effect.Trigger}.");
                 return current;
         }
     }
@@ -375,7 +375,7 @@ public sealed class EffectDrivenRelic : Relic
                 var deck = GameServices.Deck;
                 if (deck == null)
                 {
-                    Debug.LogWarning("[EffectDrivenRelic] DrawCards effect requires a registered deck service.");
+                    GameLog.Warn("[EffectDrivenRelic] DrawCards effect requires a registered deck service.");
                     return false;
                 }
                 int count = Mathf.Max(0, effect.ResolveValue(Stacks)); // 스택 기반으로 도출된 카드 수
@@ -389,7 +389,7 @@ public sealed class EffectDrivenRelic : Relic
                 var wallet = ServiceRegistry.Get<IWalletService>();
                 if (wallet == null)
                 {
-                    Debug.LogWarning("[EffectDrivenRelic] GainGold effect requires IWalletService.");
+                    GameLog.Warn("[EffectDrivenRelic] GainGold effect requires IWalletService.");
                     return false;
                 }
                 int gold = effect.ResolveValue(Stacks); // 지급할 골드 양
@@ -471,7 +471,7 @@ public sealed class EffectDrivenRelic : Relic
 
                 return attackApplied;
             default:
-                Debug.LogWarning($"[EffectDrivenRelic] Unsupported triggered effect type {effect.Type} on trigger {effect.Trigger}.");
+                GameLog.Warn($"[EffectDrivenRelic] Unsupported triggered effect type {effect.Type} on trigger {effect.Trigger}.");
                 return false;
         }
     }
@@ -932,7 +932,7 @@ public sealed class EffectDrivenRelic : Relic
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[EffectDrivenRelic] ApplyRunRelicEnergyDelta failed: {e.Message}");
+            GameLog.Warn($"[EffectDrivenRelic] ApplyRunRelicEnergyDelta failed: {e.Message}");
             return false;
         }
 
@@ -959,7 +959,7 @@ public sealed class EffectDrivenRelic : Relic
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[EffectDrivenRelic] ApplyRunRelicHpDelta failed: {e.Message}");
+            GameLog.Warn($"[EffectDrivenRelic] ApplyRunRelicHpDelta failed: {e.Message}");
             return false;
         }
 

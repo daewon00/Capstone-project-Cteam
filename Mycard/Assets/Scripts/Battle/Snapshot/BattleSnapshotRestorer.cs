@@ -14,7 +14,7 @@ public static class BattleSnapshotRestorer
     {
         if (snapshot == null || context == null)
         {
-            Debug.LogWarning("[BattleSnapshotRestorer] Missing snapshot or context");
+            GameLog.Warn("[BattleSnapshotRestorer] Missing snapshot or context");
             return;
         }
 
@@ -25,13 +25,13 @@ public static class BattleSnapshotRestorer
         RestoreRng(snapshot.rngStates, context.RngService);
         context.Battle.MarkRestored();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleSnapshotRestorer] Applied snapshot turn={snapshot.turn?.turnNumber} handCountSnapshot={snapshot.player?.handInstanceIds?.Count ?? 0} playerField={snapshot.playerField?.Count ?? 0} enemyField={snapshot.enemyField?.Count ?? 0} actualHand={(context.Hand!=null ? context.Hand.heldCards.Count : -1)}");
+        GameLog.Info($"[BattleSnapshotRestorer] Applied snapshot turn={snapshot.turn?.turnNumber} handCountSnapshot={snapshot.player?.handInstanceIds?.Count ?? 0} playerField={snapshot.playerField?.Count ?? 0} enemyField={snapshot.enemyField?.Count ?? 0} actualHand={(context.Hand!=null ? context.Hand.heldCards.Count : -1)}");
 #endif
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (context.Hand != null)
         {
             var actual = string.Join(",", context.Hand.heldCards.ConvertAll(c => c != null ? c.GetBattleInstanceId() : "<null>"));
-            Debug.Log($"[BattleSnapshotRestorer] Actual hand instances: {actual}");
+            GameLog.Info($"[BattleSnapshotRestorer] Actual hand instances: {actual}");
         }
 #endif
     }
@@ -66,18 +66,18 @@ public static class BattleSnapshotRestorer
             if (player.handInstanceIds != null && player.handInstanceIds.Count > 0)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[BattleSnapshotRestorer] Restoring hand from snapshot list: {string.Join(",", player.handInstanceIds)}");
+                GameLog.Info($"[BattleSnapshotRestorer] Restoring hand from snapshot list: {string.Join(",", player.handInstanceIds)}");
 #endif
                 foreach (var instanceId in player.handInstanceIds)
                 {
                     var runtime = deckService.GetCardByInstanceId(instanceId);
                     if (runtime == null)
                     {
-                        Debug.LogWarning($"[BattleSnapshotRestorer] Missing runtime for hand card {instanceId}");
+                        GameLog.Warn($"[BattleSnapshotRestorer] Missing runtime for hand card {instanceId}");
                         continue;
                     }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[BattleSnapshotRestorer] Spawning hand card instance={runtime.InstanceId} cardId={runtime.CardId}");
+                    GameLog.Info($"[BattleSnapshotRestorer] Spawning hand card instance={runtime.InstanceId} cardId={runtime.CardId}");
 #endif
                     context.SpawnCardInHand(runtime);
                 }
@@ -110,7 +110,7 @@ public static class BattleSnapshotRestorer
             var runtime = deckService?.GetCardByInstanceId(slot.instanceId);
             if (runtime == null)
             {
-                Debug.LogWarning($"[BattleSnapshotRestorer] Player field restore missing runtime for {slot.instanceId}");
+                GameLog.Warn($"[BattleSnapshotRestorer] Player field restore missing runtime for {slot.instanceId}");
                 continue;
             }
             context.SpawnPlayerFieldCard(slot, runtime);

@@ -58,7 +58,7 @@ public class DeckOverlayController : MonoBehaviour
 
         if (panelRoot == null || cardItemPrefab == null || contentParent == null)
         {
-            Debug.LogError("[DeckOverlay] 필수 참조가 비어있습니다. panelRoot/contentParent/cardItemPrefab 확인", this);
+            GameLog.Error("[DeckOverlay] 필수 참조가 비어있습니다. panelRoot/contentParent/cardItemPrefab 확인", this);
             return false;
         }
 
@@ -106,7 +106,7 @@ public class DeckOverlayController : MonoBehaviour
         }
         catch (System.SystemException e)
         {
-            Debug.LogError($"[DeckOverlay] 덱 로드 실패: {e.Message}");
+            GameLog.Error($"[DeckOverlay] 덱 로드 실패: {e.Message}");
             SetStatus("덱을 불러오지 못했습니다.");
             UpdateDeckCount(0);
             ClearContent();
@@ -213,7 +213,7 @@ public class DeckOverlayController : MonoBehaviour
             var so = _cardCatalog != null ? _cardCatalog.GetCardData(state.CardId) : null;
             if (so == null)
             {
-                Debug.LogWarning($"[DeckOverlay] CardId({state.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다.");
+                GameLog.Warn($"[DeckOverlay] CardId({state.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다.");
             }
             var view = Instantiate(cardItemPrefab, contentParent);
             view.Bind(so, state);
@@ -242,7 +242,7 @@ public class DeckOverlayController : MonoBehaviour
             var so = _cardCatalog != null ? _cardCatalog.GetCardData(entry.CardId) : null;
             if (so == null)
             {
-                Debug.LogWarning($"[DeckOverlay] 프리뷰 카드({entry.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다.");
+                GameLog.Warn($"[DeckOverlay] 프리뷰 카드({entry.CardId})에 대한 CardScriptableObject를 찾을 수 없습니다.");
             }
 
             var view = Instantiate(cardItemPrefab, contentParent);

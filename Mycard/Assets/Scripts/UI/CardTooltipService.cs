@@ -33,7 +33,7 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
             HideAll();
             return;
         }
-        Debug.Log($"[CardTooltipService] Show request for {owner?.name ?? "<null>"} dataDesc={(data.Description ?? "<null>")}");
+        GameLog.Info($"[CardTooltipService] Show request for {owner?.name ?? "<null>"} dataDesc={(data.Description ?? "<null>")}");
 
         _presenter = EnsurePresenter();
         if (_presenter == null)
@@ -199,10 +199,10 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
                 AttachPresenterToCanvas(_presenter);
                 return _presenter;
             }
-            Debug.LogWarning($"[CardTooltipService] Failed to load CardTooltipPresenter at Resources/{presenterResourcePath}");
+            GameLog.Warn($"[CardTooltipService] Failed to load CardTooltipPresenter at Resources/{presenterResourcePath}");
         }
 
-        Debug.LogWarning("[CardTooltipService] CardTooltipPresenter not found. Card press tooltip will be disabled.");
+        GameLog.Warn("[CardTooltipService] CardTooltipPresenter not found. Card press tooltip will be disabled.");
         return null;
     }
 

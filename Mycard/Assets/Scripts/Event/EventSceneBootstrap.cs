@@ -46,13 +46,13 @@ public class EventSceneBootstrap : MonoBehaviour
         if (upgradeSelectionPanel != null && upgradeSelectionPanel.gameObject.scene.IsValid())
         {
             upgradeSelectionPanel.transform.SetAsLastSibling();
-            Debug.Log($"[EventScene] 기존 패널 사용 (active={upgradeSelectionPanel.gameObject.activeSelf})", upgradeSelectionPanel);
+            GameLog.Info($"[EventScene] 기존 패널 사용 (active={upgradeSelectionPanel.gameObject.activeSelf})", upgradeSelectionPanel);
             return upgradeSelectionPanel;
         }
 
         if (upgradeSelectionPanelPrefab == null)
         {
-            Debug.LogError("[EventScene] upgradeSelectionPanelPrefab이 비어 있어 강화 선택 UI를 생성할 수 없습니다.");
+            GameLog.Error("[EventScene] upgradeSelectionPanelPrefab이 비어 있어 강화 선택 UI를 생성할 수 없습니다.");
             return upgradeSelectionPanel;
         }
 
@@ -63,7 +63,7 @@ public class EventSceneBootstrap : MonoBehaviour
         var instance = Instantiate(upgradeSelectionPanelPrefab, parent);
         upgradeSelectionPanel = instance;
         upgradeSelectionPanel.transform.SetAsLastSibling();
-        Debug.Log($"[EventScene] Upgrade panel instantiated under {parent.name} (active={upgradeSelectionPanel.gameObject.activeSelf})", upgradeSelectionPanel);
+        GameLog.Info($"[EventScene] Upgrade panel instantiated under {parent.name} (active={upgradeSelectionPanel.gameObject.activeSelf})", upgradeSelectionPanel);
         return upgradeSelectionPanel;
     }
 
@@ -72,13 +72,13 @@ public class EventSceneBootstrap : MonoBehaviour
         if (upgradeOverlay != null && upgradeOverlay.gameObject.scene.IsValid())
         {
             upgradeOverlay.transform.SetAsLastSibling();
-            Debug.Log($"[EventScene] 기존 오버레이 사용 (active={upgradeOverlay.gameObject.activeSelf})", upgradeOverlay);
+            GameLog.Info($"[EventScene] 기존 오버레이 사용 (active={upgradeOverlay.gameObject.activeSelf})", upgradeOverlay);
             return upgradeOverlay;
         }
 
         if (upgradeOverlayPrefab == null)
         {
-            Debug.LogWarning("[EventScene] upgradeOverlayPrefab이 비어 있어 오버레이를 생성할 수 없습니다.");
+            GameLog.Warn("[EventScene] upgradeOverlayPrefab이 비어 있어 오버레이를 생성할 수 없습니다.");
             return upgradeOverlay;
         }
 
@@ -89,7 +89,7 @@ public class EventSceneBootstrap : MonoBehaviour
         var instance = Instantiate(upgradeOverlayPrefab, parent);
         upgradeOverlay = instance;
         upgradeOverlay.transform.SetAsLastSibling();
-        Debug.Log($"[EventScene] Upgrade overlay instantiated under {parent.name} (active={upgradeOverlay.gameObject.activeSelf})", upgradeOverlay);
+        GameLog.Info($"[EventScene] Upgrade overlay instantiated under {parent.name} (active={upgradeOverlay.gameObject.activeSelf})", upgradeOverlay);
         return upgradeOverlay;
     }
 
@@ -100,7 +100,7 @@ public class EventSceneBootstrap : MonoBehaviour
     {
         if (choiceButtonTemplate == null)
         {
-            Debug.LogError("[EventScene] choiceButtonTemplate이 설정되지 않았습니다.");
+            GameLog.Error("[EventScene] choiceButtonTemplate이 설정되지 않았습니다.");
             return;
         }
 
@@ -122,7 +122,7 @@ public class EventSceneBootstrap : MonoBehaviour
         try { _eventManager = ServiceRegistry.GetRequired<IEventManager>(); }
         catch (System.Exception e)
         {
-            Debug.LogError($"[EventScene] EventManager가 없습니다: {e.Message}");
+            GameLog.Error($"[EventScene] EventManager가 없습니다: {e.Message}");
             SafeGoMap();
             return;
         }
@@ -132,7 +132,7 @@ public class EventSceneBootstrap : MonoBehaviour
         _currentSession = _eventManager.LoadActiveOrCreate(fallbackEventId);
         if (_currentSession == null)
         {
-            Debug.LogError("[EventScene] 세션을 불러올 수 없습니다.");
+            GameLog.Error("[EventScene] 세션을 불러올 수 없습니다.");
             SafeGoMap();
             return;
         }
@@ -140,7 +140,7 @@ public class EventSceneBootstrap : MonoBehaviour
         // ★ 예외 처리: 이미 해결된 이벤트라면 즉시 맵으로 복귀합니다.
         if (_currentSession.resolved)
         {
-            Debug.LogWarning("[EventScene] 이미 해결된 이벤트 세션입니다. 맵으로 복귀합니다.");
+            GameLog.Warn("[EventScene] 이미 해결된 이벤트 세션입니다. 맵으로 복귀합니다.");
             SafeGoMap();
             return;
         }
@@ -158,7 +158,7 @@ public class EventSceneBootstrap : MonoBehaviour
 
         // 1. 설명 텍스트를 채웁니다.
         descriptionText.text = _currentSession.description ?? "";
-        Debug.Log($"[EventScene] Stage '{_currentSession.stageId}' 로딩 (choices={_currentSession.choices?.Length ?? 0})");
+        GameLog.Info($"[EventScene] Stage '{_currentSession.stageId}' 로딩 (choices={_currentSession.choices?.Length ?? 0})");
         ClearChoiceButtons();
 
         if (!string.Equals(_lastAutoSelectionStageId, _currentSession.stageId, StringComparison.Ordinal))
@@ -170,7 +170,7 @@ public class EventSceneBootstrap : MonoBehaviour
         var choices = _currentSession.choices;
         if (choices == null || choices.Length == 0)
         {
-            Debug.LogWarning("[EventScene] 선택지가 없는 이벤트 세션입니다. 맵으로 복귀합니다.");
+            GameLog.Warn("[EventScene] 선택지가 없는 이벤트 세션입니다. 맵으로 복귀합니다.");
             SafeGoMap();
             return;
         }
@@ -209,7 +209,7 @@ public class EventSceneBootstrap : MonoBehaviour
     /// </summary>
     private void OnChoicePicked(EventChoiceDTO choice)
     {
-        Debug.Log($"[EventScene] OnChoicePicked choiceId={choice?.id}", this);
+        GameLog.Info($"[EventScene] OnChoicePicked choiceId={choice?.id}", this);
         if (_isResolving) return; // 중복 클릭 방지
         _isResolving = true;
 
@@ -222,7 +222,7 @@ public class EventSceneBootstrap : MonoBehaviour
         }
 
         var shouldReturn = _eventManager.ApplyChoice(_currentSession, choice);
-        Debug.Log($"[EventScene] ApplyChoice result shouldReturn={shouldReturn}", this);
+        GameLog.Info($"[EventScene] ApplyChoice result shouldReturn={shouldReturn}", this);
 
         if (shouldReturn)
         {
@@ -235,14 +235,14 @@ public class EventSceneBootstrap : MonoBehaviour
         if (activeSession != null)
         {
             _currentSession = activeSession;
-            Debug.Log("[EventScene] ReturnToMap 효과가 없어 이벤트 씬을 유지합니다. 선택지를 갱신합니다.");
+            GameLog.Info("[EventScene] ReturnToMap 효과가 없어 이벤트 씬을 유지합니다. 선택지를 갱신합니다.");
             BindUI();
             _isResolving = false;
             return;
         }
         else
         {
-            Debug.LogWarning("[EventScene] 활성 이벤트 세션이 없어 맵으로 복귀합니다.");
+            GameLog.Warn("[EventScene] 활성 이벤트 세션이 없어 맵으로 복귀합니다.");
             SafeGoMap();
             return;
         }
@@ -289,7 +289,7 @@ public class EventSceneBootstrap : MonoBehaviour
         if (!string.IsNullOrEmpty(mapSceneName))
             SceneManager.LoadScene(mapSceneName);
         else
-            Debug.LogError("[EventScene] mapSceneName이 비어있어 씬 전환이 불가합니다.");
+            GameLog.Error("[EventScene] mapSceneName이 비어있어 씬 전환이 불가합니다.");
     }
 
     /// <summary>
@@ -335,17 +335,17 @@ public class EventSceneBootstrap : MonoBehaviour
     private Button CreateChoiceButton(EventChoiceDTO choice, int index)
     {
         var mode = GetSelectionMode(choice);
-        Debug.Log($"[EventScene] CreateChoiceButton {choice?.id} mode={mode}", this);
+        GameLog.Info($"[EventScene] CreateChoiceButton {choice?.id} mode={mode}", this);
         if (choiceButtonTemplate == null)
         {
-            Debug.LogError("[EventScene] choiceButtonTemplate이 설정되어 있지 않아 선택지를 생성할 수 없습니다.");
+            GameLog.Error("[EventScene] choiceButtonTemplate이 설정되어 있지 않아 선택지를 생성할 수 없습니다.");
             return null;
         }
 
         var parent = choicesParent != null ? choicesParent : choiceButtonTemplate.transform.parent as RectTransform;
         if (parent == null)
         {
-            Debug.LogError("[EventScene] 선택지 부모 RectTransform을 찾을 수 없습니다.");
+            GameLog.Error("[EventScene] 선택지 부모 RectTransform을 찾을 수 없습니다.");
             return null;
         }
 
@@ -354,7 +354,7 @@ public class EventSceneBootstrap : MonoBehaviour
         button.onClick.RemoveAllListeners();
         if (mode != CardSelectionMode.None)
         {
-            Debug.Log($"[EventScene] Choice requires card selection (mode={mode})", button);
+            GameLog.Info($"[EventScene] Choice requires card selection (mode={mode})", button);
             button.onClick.AddListener(() => BeginCardSelection(choice, mode));
         }
         else
@@ -398,7 +398,7 @@ public class EventSceneBootstrap : MonoBehaviour
 
     private void BeginCardSelection(EventChoiceDTO choice, CardSelectionMode mode)
     {
-        Debug.Log($"[EventScene] BeginCardSelection 시작 mode={mode}", this);
+        GameLog.Info($"[EventScene] BeginCardSelection 시작 mode={mode}", this);
         if (mode == CardSelectionMode.None)
         {
             OnChoicePicked(choice);
@@ -410,7 +410,7 @@ public class EventSceneBootstrap : MonoBehaviour
 
         if (overlay == null)
         {
-            Debug.LogWarning("[EventScene] 오버레이 생성 실패. 선택 UI를 건너뛰고 선택 결과를 즉시 적용합니다.");
+            GameLog.Warn("[EventScene] 오버레이 생성 실패. 선택 UI를 건너뛰고 선택 결과를 즉시 적용합니다.");
             OnChoicePicked(choice);
             return;
         }
@@ -489,7 +489,7 @@ public class EventSceneBootstrap : MonoBehaviour
     {
         if (state == null)
         {
-            Debug.LogWarning("[EventScene] QueueSelectionForMode 호출 시 state가 null입니다.");
+            GameLog.Warn("[EventScene] QueueSelectionForMode 호출 시 state가 null입니다.");
             return false;
         }
 

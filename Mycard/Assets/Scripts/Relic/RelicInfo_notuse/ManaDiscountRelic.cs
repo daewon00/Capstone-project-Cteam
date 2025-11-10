@@ -4,46 +4,46 @@ using UnityEngine;
 
 public class ManaDiscountRelic : Relic
 {
-    // Ä«µåº°·Î ¿ì¸®°¡ Àû¿ëÇÑ ÇÒÀÎ·®À» ÃßÀû (¼ÕÆÐ¿¡¼­¸¸ ÀÇ¹Ì ÀÖÀ½)
+    // Ä«åº° ì¸®  Î·  (Ð¿ Ç¹ )
     private readonly Dictionary<Card, int> applied = new Dictionary<Card, int>();
 
     public ManaDiscountRelic(RelicData data) : base(data) { }
 
     public override void OnAdd()
     {
-        // ÇöÀç ÇÃ·¹ÀÌ¾î ¼ÕÆÐ ÀüºÎ¿¡ ½ºÅÃ¸¸Å­ ÇÒÀÎ Àû¿ë
+        //  Ã·Ì¾  Î¿ Ã¸Å­  
         ApplyToEntireHand(Stacks);
-        Debug.Log($"[Relic] {Data.displayName} È¹µæ. ¼ÕÆÐ ÄÚ½ºÆ® -{Stacks}");
+        GameLog.Info($"[Relic] {Data.displayName} È¹.  Ú½Æ® -{Stacks}");
     }
 
     protected override void OnStacksChanged()
     {
-        // ½ºÅÃÀÌ º¯ÇÏ¸é, ¼ÕÆÐ °¢ Ä«µåÀÇ ¸ñÇ¥ ÇÒÀÎ·® = Stacks·Î ÀçÁ¶Á¤
+        //  Ï¸,   Ä« Ç¥ Î· = Stacks 
         ApplyToEntireHand(Stacks);
     }
 
     public override void OnTurnStart(bool isPlayerTurn)
     {
         if (!isPlayerTurn) return;
-        // ÅÏ ½ÃÀÛ ½ÃÁ¡¿¡ ¼ÕÆÐ°¡ ¹Ù²î¾úÀ» ¼ö ÀÖÀ¸´Ï ÀçÀû¿ë(Áßº¹ ¾ÈÀü)
+        //    Ð° Ù²   (ßº )
         ApplyToEntireHand(Stacks);
     }
 
     public override void OnCardDrawn(Card card)
     {
-        // »õ·Î »ÌÈù ÇÃ·¹ÀÌ¾î Ä«µå¿¡ Áï½Ã Àû¿ë
+        //   Ã·Ì¾ Ä«å¿¡  
         if (card != null && card.isPlayer) ApplyDiscount(card, Stacks);
     }
 
     public override void OnCardPlayed(Card card)
     {
-        // ¼Õ¿¡¼­ ³ª°£ Ä«µå´Â ´õ ÀÌ»ó °ü¸® ¾È ÇÔ
+        // Õ¿  Ä«  Ì»   
         if (card != null) applied.Remove(card);
     }
 
     public override void OnRemove()
     {
-        // ¼ÕÆÐ¿¡ ³²¾ÆÀÖ´Â Ä«µåµé¿¡¼­ ¿ì¸®°¡ ÁØ ÇÒÀÎ¸¸Å­ µÇµ¹¸²
+        // Ð¿ Ö´ Ä«é¿¡ ì¸®  Î¸Å­ Çµ
         foreach (var kv in SnapshotAlive())
         {
             var c = kv.Key; var have = kv.Value;
@@ -51,7 +51,7 @@ public class ManaDiscountRelic : Relic
             if (have > 0) { c.manaCost += have; c.UpdateCardDisplay(); }
         }
         applied.Clear();
-        Debug.Log($"[Relic] {Data.displayName} Á¦°Å. ¼ÕÆÐ ÄÚ½ºÆ® º¹±¸");
+        GameLog.Info($"[Relic] {Data.displayName} .  Ú½Æ® ");
     }
 
     // ---------- helpers ----------
@@ -67,7 +67,7 @@ public class ManaDiscountRelic : Relic
             ApplyDiscount(c, targetDiscountPerCard);
         }
 
-        // ¼Õ¿¡¼­ ºüÁ®³ª°£ Ä«µå°¡ ÀÖ´Ù¸é ÃßÀû¿¡¼­ Á¦°Å
+        // Õ¿  Ä«å°¡ Ö´Ù¸  
         var toRemove = new List<Card>();
         foreach (var kv in applied)
         {
@@ -80,16 +80,16 @@ public class ManaDiscountRelic : Relic
 
     private void ApplyDiscount(Card c, int target)
     {
-        // ÇöÀç Ä«µå¿¡ ¿ì¸®°¡ Àû¿ëÇÑ ÇÒÀÎ·®
+        //  Ä«å¿¡ ì¸®  Î·
         applied.TryGetValue(c, out int cur);
-        int delta = target - cur; // ´Ã¾î³¯ ÇÒÀÎ(+) ¶Ç´Â ÁÙÀÏ ÇÒÀÎ(-)
+        int delta = target - cur; // Ã¾î³¯ (+) Ç´  (-)
         if (delta == 0) return;
 
         if (delta > 0)
         {
-            // ÇÒÀÎ ´Ã¸²: ÄÚ½ºÆ®¸¦ delta¸¸Å­ ³·ÃßµÇ 0 ¹Ì¸¸Àº ¹æÁö
+            //  Ã¸: Ú½Æ® deltaÅ­ ßµ 0 Ì¸ 
             int newCost = Mathf.Max(0, c.manaCost - delta);
-            int realDelta = c.manaCost - newCost; // ½ÇÁ¦·Î ³»·Á°£ °ª(0~delta)
+            int realDelta = c.manaCost - newCost; //   (0~delta)
             if (realDelta > 0)
             {
                 c.manaCost = newCost;
@@ -99,7 +99,7 @@ public class ManaDiscountRelic : Relic
         }
         else
         {
-            // ÇÒÀÎ Ãà¼Ò(º¹±¸): (-delta)¸¸Å­ ÄÚ½ºÆ® Áõ°¡
+            //  (): (-delta)Å­ Ú½Æ® 
             int addBack = -delta;
             c.manaCost += addBack;
             c.UpdateCardDisplay();

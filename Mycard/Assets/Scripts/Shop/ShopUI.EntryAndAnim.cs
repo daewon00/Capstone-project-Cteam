@@ -47,7 +47,7 @@ public partial class ShopUI : MonoBehaviour
             {
                 displayItems.Append(vm.title + ", ");
             }
-            Debug.Log($"<color=cyan>[CCTV] 화면 표시용 아이템 목록:</color> {displayItems}", this);
+            GameLog.Info($"<color=cyan>[CCTV] 화면 표시용 아이템 목록:</color> {displayItems}", this);
         }
 
         // --- 최종 화면 갱신 ---

@@ -32,7 +32,7 @@ public class CardPointsController : MonoBehaviour
         BattleSnapshotScheduler.Instance?.SetCombatResolving(true);
         StartCoroutine(PlayerAttackCo());
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[CardPointsController] PlayerAttack -> MoveTo battleTransform");
+        GameLog.Info("[CardPointsController] PlayerAttack -> MoveTo battleTransform");
 #endif
         CameraController.instance.MoveTo(CameraController.instance.battleTransform);
 

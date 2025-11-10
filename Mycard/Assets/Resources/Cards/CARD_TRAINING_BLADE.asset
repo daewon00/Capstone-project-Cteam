@@ -12,16 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d8045bb5fdaf64cb19aaa3581168f0, type: 3}
   m_Name: CARD_TRAINING_BLADE
   m_EditorClassIdentifier: 
-  cardName: 수습 검사
+  cardName: "\uC218\uC2B5 \uAC80\uC0AC"
   CardId: CARD_TRAINING_BLADE
-  actionDescription: 검술을 배우기 시작한 견습 병사입니다.
+  actionDescription: "\uAC80\uC220\uC744 \uBC30\uC6B0\uAE30 \uC2DC\uC791\uD55C \uACAC\uC2B5
     \uBCD1\uC0AC\uC785\uB2C8\uB2E4."
   cardLore: 
-  currentHealth: 4
-  attackPower: 4
   manaCost: 4
+  attackPower: 4
+  currentHealth: 4
   characterSprite: {fileID: 21300000, guid: 566e25bcf693f7443b81dc7fe1e83a11, type: 3}
   bgSprite: {fileID: 21300000, guid: 947eb1811c248cb4f8704b3548422538, type: 3}
   rarity: 0
   effects: []
+  upgradeSettings:
+    enabled: 0
+    manaCost: 0
+    attackPower: 0
+    health: 0
+    initialized: 0
   removeAfterCombat: 0

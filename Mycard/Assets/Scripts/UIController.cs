@@ -142,7 +142,7 @@ public class UIController : MonoBehaviour
     public void AddRelicTest()
     {
         RelicSystem.Instance.AddRelicById("EnemyFirstCardWeakener", stacks: 1);
-        Debug.LogWarning("Relic추가됨");
+        GameLog.Warn("Relic추가됨");
 
     }
 
@@ -166,7 +166,7 @@ public class UIController : MonoBehaviour
             return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[UIController] FieldButton -> MoveTo battleTransform");
+        GameLog.Info("[UIController] FieldButton -> MoveTo battleTransform");
 #endif
         CameraController.instance.MoveTo(CameraController.instance.battleTransform);
         endTurnButton.SetActive(false);
@@ -187,7 +187,7 @@ public class UIController : MonoBehaviour
             return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[UIController] FieldBack -> MoveTo homeTransform");
+        GameLog.Info("[UIController] FieldBack -> MoveTo homeTransform");
 #endif
         CameraController.instance.MoveTo(CameraController.instance.homeTransform);
         endTurnButton.SetActive(true);
@@ -252,18 +252,18 @@ public class UIController : MonoBehaviour
             // 2) PortraitInventory에 캐릭터 추가
             PortraitInventory.instance.AddCharacter(newChar);
 
-            Debug.Log(newChar.characterName + " 추가됨!");
+            GameLog.Info(newChar.characterName + " 추가됨!");
         }
         else
         {
-            Debug.LogError("캐릭터 ScriptableObject를 찾을 수 없습니다!");
+            GameLog.Error("캐릭터 ScriptableObject를 찾을 수 없습니다!");
         }
     }*/
 
     public void CardAdd1()
     {
         // 레거시 DeckController 경로 제거: 이 기능은 신규 덱/보상 시스템으로 대체되어야 합니다.
-        Debug.LogWarning("[UIController] CardAdd1은 레거시입니다. 덱 추가는 보상/상점/동료 선택 로직을 통해 처리하세요.");
+        GameLog.Warn("[UIController] CardAdd1은 레거시입니다. 덱 추가는 보상/상점/동료 선택 로직을 통해 처리하세요.");
     }
     
     public void AddRelic()

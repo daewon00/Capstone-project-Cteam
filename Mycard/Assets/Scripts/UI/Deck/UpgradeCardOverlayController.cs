@@ -86,7 +86,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
 
         if (!EnsureBindings())
         {
-            Debug.LogError("[UpgradeOverlay] 필수 참조가 비어있습니다. panelRoot/scrollRect/contentParent/itemPrefab 확인", this);
+            GameLog.Error("[UpgradeOverlay] 필수 참조가 비어있습니다. panelRoot/scrollRect/contentParent/itemPrefab 확인", this);
             return;
         }
 
@@ -103,7 +103,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
         {
             bool before = panelRoot.activeSelf;
             panelRoot.SetActive(true);
-            Debug.Log($"[UpgradeOverlay] Show -> panel active: {before} → {panelRoot.activeSelf} (candidates={candidates.Count}) mode={(_activeConfig == null ? "unknown" : _activeConfig.Title)}", this);
+            GameLog.Info($"[UpgradeOverlay] Show -> panel active: {before} → {panelRoot.activeSelf} (candidates={candidates.Count}) mode={(_activeConfig == null ? "unknown" : _activeConfig.Title)}", this);
         }
 
         // 스크롤 위치 초기화(상단)
@@ -170,7 +170,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
 
         if (!valid)
         {
-            Debug.LogError(
+            GameLog.Error(
                 $"[UpgradeOverlay] EnsureBindings 실패 - panelRoot={(panelRoot?panelRoot.name:"null")}, scrollRect={(scrollRect?scrollRect.name:"null")}, content={(contentParent?contentParent.name:"null")}, itemPrefab={(itemPrefab?itemPrefab.name:"null")}",
                 this);
         }
@@ -183,14 +183,14 @@ public class UpgradeCardOverlayController : MonoBehaviour
 
         if (_deckService == null || _cardCatalog == null)
         {
-            Debug.LogWarning("[UpgradeOverlay] 서비스(IDeckService/ICardCatalog) 없음. 후보를 표시할 수 없습니다.", this);
+            GameLog.Warn("[UpgradeOverlay] 서비스(IDeckService/ICardCatalog) 없음. 후보를 표시할 수 없습니다.", this);
             return result;
         }
 
         var snapshot = _deckService.GetAllCardsSnapshot();
         if (snapshot == null || snapshot.Count == 0)
         {
-            Debug.Log("[UpgradeOverlay] 덱이 비어있습니다.", this);
+            GameLog.Info("[UpgradeOverlay] 덱이 비어있습니다.", this);
             return result;
         }
 
@@ -224,7 +224,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
                 emptyLabel.text = label;
                 emptyLabel.gameObject.SetActive(true);
             }
-            Debug.LogWarning("[UpgradeOverlay] 후보가 없습니다.", this);
+            GameLog.Warn("[UpgradeOverlay] 후보가 없습니다.", this);
             return;
         }
 
@@ -247,7 +247,7 @@ public class UpgradeCardOverlayController : MonoBehaviour
             var view = Instantiate(itemPrefab, contentParent);
             if (view == null)
             {
-                Debug.LogError("[UpgradeOverlay] 아이템 인스턴스 생성 실패", this);
+                GameLog.Error("[UpgradeOverlay] 아이템 인스턴스 생성 실패", this);
                 continue;
             }
 
@@ -259,19 +259,19 @@ public class UpgradeCardOverlayController : MonoBehaviour
             {
                 try
                 {
-                    Debug.Log($"[UpgradeOverlay] Item clicked: instance={(state!=null?state.InstanceId:"null")} cardId={(so!=null?so.CardId:state?.CardId)}", view);
+                    GameLog.Info($"[UpgradeOverlay] Item clicked: instance={(state!=null?state.InstanceId:"null")} cardId={(so!=null?so.CardId:state?.CardId)}", view);
                     _onCardClicked?.Invoke(state, so);
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[UpgradeOverlay] onCardClicked 처리 중 오류: {e.Message}");
+                    GameLog.Warn($"[UpgradeOverlay] onCardClicked 처리 중 오류: {e.Message}");
                 }
             });
 
             built++;
         }
 
-        Debug.Log($"[UpgradeOverlay] BuildList 완료 - contentChildren={(contentParent!=null?contentParent.childCount:0)}, built={built}", this);
+        GameLog.Info($"[UpgradeOverlay] BuildList 완료 - contentChildren={(contentParent!=null?contentParent.childCount:0)}, built={built}", this);
     }
 
     private void ClearContent()

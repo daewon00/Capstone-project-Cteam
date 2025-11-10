@@ -39,7 +39,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         // 유효성 검사: 필수 컨트롤러 레퍼런스 확인
         if (_battleController == null || _handController == null)
         {
-            Debug.LogError("[BattleSceneBootstrap] 필수 컨트롤러가 인스펙터에 연결되지 않았습니다! 초기화를 중단합니다.", this);
+            GameLog.Error("[BattleSceneBootstrap] 필수 컨트롤러가 인스펙터에 연결되지 않았습니다! 초기화를 중단합니다.", this);
             this.enabled = false;
             return;
         }
@@ -58,8 +58,8 @@ public class BattleSceneBootstrap : MonoBehaviour
         }
         ServiceRegistry.Register<ICardTooltipService>(cardTooltipService);
 
-        if (deckService == null) Debug.LogWarning("[BattleSceneBootstrap] IDeckService를 찾지 못했습니다.");
-        if (cardCatalog == null) Debug.LogWarning("[BattleSceneBootstrap] ICardCatalog를 찾지 못했습니다.");
+        if (deckService == null) GameLog.Warn("[BattleSceneBootstrap] IDeckService를 찾지 못했습니다.");
+        if (cardCatalog == null) GameLog.Warn("[BattleSceneBootstrap] ICardCatalog를 찾지 못했습니다.");
         if (deckService != null) GameServices.RegisterDeck(deckService);
         CardPrefabReference = _cardPrefab;
 
@@ -76,7 +76,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         }
         binder.Initialize(_handController, deckService, cardCatalog);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleSceneBootstrap] HandServiceBinder initialized. hand={_handController!=null}, deckSvc={deckService!=null}, catalog={cardCatalog!=null}, cardPrefab={_cardPrefab!=null}");
+        GameLog.Info($"[BattleSceneBootstrap] HandServiceBinder initialized. hand={_handController!=null}, deckSvc={deckService!=null}, catalog={cardCatalog!=null}, cardPrefab={_cardPrefab!=null}");
 #endif
 
         if (_battleController != null && deckService != null)
@@ -86,7 +86,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         }
         else
         {
-            if (_battleController == null) Debug.LogWarning("[BattleSceneBootstrap] BattleController가 연결되지 않았습니다.");
+            if (_battleController == null) GameLog.Warn("[BattleSceneBootstrap] BattleController가 연결되지 않았습니다.");
         }
 
         var scheduler = FindObjectOfType<BattleSnapshotScheduler>();
@@ -128,7 +128,7 @@ public class BattleSceneBootstrap : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[BattleSceneBootstrap] LoadCurrentRun failed: {e.Message}");
+                GameLog.Warn($"[BattleSceneBootstrap] LoadCurrentRun failed: {e.Message}");
             }
         }
 
@@ -140,7 +140,7 @@ public class BattleSceneBootstrap : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         else if (!string.IsNullOrEmpty(runId))
         {
-            Debug.LogWarning("[BattleSceneBootstrap] Run data missing; using inspector defaults for battle stats.");
+            GameLog.Warn("[BattleSceneBootstrap] Run data missing; using inspector defaults for battle stats.");
         }
 #endif
 
@@ -162,7 +162,7 @@ public class BattleSceneBootstrap : MonoBehaviour
                     }
                     catch (System.Exception e)
                     {
-                        Debug.LogWarning($"[BattleSceneBootstrap] Reload current run failed: {e.Message}");
+                        GameLog.Warn($"[BattleSceneBootstrap] Reload current run failed: {e.Message}");
                     }
                 }
                 payload = new RunStagePayloads.Battle
@@ -211,7 +211,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[BattleSceneBootstrap] Failed to parse battle snapshot: {e.Message}");
+            GameLog.Warn($"[BattleSceneBootstrap] Failed to parse battle snapshot: {e.Message}");
         }
 
         var scheduler = BattleSnapshotScheduler.Instance;
@@ -268,7 +268,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         var encounter = ResolveEncounter(kind, storedEnemyId);
         if (encounter == null)
         {
-            Debug.LogWarning("[BattleSceneBootstrap] Encounter 구성을 찾지 못해 기본 설정으로 진행합니다.");
+            GameLog.Warn("[BattleSceneBootstrap] Encounter 구성을 찾지 못해 기본 설정으로 진행합니다.");
             return;
         }
 
@@ -351,7 +351,7 @@ public class BattleSceneBootstrap : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[BattleSceneBootstrap] Failed to commit battle entry: {e.Message}");
+            GameLog.Warn($"[BattleSceneBootstrap] Failed to commit battle entry: {e.Message}");
         }
     }
 

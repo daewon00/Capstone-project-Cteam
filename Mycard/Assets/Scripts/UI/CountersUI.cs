@@ -21,7 +21,7 @@ public class CountersUI : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[CountersUI] IDeckService를 찾을 수 없어 UI를 비활성화합니다: {e.Message}");
+            GameLog.Warn($"[CountersUI] IDeckService를 찾을 수 없어 UI를 비활성화합니다: {e.Message}");
             this.enabled = false;
         }
     }

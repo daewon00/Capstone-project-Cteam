@@ -19,7 +19,7 @@ public static class CardReadabilityRegistry
                 {
                     if (!_missingLogged)
                     {
-                        Debug.LogWarning("[CardReadabilityRegistry] Resources/Cards/CardReadabilityProfile.asset not found. Using code defaults.");
+                        GameLog.Warn("[CardReadabilityRegistry] Resources/Cards/CardReadabilityProfile.asset not found. Using code defaults.");
                         _missingLogged = true;
                     }
                     _profile = ScriptableObject.CreateInstance<CardReadabilityProfile>();
@@ -42,7 +42,7 @@ public static class CardReadabilityRegistry
         if (profile != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[CardReadabilityRegistry] Loaded CardReadabilityProfile from Resources/Cards.");
+            GameLog.Info("[CardReadabilityRegistry] Loaded CardReadabilityProfile from Resources/Cards.");
 #endif
             return profile;
         }
@@ -52,7 +52,7 @@ public static class CardReadabilityRegistry
         if (all != null && all.Length > 0)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[CardReadabilityRegistry] Loaded CardReadabilityProfile fallback path: {all[0].name}");
+            GameLog.Info($"[CardReadabilityRegistry] Loaded CardReadabilityProfile fallback path: {all[0].name}");
 #endif
             return all[0];
         }

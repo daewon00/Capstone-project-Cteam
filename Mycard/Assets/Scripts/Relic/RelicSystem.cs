@@ -146,7 +146,7 @@ public class RelicSystem : MonoBehaviour
             case "COMP_COMP_Knight": return new COMP_COMP_KnightRelic(data);//
             // TODO: relic�� �߰��ɶ����� �־��ֱ�(Ŀ����relic�� ���츸)
             default:
-                Debug.LogWarning($"[RelicSystem] �������� �ʴ� relic�Դϴ� relicId: {relicId}");
+                GameLog.Warn($"[RelicSystem] �������� �ʴ� relic�Դϴ� relicId: {relicId}");
                 return null;
         }
     }
@@ -160,7 +160,7 @@ public class RelicSystem : MonoBehaviour
         if (string.IsNullOrEmpty(relicId)) return false;
         if (!dbById.TryGetValue(relicId, out var data))
         {
-            Debug.LogWarning($"[RelicSystem] DB�� ���� relicId: {relicId}");
+            GameLog.Warn($"[RelicSystem] DB�� ���� relicId: {relicId}");
             return false;
         }
 
@@ -170,7 +170,7 @@ public class RelicSystem : MonoBehaviour
         {
             if (!existing.Data.stackable)
             {
-                Debug.LogWarning($"[RelicSystem] Relic already owned and not stackable: {relicId}");
+                GameLog.Warn($"[RelicSystem] Relic already owned and not stackable: {relicId}");
                 return false;
             }
 

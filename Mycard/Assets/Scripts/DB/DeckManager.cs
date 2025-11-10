@@ -77,7 +77,7 @@ public class DeckManager : MonoBehaviour
         }
 
         if (verboseLogs)
-            Debug.Log($"[DeckManager] 런 초기화 완료: runId={_runId}, 보유 카드={MasterDeck.Count}, 다음 카드 번호=0x{_nextCardInstanceCounter:X}");
+            GameLog.Info($"[DeckManager] 런 초기화 완료: runId={_runId}, 보유 카드={MasterDeck.Count}, 다음 카드 번호=0x{_nextCardInstanceCounter:X}");
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ public class DeckManager : MonoBehaviour
         MasterDeck.Add(card); // 생성된 카드는 우선 '마스터 덱'에 보관합니다.
 
         if (verboseLogs)
-            Debug.Log($"[DeckManager] 새 카드 생성: {baseCardId} (시리얼: {instanceId}, 강화: {upgraded})");
+            GameLog.Info($"[DeckManager] 새 카드 생성: {baseCardId} (시리얼: {instanceId}, 강화: {upgraded})");
 
         return card;
     }
@@ -157,7 +157,7 @@ public class DeckManager : MonoBehaviour
         }
 
         if (verboseLogs)
-            Debug.Log($"[DeckManager] 전투 준비 완료: 뽑을 덱={DrawPile.Count}장");
+            GameLog.Info($"[DeckManager] 전투 준비 완료: 뽑을 덱={DrawPile.Count}장");
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public class DeckManager : MonoBehaviour
             // 리스트의 i번째와 j번째 카드의 위치를 서로 바꿉니다.
             (DrawPile[i], DrawPile[j]) = (DrawPile[j], DrawPile[i]);
         }
-        if (verboseLogs) Debug.Log("[DeckManager] 뽑을 牌 더미를 섞었습니다.");
+        if (verboseLogs) GameLog.Info("[DeckManager] 뽑을 牌 더미를 섞었습니다.");
     }
 
     /// <summary>

@@ -44,8 +44,8 @@ public static class LegacyApiScanner
     public static void ScanFromMenu()
     {
         bool ok = RunScan();
-        if (ok) Debug.Log("✅ 레거시 API 스캐너: 금지된 패턴 없음");
-        else Debug.LogWarning("❌ 레거시 API 스캐너: 금지된 패턴 발견 (Console 확인)");
+        if (ok) GameLog.Info("✅ 레거시 API 스캐너: 금지된 패턴 없음");
+        else GameLog.Warn("❌ 레거시 API 스캐너: 금지된 패턴 발견 (Console 확인)");
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public static class LegacyApiScanner
                 if (regex.IsMatch(content))
                 {
                     var asset = AssetDatabase.LoadAssetAtPath<Object>(rel);
-                    Debug.LogError($"[레거시 API 발견] 파일: {rel} — 패턴 그룹 중 하나 매칭", asset);
+                    GameLog.Error($"[레거시 API 발견] 파일: {rel} — 패턴 그룹 중 하나 매칭", asset);
                     clean = false;
                 }
             }

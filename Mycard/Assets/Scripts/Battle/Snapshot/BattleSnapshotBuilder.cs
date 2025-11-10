@@ -23,7 +23,7 @@ public static class BattleSnapshotBuilder
 
         if (battle == null || hand == null || board == null)
         {
-            Debug.LogWarning("[BattleSnapshotBuilder] Missing core controller, snapshot skipped.");
+            GameLog.Warn("[BattleSnapshotBuilder] Missing core controller, snapshot skipped.");
             return null;
         }
 
@@ -63,10 +63,10 @@ public static class BattleSnapshotBuilder
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleSnapshotBuilder] Capture reason='{reason}' turn={dto.turn.turnNumber} phase={dto.turn.phase} handCount={dto.player.handInstanceIds?.Count ?? 0} playerField={dto.playerField?.Count ?? 0} enemyField={dto.enemyField?.Count ?? 0} playerMana={dto.turn.playerMana}/{dto.turn.playerMaxMana} enemyMana={dto.turn.enemyMana}/{dto.turn.enemyMaxMana}");
+        GameLog.Info($"[BattleSnapshotBuilder] Capture reason='{reason}' turn={dto.turn.turnNumber} phase={dto.turn.phase} handCount={dto.player.handInstanceIds?.Count ?? 0} playerField={dto.playerField?.Count ?? 0} enemyField={dto.enemyField?.Count ?? 0} playerMana={dto.turn.playerMana}/{dto.turn.playerMaxMana} enemyMana={dto.turn.enemyMana}/{dto.turn.enemyMaxMana}");
         if (dto.player.handInstanceIds != null)
         {
-            Debug.Log("[BattleSnapshotBuilder] Hand instances: " + string.Join(",", dto.player.handInstanceIds));
+            GameLog.Info("[BattleSnapshotBuilder] Hand instances: " + string.Join(",", dto.player.handInstanceIds));
         }
 #endif
 
@@ -203,7 +203,7 @@ public static class BattleSnapshotBuilder
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[BattleSnapshotBuilder] CaptureRng failed: {e.Message}");
+            GameLog.Warn($"[BattleSnapshotBuilder] CaptureRng failed: {e.Message}");
         }
         return list;
     }

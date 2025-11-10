@@ -222,6 +222,6 @@ public sealed class HighlightProxyCoordinator : MonoBehaviour
     private void D(string msg)
     {
         if (!enableLogs) return;
-        Debug.Log($"[HighlightProxyCoordinator] {msg}", this);
+        GameLog.Info($"[HighlightProxyCoordinator] {msg}", this);
     }
 }

@@ -28,7 +28,7 @@ public partial class ShopUI : MonoBehaviour
         }
         VLog($"[ShopUI] cardPool merged count = {cardPool.Count}");
         if (cardPool.Count == 0)
-            Debug.LogWarning($"[ShopUI] No cards found in inspector or Resources/{CardsPath}");
+            GameLog.Warn($"[ShopUI] No cards found in inspector or Resources/{CardsPath}");
 
         // 카드 ID 매핑 구축 (여기가 빠지면 ImportSession에서 카드 3칸이 제대로 복원 안 됨)
         _cardIdMap.Clear();
@@ -41,7 +41,7 @@ public partial class ShopUI : MonoBehaviour
             if (!string.IsNullOrEmpty(card.CardId))
             {
                 if (_cardIdMap.ContainsKey(card.CardId))
-                    Debug.LogWarning($"[ShopUI] Duplicate CardId: {card.CardId}");
+                    GameLog.Warn($"[ShopUI] Duplicate CardId: {card.CardId}");
                 else
                     _cardIdMap[card.CardId] = card;
             }
@@ -50,13 +50,13 @@ public partial class ShopUI : MonoBehaviour
             if (!string.IsNullOrEmpty(card.cardName))
             {
                 if (_cardNameMap.ContainsKey(card.cardName))
-                    Debug.LogWarning($"[ShopUI] Duplicate CardName: {card.cardName}");
+                    GameLog.Warn($"[ShopUI] Duplicate CardName: {card.cardName}");
                 else
                     _cardNameMap[card.cardName] = card;
             }
         }
         // [CCTV] 전화번호부가 완성되었는지 확인
-        Debug.Log($"<color=purple>[CCTV] '카드 전화번호부'(_cardIdMap) 생성 완료. 총 {cardPool.Count}개의 카드 중 { _cardIdMap.Count}개가 등록되었습니다.</color>", this);
+        GameLog.Info($"<color=purple>[CCTV] '카드 전화번호부'(_cardIdMap) 생성 완료. 총 {cardPool.Count}개의 카드 중 { _cardIdMap.Count}개가 등록되었습니다.</color>", this);
     }
 
     // ==========================================================

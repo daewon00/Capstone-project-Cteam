@@ -50,7 +50,7 @@ public class CameraController : MonoBehaviour
         Transform cam = mainCamera.transform;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[CameraController] MoveTo target={(target != null ? target.name : "<null>")} from={(CurrentTarget != null ? CurrentTarget.name : "<null>")}");
+        GameLog.Info($"[CameraController] MoveTo target={(target != null ? target.name : "<null>")} from={(CurrentTarget != null ? CurrentTarget.name : "<null>")}");
 #endif
         cam.DOKill();
         // 위치

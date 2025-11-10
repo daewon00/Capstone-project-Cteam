@@ -69,7 +69,7 @@ public sealed class RunStageService : IRunStageService
         var payloadSnippet = string.IsNullOrEmpty(row.PayloadJson)
             ? "(empty)"
             : (row.PayloadJson.Length > 128 ? row.PayloadJson.Substring(0, 128) + "..." : row.PayloadJson);
-        Debug.Log($"{LogTag} SetStage runId={_runId}, {previousStage} -> {stage}, sceneHint='{row.SceneHint}', payload={payloadSnippet}");
+        GameLog.Info($"{LogTag} SetStage runId={_runId}, {previousStage} -> {stage}, sceneHint='{row.SceneHint}', payload={payloadSnippet}");
 #endif
 
         if (stage != RunStageType.Battle && stage != RunStageType.BattlePending)
@@ -116,7 +116,7 @@ public sealed class RunStageService : IRunStageService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"{LogTag} Payload parse failed for stage {_current.Stage}: {e.Message}");
+            GameLog.Warn($"{LogTag} Payload parse failed for stage {_current.Stage}: {e.Message}");
             payload = null;
             return false;
         }
@@ -145,7 +145,7 @@ public sealed class RunStageService : IRunStageService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"{LogTag} TryParse failed: {e.Message}");
+            GameLog.Warn($"{LogTag} TryParse failed: {e.Message}");
             payload = null;
             return false;
         }
