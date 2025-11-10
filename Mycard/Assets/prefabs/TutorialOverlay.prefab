@@ -163,6 +163,7 @@ MonoBehaviour:
     Pivot: {fileID: 7084005740513244007}
   - Anchor: 8
     Pivot: {fileID: 3875305365458700633}
+  enableDebugLogs: 1
 --- !u!1 &920974978515862454
 GameObject:
   m_ObjectHideFlags: 0
@@ -716,6 +717,7 @@ MonoBehaviour:
   highlightPadding: 12
   overlayColor: {r: 0, g: 0, b: 0, a: 0.78431374}
   overrideMaterial: {fileID: 0}
+  enableDebugLogs: 1
 --- !u!1 &6706207628458016769
 GameObject:
   m_ObjectHideFlags: 0
@@ -1106,8 +1108,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 3436565973
-  m_fontColor: {r: 0.8352941, g: 0.8352941, b: 0.8352941, a: 0.8}
+    rgba: 4290550662
+  m_fontColor: {r: 0.5241189, g: 0.60881096, b: 0.735849, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1124,13 +1126,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4288922167
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 24
-  m_fontStyle: 2
+  m_fontStyle: 3
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535

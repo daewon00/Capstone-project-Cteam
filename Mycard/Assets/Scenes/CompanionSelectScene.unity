@@ -220,6 +220,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.x
       value: -17
       objectReference: {fileID: 0}
+    - target: {fileID: 6235924552862209713, guid: 811742a9c4e41e1419add740f0c58155, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6388716009660567401, guid: 811742a9c4e41e1419add740f0c58155, type: 3}
       propertyPath: m_SizeDelta.x
       value: 600
@@ -234,11 +238,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7859964376820977739, guid: 811742a9c4e41e1419add740f0c58155, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7859964376820977739, guid: 811742a9c4e41e1419add740f0c58155, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8850074602612333777, guid: 811742a9c4e41e1419add740f0c58155, type: 3}
       propertyPath: m_Pivot.x
@@ -282,7 +286,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8850074602612333777, guid: 811742a9c4e41e1419add740f0c58155, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1000
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8850074602612333777, guid: 811742a9c4e41e1419add740f0c58155, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1200,38 +1204,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontSize
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontStyle
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontColor.a
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontColor.b
-      value: 0.735849
-      objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontColor.g
-      value: 0.60881096
-      objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontColor.r
-      value: 0.5241189
-      objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontSizeBase
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 7322631558074754318, guid: e023fb91460e04613ae183bfa4076c20, type: 3}
-      propertyPath: m_fontColor32.rgba
-      value: 4290550662
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2107,6 +2079,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetId: start-button
   explicitRect: {fileID: 1479247937}
+  aliasIds: []
 --- !u!1 &1638654548
 GameObject:
   m_ObjectHideFlags: 0
@@ -3050,6 +3023,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetId: companion-carousel
   explicitRect: {fileID: 210000000000000302}
+  aliasIds: []
 --- !u!1 &210000000000000401
 GameObject:
   m_ObjectHideFlags: 0
