@@ -43,11 +43,11 @@ public class PerkSlotUI : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (plusButton == null || minusButton == null)
         {
-            Debug.LogWarning($"[PerkSlotUI] plus/minus Button not bound on '{gameObject.name}' (perkId={_perkDef?.Id ?? "<null>"}). Please assign in the prefab.");
+            GameLog.Warn($"[PerkSlotUI] plus/minus Button not bound on '{gameObject.name}' (perkId={_perkDef?.Id ?? "<null>"}). Please assign in the prefab.");
         }
         if (_onAdjustRequested == null)
         {
-            Debug.LogWarning($"[PerkSlotUI] OnAdjustRequested callback is null on '{gameObject.name}' (perkId={_perkDef?.Id ?? "<null>"}).");
+            GameLog.Warn($"[PerkSlotUI] OnAdjustRequested callback is null on '{gameObject.name}' (perkId={_perkDef?.Id ?? "<null>"}).");
         }
 #endif
 

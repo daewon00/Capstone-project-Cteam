@@ -171,7 +171,7 @@ public sealed class PerkService : IPerkService
             if (!_defs.TryGetValue(perkId, out var def))
             {
                 // 요청에 알 수 없는 특전이 포함된 경우 경고 후 무시합니다.
-                Debug.LogWarning($"[PerkService] Unknown perk in ApplyAdjustments: {perkId}");
+                GameLog.Warn($"[PerkService] Unknown perk in ApplyAdjustments: {perkId}");
                 finalLevels[perkId] = current; // no change
                 continue;
             }
@@ -194,7 +194,7 @@ public sealed class PerkService : IPerkService
         int pointsDelta = -totalCost + totalRefund;
         int finalUnspent = unspent + pointsDelta;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[PerkService] ApplyAdjustments preview: keys={finalLevels.Count}, cost={totalCost}, refund={totalRefund}, delta={pointsDelta}, unspent={unspent} -> final={finalUnspent}");
+        GameLog.Info($"[PerkService] ApplyAdjustments preview: keys={finalLevels.Count}, cost={totalCost}, refund={totalRefund}, delta={pointsDelta}, unspent={unspent} -> final={finalUnspent}");
 #endif
         if (finalUnspent < 0)
         {
@@ -215,13 +215,13 @@ public sealed class PerkService : IPerkService
             _db.ApplyPerkAdjustments(profileId, rows, pointsDelta);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             var after = _db.LoadPerkAllocations(profileId);
-            Debug.Log($"[PerkService] ApplyAdjustments committed: rowsSaved={rows.Count}, rowsNow={after?.Count}");
+            GameLog.Info($"[PerkService] ApplyAdjustments committed: rowsSaved={rows.Count}, rowsNow={after?.Count}");
 #endif
             return true;
         }
         catch (Exception e)
         {
-            Debug.LogError($"[PerkService] ApplyAdjustments failed: {e.Message}");
+            GameLog.Error($"[PerkService] ApplyAdjustments failed: {e.Message}");
             error = e.Message;
             return false;
         }
@@ -243,7 +243,7 @@ public sealed class PerkService : IPerkService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[PerkService] Failed to load SOs: {e.Message}");
+            GameLog.Warn($"[PerkService] Failed to load SOs: {e.Message}");
         }
 
         // 에셋이 없을 경우 개발/테스트용 기본 정의를 생성합니다.

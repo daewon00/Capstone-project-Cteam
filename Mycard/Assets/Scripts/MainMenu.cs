@@ -153,7 +153,7 @@ public class MainMenu : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[MainMenu] Failed to load RunStageState: {e.Message}");
+            GameLog.Warn($"[MainMenu] Failed to load RunStageState: {e.Message}");
         }
 
         if (stageState != null)
@@ -161,11 +161,11 @@ public class MainMenu : MonoBehaviour
             var payloadPreview = string.IsNullOrEmpty(stageState.PayloadJson)
                 ? "(empty)"
                 : (stageState.PayloadJson.Length > 128 ? stageState.PayloadJson.Substring(0, 128) + "..." : stageState.PayloadJson);
-            Debug.Log($"[MainMenu] Continue stage={stageState.Stage}, sceneHint='{stageState.SceneHint}', payload={payloadPreview}");
+            GameLog.Info($"[MainMenu] Continue stage={stageState.Stage}, sceneHint='{stageState.SceneHint}', payload={payloadPreview}");
         }
         else
         {
-            Debug.Log("[MainMenu] Continue stageState is null; defaulting to Map.");
+            GameLog.Info("[MainMenu] Continue stageState is null; defaulting to Map.");
         }
 
         var targetScene = mapScene;
@@ -202,7 +202,7 @@ public class MainMenu : MonoBehaviour
         {
             // DB에서 현재 런 관련 테이블 레코드들 제거
             DatabaseManager.Instance.DeleteCurrentRun(runId);
-            Debug.Log($"[MainMenu] Deleted current run: {runId}");
+            GameLog.Info($"[MainMenu] Deleted current run: {runId}");
         }
 
         // PlayerPrefs 키 정리
@@ -219,7 +219,7 @@ public class MainMenu : MonoBehaviour
     {
         Application.Quit();
 
-        Debug.Log("Quit game");
+        GameLog.Info("Quit game");
 
         AudioManager.instance.PlaySFX(0);
     }

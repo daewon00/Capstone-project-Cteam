@@ -36,7 +36,7 @@ public class RunService : IRunService
     {
         _runId = runId ?? string.Empty;
         _hasCommitted = false;
-        Debug.Log($"[RunService] Rebound to Run ID: {_runId}");
+        GameLog.Info($"[RunService] Rebound to Run ID: {_runId}");
 
         var tutorialService = ServiceRegistry.Get<ITutorialService>();
         if (tutorialService != null)
@@ -51,7 +51,7 @@ public class RunService : IRunService
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[RunService] Failed to query tutorial state: {e.Message}");
+                    GameLog.Warn($"[RunService] Failed to query tutorial state: {e.Message}");
                 }
             }
 
@@ -66,7 +66,7 @@ public class RunService : IRunService
     {
         if (_hasCommitted)
         {
-            Debug.LogWarning("[RunService] Combat result already committed. Ignoring.");
+            GameLog.Warn("[RunService] Combat result already committed. Ignoring.");
             return;
         }
         _hasCommitted = true;
@@ -87,12 +87,12 @@ public class RunService : IRunService
     /// </summary>
     private void ProcessVictory()
     {
-        Debug.Log("[RunService] Processing VICTORY...");
+        GameLog.Info("[RunService] Processing VICTORY...");
 
         var lr = _database.LoadCurrentRun(_runId);
         if (lr == null || lr.Run == null)
         {
-            Debug.LogError($"[RunService] Failed to load run {_runId}. Did you start the battle scene directly or finish the run earlier? Routing to Main Menu.");
+            GameLog.Error($"[RunService] Failed to load run {_runId}. Did you start the battle scene directly or finish the run earlier? Routing to Main Menu.");
             try { SceneManager.LoadScene("Main Menu"); } catch { }
             return;
         }
@@ -104,7 +104,7 @@ public class RunService : IRunService
         var battleKind = GameContext.I != null
             ? GameContext.I.CurrentBattleKind
             : (GameContext.BattleKind)PlayerPrefs.GetInt("currentBattleKind", (int)GameContext.BattleKind.Normal);
-        Debug.Log($"[BossFlow][RunService] ProcessVictory: battleKind={battleKind}, runId={_runId}");
+        GameLog.Info($"[BossFlow][RunService] ProcessVictory: battleKind={battleKind}, runId={_runId}");
         if (battleKind == GameContext.BattleKind.Boss)
         {
             // 전투 승리 이벤트를 메타 이벤트 허브에 방송합니다.
@@ -130,7 +130,7 @@ public class RunService : IRunService
                 Cleared = true,
                 EndedAtUtc = DateTime.UtcNow.ToString("o")
             };
-            Debug.Log("[BossFlow][RunService] EndRunAndSummarize(Cleared=true)");
+            GameLog.Info("[BossFlow][RunService] EndRunAndSummarize(Cleared=true)");
             _database.EndRunAndSummarize(summary);
             stageService?.ClearStage();
 
@@ -148,7 +148,7 @@ public class RunService : IRunService
             catch { }
 
             // 에디터 배치형 UGUI(씬의 RunClearedView)가 MetaEvents.OnRunEnded를 수신해 스스로 표시합니다.
-            Debug.Log("[BossFlow][RunService] Broadcast done. Expect RunClearedView in scene to activate.");
+            GameLog.Info("[BossFlow][RunService] Broadcast done. Expect RunClearedView in scene to activate.");
             // 저장된 전투 종류 태그를 정리합니다.
             try { PlayerPrefs.DeleteKey("currentBattleKind"); PlayerPrefs.Save(); } catch { }
             return;
@@ -189,7 +189,7 @@ public class RunService : IRunService
 
         ServiceRegistry.Get<ITutorialService>()?.NotifyBattleCompleted();
 
-        Debug.Log("[RunService] Node cleared. Rewards saved. Transitioning to Map Scene.");
+        GameLog.Info("[RunService] Node cleared. Rewards saved. Transitioning to Map Scene.");
         RunCacheSynchronizer.Sync();
         var nextMapScene = PlayerPrefs.GetString("lastMapScene", "Map Scene");
         if (string.IsNullOrEmpty(nextMapScene))
@@ -278,7 +278,7 @@ public class RunService : IRunService
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[RunService] 카드 보상 생성 실패: {e.Message}");
+            GameLog.Warn($"[RunService] 카드 보상 생성 실패: {e.Message}");
         }
         return container;
     }
@@ -288,7 +288,7 @@ public class RunService : IRunService
     /// </summary>
     private void ProcessDefeat()
     {
-        Debug.Log("[RunService] Processing DEFEAT...");
+        GameLog.Info("[RunService] Processing DEFEAT...");
 
         var lr = _database.LoadCurrentRun(_runId);
         var summary = new RunSummary
@@ -314,7 +314,7 @@ public class RunService : IRunService
         }
         catch { }
 
-        Debug.Log($"[RunService] Run {_runId} ended. Firing OnRunEnded and transitioning to Main Menu.");
+        GameLog.Info($"[RunService] Run {_runId} ended. Firing OnRunEnded and transitioning to Main Menu.");
         OnRunEnded?.Invoke();
         // 패배로 런이 종료되었으므로 이어하기 키를 정리해 혼선을 방지합니다.
         try { PlayerPrefs.DeleteKey("lastRunId"); PlayerPrefs.Save(); } catch { }

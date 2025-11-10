@@ -93,7 +93,7 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         _singleSelectedState = null;
         _onConfirm = onConfirm;
         _onCancel = onCancel;
-        Debug.LogWarning("[DeckUpgradeSelection] 목록 모드는 더 이상 사용되지 않습니다. Show()는 false를 반환합니다.", this);
+        GameLog.Warn("[DeckUpgradeSelection] 목록 모드는 더 이상 사용되지 않습니다. Show()는 false를 반환합니다.", this);
         HideImmediate();
         return false;
     }
@@ -115,7 +115,7 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
 
         if (!EnsureBindings())
         {
-            Debug.LogError("[DeckUpgradeSelection] ShowSingle EnsureBindings 실패", this);
+            GameLog.Error("[DeckUpgradeSelection] ShowSingle EnsureBindings 실패", this);
             HideImmediate();
             return false;
         }
@@ -275,7 +275,7 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
 
         if (!EnsureBindings())
         {
-            Debug.LogError("[DeckUpgradeSelection] RefreshCandidates 시점에 EnsureBindings 실패", this);
+            GameLog.Error("[DeckUpgradeSelection] RefreshCandidates 시점에 EnsureBindings 실패", this);
             return false;
         }
 
@@ -302,14 +302,14 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         if (_candidates.Count == 0)
         {
             ShowEmptyMessage("강화 가능한 카드가 없습니다.");
-            Debug.LogWarning("[DeckUpgradeSelection] 강화 후보가 없습니다.", this);
+            GameLog.Warn("[DeckUpgradeSelection] 강화 후보가 없습니다.", this);
             return false;
         }
 
         if (!BuildList())
         {
             ShowEmptyMessage("강화 후보를 표시할 수 없습니다.");
-            Debug.LogError($"[DeckUpgradeSelection] BuildList 실패 - contentRoot={(contentRoot ? contentRoot.name : "null")}, cardItemPrefab={(cardItemPrefab ? cardItemPrefab.name : "null")}", this);
+            GameLog.Error($"[DeckUpgradeSelection] BuildList 실패 - contentRoot={(contentRoot ? contentRoot.name : "null")}, cardItemPrefab={(cardItemPrefab ? cardItemPrefab.name : "null")}", this);
             return false;
         }
 
@@ -321,29 +321,29 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
     {
         if (contentRoot == null || cardItemPrefab == null)
         {
-        Debug.LogError("[DeckUpgradeSelection] 카드 리스트를 생성할 수 없습니다. contentRoot/cardItemPrefab을 확인하세요.", this);
+        GameLog.Error("[DeckUpgradeSelection] 카드 리스트를 생성할 수 없습니다. contentRoot/cardItemPrefab을 확인하세요.", this);
             return false;
         }
 
-        Debug.Log($"[DeckUpgradeSelection] BuildList 시작 - 후보 {_candidates.Count}개, contentRoot={contentRoot.name}", this);
+        GameLog.Info($"[DeckUpgradeSelection] BuildList 시작 - 후보 {_candidates.Count}개, contentRoot={contentRoot.name}", this);
 
         foreach (var (state, card) in _candidates.OrderBy(c => GetSortKey(c.card), StringComparer.OrdinalIgnoreCase))
         {
             if (state == null)
             {
-                Debug.LogWarning("[DeckUpgradeSelection] null 상태 카드가 후보에 포함되어 무시합니다.", this);
+                GameLog.Warn("[DeckUpgradeSelection] null 상태 카드가 후보에 포함되어 무시합니다.", this);
                 continue;
             }
 
             var instance = Instantiate(cardItemPrefab, contentRoot);
             if (instance == null)
             {
-                Debug.LogError("[DeckUpgradeSelection] 카드 아이템 프리팹 인스턴스화 실패", this);
+                GameLog.Error("[DeckUpgradeSelection] 카드 아이템 프리팹 인스턴스화 실패", this);
                 continue;
             }
 
             var item = instance.GetComponent<CardDisplaySelectionItem>() ?? instance.AddComponent<CardDisplaySelectionItem>();
-            Debug.Log($"[DeckUpgradeSelection] 카드 생성 - cardId={state.CardId} instanceId={state.InstanceId}", item);
+            GameLog.Info($"[DeckUpgradeSelection] 카드 생성 - cardId={state.CardId} instanceId={state.InstanceId}", item);
             item.Bind(card, state);
             item.Clicked += HandleItemClicked;
             _spawnedItems.Add(item);
@@ -353,13 +353,13 @@ public class DeckUpgradeSelectionPanel : MonoBehaviour
         {
             emptyLabel.gameObject.SetActive(false);
         }
-        Debug.Log($"[DeckUpgradeSelection] BuildList 완료 - contentChildren={contentRoot.childCount}", this);
+        GameLog.Info($"[DeckUpgradeSelection] BuildList 완료 - contentChildren={contentRoot.childCount}", this);
         return _spawnedItems.Count > 0;
     }
 
     private void HandleItemClicked(CardDisplaySelectionItem item)
     {
-        Debug.Log($"[DeckUpgradeSelection] HandleItemClicked {(item != null ? item.RuntimeState?.InstanceId : "null")}", this);
+        GameLog.Info($"[DeckUpgradeSelection] HandleItemClicked {(item != null ? item.RuntimeState?.InstanceId : "null")}", this);
         if (item == null)
             return;
 
@@ -377,7 +377,7 @@ private void HandleConfirm()
     {
         if (_singleMode) {
             var selected = _singleSelectedState;
-            Debug.Log($"[DeckUpgradeSelection] Confirm(단일) 클릭 - selectedInstance={(selected != null ? selected.InstanceId : "null")}", this);
+            GameLog.Info($"[DeckUpgradeSelection] Confirm(단일) 클릭 - selectedInstance={(selected != null ? selected.InstanceId : "null")}", this);
             var h = _onConfirm; Hide(); h?.Invoke(selected);
             return;
         }
@@ -385,7 +385,7 @@ private void HandleConfirm()
             return;
 
         var selectedState = _currentSelection.RuntimeState;
-        Debug.Log($"[DeckUpgradeSelection] Confirm 클릭 - selectedInstance={(selectedState != null ? selectedState.InstanceId : "null")}", this);
+        GameLog.Info($"[DeckUpgradeSelection] Confirm 클릭 - selectedInstance={(selectedState != null ? selectedState.InstanceId : "null")}", this);
         var handler = _onConfirm;
         Hide();
         handler?.Invoke(selectedState);
@@ -411,12 +411,12 @@ private void HandleConfirm()
         {
             _currentSelection.SetSelected(true);
             previewPanel?.Show(_currentSelection.CardData, _currentSelection.RuntimeState);
-            Debug.Log($"[DeckUpgradeSelection] 선택됨 -> {(_currentSelection.RuntimeState != null ? _currentSelection.RuntimeState.InstanceId : "null")}", this);
+            GameLog.Info($"[DeckUpgradeSelection] 선택됨 -> {(_currentSelection.RuntimeState != null ? _currentSelection.RuntimeState.InstanceId : "null")}", this);
         }
         else
         {
             previewPanel?.Clear();
-            Debug.Log("[DeckUpgradeSelection] 선택 해제", this);
+            GameLog.Info("[DeckUpgradeSelection] 선택 해제", this);
         }
 
         UpdateConfirmState();
@@ -427,7 +427,7 @@ private void HandleConfirm()
         if (confirmButton != null)
         {
             confirmButton.interactable = _currentSelection != null;
-            Debug.Log($"[DeckUpgradeSelection] Confirm 버튼 interactable={confirmButton.interactable}", this);
+            GameLog.Info($"[DeckUpgradeSelection] Confirm 버튼 interactable={confirmButton.interactable}", this);
         }
     }
 
@@ -470,7 +470,7 @@ private void HandleConfirm()
         }
         var cr = contentRoot != null ? contentRoot.name : "<none>";
         var pf = cardItemPrefab != null ? cardItemPrefab.name : "<none>";
-        Debug.Log($"[DeckUpgradeSelection] EnsureBindings 성공 - contentRoot={cr}, cardItemPrefab={pf}, singleMode={_singleMode}", this);
+        GameLog.Info($"[DeckUpgradeSelection] EnsureBindings 성공 - contentRoot={cr}, cardItemPrefab={pf}, singleMode={_singleMode}", this);
         return true;
     }
 

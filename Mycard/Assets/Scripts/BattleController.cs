@@ -41,18 +41,18 @@ public class BattleController : MonoBehaviour
             try { Initialize(deckService); }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[BattleController] Initialize(deckService) 실패: {e.Message}");
+                GameLog.Warn($"[BattleController] Initialize(deckService) 실패: {e.Message}");
             }
         }
         else
         {
-            Debug.LogWarning("[BattleController] IDeckService를 찾지 못했습니다. 추후 단계에서 연결 예정.");
+            GameLog.Warn("[BattleController] IDeckService를 찾지 못했습니다. 추후 단계에서 연결 예정.");
         }
 
         _effectService = ServiceRegistry.Get<ICardEffectService>();
         if (_effectService == null)
         {
-            Debug.LogWarning("[BattleController] ICardEffectService를 찾지 못했습니다. 카드 효과가 적용되지 않습니다.");
+            GameLog.Warn("[BattleController] ICardEffectService를 찾지 못했습니다. 카드 효과가 적용되지 않습니다.");
         }
         AudioManager.instance.StopMusic();
         AudioManager.instance.PlayBGM();
@@ -78,7 +78,7 @@ public class BattleController : MonoBehaviour
     {
         if (!_isInitialized || _deckService == null)
         {
-            Debug.LogWarning("[BattleController] IDeckService가 초기화되지 않아 드로우를 건너뛰고 턴 시작 효과를 즉시 발동합니다.");
+            GameLog.Warn("[BattleController] IDeckService가 초기화되지 않아 드로우를 건너뛰고 턴 시작 효과를 즉시 발동합니다.");
             GameEvents.RaiseTurnStart(true);
             return;
         }
@@ -103,7 +103,7 @@ public class BattleController : MonoBehaviour
         if (!_waitingForPlayerTurnStartEffects)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[BattleController] NotifyPlayerTurnStartReady가 예기치 않게 호출되었습니다. 이미 효과가 발동되었을 수 있습니다.");
+            GameLog.Warn("[BattleController] NotifyPlayerTurnStartReady가 예기치 않게 호출되었습니다. 이미 효과가 발동되었을 수 있습니다.");
 #endif
         }
 
@@ -166,7 +166,7 @@ public class BattleController : MonoBehaviour
         FillPlayerMana();
         UIController.instance?.setPlayerHealthText(playerHealth);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleController] ApplyRunStats hp={playerHealth}/{resolvedMaxHp} energy={resolvedEnergy}");
+        GameLog.Info($"[BattleController] ApplyRunStats hp={playerHealth}/{resolvedMaxHp} energy={resolvedEnergy}");
 #endif
         _playerStatsInitialized = true;
     }
@@ -196,7 +196,7 @@ public class BattleController : MonoBehaviour
         GameEvents.RaisePlayerManaChanged(playerMana, currentPlayerMaxMana);
         UIController.instance?.SetEnemyManaText(enemyMana);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleController] SetTurnStateFromSnapshot: turn={_turnCounter}, phase={currentPhase}, playerMana={playerMana}/{currentPlayerMaxMana}, enemyMana={enemyMana}/{currentEnemyMaxMana}");
+        GameLog.Info($"[BattleController] SetTurnStateFromSnapshot: turn={_turnCounter}, phase={currentPhase}, playerMana={playerMana}/{currentPlayerMaxMana}, enemyMana={enemyMana}/{currentEnemyMaxMana}");
 #endif
         _playerStatsInitialized = true;
     }
@@ -254,7 +254,7 @@ public class BattleController : MonoBehaviour
         {
             SkipInitialSetup = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[BattleController] Start skipped due to snapshot restore");
+            GameLog.Info("[BattleController] Start skipped due to snapshot restore");
 #endif
             return;
         }
@@ -422,7 +422,7 @@ public class BattleController : MonoBehaviour
                 case TurnOrder.playerActive:
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log("[BattleController] AdvanceTurn -> MoveTo homeTransform (playerActive)");
+                    GameLog.Info("[BattleController] AdvanceTurn -> MoveTo homeTransform (playerActive)");
 #endif
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);  //카메라 위치 초기화
                     UIController.instance.endTurnButton.SetActive(true);    // 턴종료 버튼 활성화
@@ -448,7 +448,7 @@ public class BattleController : MonoBehaviour
 
                 case TurnOrder.playerCardAttacks:   //플레이어 공격
 
-                    //Debug.Log("Skipping player card attacks");
+                    //GameLog.Info("Skipping player card attacks");
                     //AdvanceTurn();
                     CardPointsController.instance.PlayerAttack();   //CardPointsController에 PlayerAttack함수 실행(플레이어 공격 매커니즘)
 
@@ -456,7 +456,7 @@ public class BattleController : MonoBehaviour
 
                 case TurnOrder.enemyActive:
                     GameEvents.RaiseTurnStart(false); // 추가 +++ 적 턴 시작
-                    //Debug.Log("Skipping enemy actions");
+                    //GameLog.Info("Skipping enemy actions");
                     //AdvanceTurn();
 
                     if (currentEnemyMaxMana < enemymaxMana)  // 최대마나보다 작으면 플레이어 마나증가 *첫턴은 증가하면 안될텐데*
@@ -472,7 +472,7 @@ public class BattleController : MonoBehaviour
 
                 case TurnOrder.enemyCardAttacks:    //적 공격
 
-                    //Debug.Log("Skipping enemy card attacks");
+                    //GameLog.Info("Skipping enemy card attacks");
                     //AdvanceTurn();
                     CardPointsController.instance.EnemyAttack();    ////CardPointsController에 EnemyAttack함수 실행(적 공격 매커니즘)
 
@@ -513,20 +513,20 @@ public class BattleController : MonoBehaviour
         if (battleEnded) return false;
         if (!_isInitialized || _deckService == null)
         {
-            Debug.LogError("[BattleController] AttemptPlayCard 실패: IDeckService가 초기화되지 않았습니다.");
+            GameLog.Error("[BattleController] AttemptPlayCard 실패: IDeckService가 초기화되지 않았습니다.");
             return false;
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleController] AttemptPlayCard: instance={(card != null ? card.InstanceId : "<null>")}, mana={playerMana}/{playermaxMana}, phase={currentPhase}");
+        GameLog.Info($"[BattleController] AttemptPlayCard: instance={(card != null ? card.InstanceId : "<null>")}, mana={playerMana}/{playermaxMana}, phase={currentPhase}");
 #endif
         if (currentPhase != TurnOrder.playerActive)
         {
-            Debug.LogWarning("[BattleController] 플레이어 턴이 아니므로 카드를 사용할 수 없습니다.");
+            GameLog.Warn("[BattleController] 플레이어 턴이 아니므로 카드를 사용할 수 없습니다.");
             return false;
         }
         if (card == null)
         {
-            Debug.LogWarning("[BattleController] AttemptPlayCard: card가 null 입니다.");
+            GameLog.Warn("[BattleController] AttemptPlayCard: card가 null 입니다.");
             return false;
         }
         //if (playerMana < card.manaCost) //기존
@@ -543,12 +543,12 @@ public class BattleController : MonoBehaviour
         var result = _deckService.PlayCard(card.InstanceId);
         if (result == null || result.Code != PlayResult.ResultCode.Success)
         {
-            Debug.LogWarning($"[BattleController] PlayCard 실패: {(result == null ? "null" : result.Code.ToString())}");
+            GameLog.Warn($"[BattleController] PlayCard 실패: {(result == null ? "null" : result.Code.ToString())}");
             return false;
         }
         _effectService?.RegisterBoardCard(card, true);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleController] PlayCard success: instance={card.InstanceId}");
+        GameLog.Info($"[BattleController] PlayCard success: instance={card.InstanceId}");
 #endif
         return true;
     }
@@ -577,12 +577,12 @@ public class BattleController : MonoBehaviour
         if (battleEnded) return;
         if (!_isInitialized || _deckService == null)
         {
-            Debug.LogError("[BattleController] AttemptPlayerDraw 실패: IDeckService가 초기화되지 않았습니다.");
+            GameLog.Error("[BattleController] AttemptPlayerDraw 실패: IDeckService가 초기화되지 않았습니다.");
             return;
         }
         if (currentPhase != TurnOrder.playerActive)
         {
-            Debug.LogWarning("[BattleController] 플레이어 턴이 아니므로 드로우할 수 없습니다.");
+            GameLog.Warn("[BattleController] 플레이어 턴이 아니므로 드로우할 수 없습니다.");
             return;
         }
 
@@ -607,12 +607,12 @@ public class BattleController : MonoBehaviour
 
         if (_battleStarted)
         {
-            Debug.LogWarning("[BattleController] StartBattle이 중복 호출되었습니다.");
+            GameLog.Warn("[BattleController] StartBattle이 중복 호출되었습니다.");
             return;
         }
         _battleStarted = true;
 
-        Debug.Log("[BattleController] 전투 시작! 초기 드로우를 요청합니다.");
+        GameLog.Info("[BattleController] 전투 시작! 초기 드로우를 요청합니다.");
         try
         {
             _deckService.SetHandLimit(_handLimit);
@@ -623,7 +623,7 @@ public class BattleController : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[BattleController] 초기 드로우 실패: {e.Message}");
+            GameLog.Error($"[BattleController] 초기 드로우 실패: {e.Message}");
         }
     }
 
@@ -782,7 +782,7 @@ public class BattleController : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[BattleController] ReportCombatEnded 실패: {e.Message}");
+            GameLog.Warn($"[BattleController] ReportCombatEnded 실패: {e.Message}");
         }
 
         StartCoroutine(ShowResultCo()); //결과 화면 
@@ -796,7 +796,7 @@ public class BattleController : MonoBehaviour
         {
             // 보스전 승리 시에는 별도의 'RUN CLEARED!' 오버레이가 표시되므로 기본 승리 화면은 생략합니다.
             var kind = GameContext.I != null ? GameContext.I.CurrentBattleKind : GameContext.BattleKind.Normal;
-            Debug.Log($"[BossFlow][BattleController] ShowResultCo victory, battleKind={kind}");
+            GameLog.Info($"[BossFlow][BattleController] ShowResultCo victory, battleKind={kind}");
             if (kind != GameContext.BattleKind.Boss)
             {
                 UIController.instance.battleEndScreen_win.SetActive(true);  // 결과 UI 표시
@@ -829,7 +829,7 @@ public class BattleController : MonoBehaviour
         if (string.IsNullOrEmpty(runId))
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[BattleController] PersistPlayerHealth skipped: runId missing.");
+            GameLog.Warn("[BattleController] PersistPlayerHealth skipped: runId missing.");
 #endif
             return;
         }
@@ -838,7 +838,7 @@ public class BattleController : MonoBehaviour
         if (db == null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[BattleController] PersistPlayerHealth skipped: IDatabase not available.");
+            GameLog.Warn("[BattleController] PersistPlayerHealth skipped: IDatabase not available.");
 #endif
             return;
         }
@@ -849,7 +849,7 @@ public class BattleController : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[BattleController] PersistPlayerHealth failed: {e.Message}");
+            GameLog.Warn($"[BattleController] PersistPlayerHealth failed: {e.Message}");
         }
     }
 
@@ -872,7 +872,7 @@ public class BattleController : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[BattleController] PersistRelicHealthDelta failed: {e.Message}");
+            GameLog.Warn($"[BattleController] PersistRelicHealthDelta failed: {e.Message}");
         }
     }
     private void PersistRelicManaDelta(int delta)
@@ -897,7 +897,7 @@ public class BattleController : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[BattleController] PersistRelicManaDelta failed: {e.Message}");
+            GameLog.Warn($"[BattleController] PersistRelicManaDelta failed: {e.Message}");
         }
     }
 }

@@ -50,7 +50,7 @@ public class PerksScreenUI : MonoBehaviour
             {
                 sb.AppendLine($"  - #{i + 1}: {GetHierarchyPath(dup[i].transform)}");
             }
-            Debug.LogWarning(sb.ToString());
+            GameLog.Warn(sb.ToString());
         }
 #endif
 
@@ -110,7 +110,7 @@ public class PerksScreenUI : MonoBehaviour
         // 방어 코드
         if (_perkService == null || _database == null || slotsContainer == null || perkSlotPrefab == null)
         {
-            Debug.LogWarning("[PerksScreenUI] Missing bindings or services.");
+            GameLog.Warn("[PerksScreenUI] Missing bindings or services.");
             return;
         }
 
@@ -202,7 +202,7 @@ public class PerksScreenUI : MonoBehaviour
             int beforeFinal = ComputeFinalPoints(currentPoints);
             if (beforeFinal < def.Cost)
             {
-                Debug.Log("[PerksScreenUI] Not enough points for +1");
+                GameLog.Info("[PerksScreenUI] Not enough points for +1");
                 return;
             }
         }
@@ -218,7 +218,7 @@ public class PerksScreenUI : MonoBehaviour
         // 인스턴스 중복/동시변경에 의한 참조 문제를 피하기 위해 사본을 전달합니다.
         var targets = new System.Collections.Generic.Dictionary<string, int>(_stagedLevels, System.StringComparer.OrdinalIgnoreCase);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[PerksScreenUI] Applying adjustments: profile={_profileId}, stagedKeys={targets.Count}");
+        GameLog.Info($"[PerksScreenUI] Applying adjustments: profile={_profileId}, stagedKeys={targets.Count}");
 #endif
         if (_perkService.ApplyAdjustments(_profileId, targets, out error))
         {
@@ -228,7 +228,7 @@ public class PerksScreenUI : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[PerksScreenUI] Apply failed: {error}");
+            GameLog.Warn($"[PerksScreenUI] Apply failed: {error}");
         }
     }
 

@@ -37,7 +37,7 @@ public sealed class TutorialTarget : MonoBehaviour
     public void SetId(string id)
     {
         #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[TutorialTarget] SetId: {targetId} -> {id} ({gameObject.name})", this);
+        GameLog.Info($"[TutorialTarget] SetId: {targetId} -> {id} ({gameObject.name})", this);
         #endif
         if (string.Equals(targetId, id, System.StringComparison.Ordinal))
         {
@@ -58,7 +58,7 @@ public sealed class TutorialTarget : MonoBehaviour
         {
             svc.RegisterTarget(this);
         #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[TutorialTarget] Re-registered with new id: {targetId}", this);
+            GameLog.Info($"[TutorialTarget] Re-registered with new id: {targetId}", this);
         #endif
         }
     }

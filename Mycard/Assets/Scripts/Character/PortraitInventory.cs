@@ -31,6 +31,6 @@ public class PortraitInventory : MonoBehaviour
             }
         }
 
-        Debug.LogWarning("빈 초상화 슬롯이 없습니다.");
+        GameLog.Warn("빈 초상화 슬롯이 없습니다.");
     }
 }

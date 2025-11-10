@@ -28,23 +28,23 @@ public static class VolumePrefs
 
     public static bool LoadMute()
     {
-        return PlayerPrefs.GetInt(KeyMute, 0) == 1; // ±âº»: À½¼Ò°Å ¾Æ´Ô
+        return PlayerPrefs.GetInt(KeyMute, 0) == 1; // âº»: Ò° Æ´
     }
 
     static bool SetParam(AudioMixer m, string name, float v)
     {
         if (!m.SetFloat(name, Mathf.Clamp(v, -80f, 0f)))
         {
-            Debug.LogError($"[VolumePrefs] AudioMixer exposed parameter '{name}'°¡ ¾ø½À´Ï´Ù. (AudioMixer ÀÎ½ºÆåÅÍ¿¡¼­ Expose Çß´ÂÁö È®ÀÎ)");
+            GameLog.Error($"[VolumePrefs] AudioMixer exposed parameter '{name}' Ï´. (AudioMixer Î½Í¿ Expose ß´ È®)");
             return false;
         }
         return true;
     }
 
-    /// <summary>ÀúÀåµÈ º¼·ýÀ» ¹Í¼­¿¡ Àû¿ëÇÏ°í, ¹®Á¦ ÀÖÀ¸¸é °æ°í ·Î±×¸¦ ³²±é´Ï´Ù.</summary>
+    /// <summary>  Í¼ Ï°,    Î±×¸ Ï´.</summary>
     public static bool ApplyToMixerWithLogs(AudioMixer mixer, string where = "")
     {
-        if (mixer == null) { Debug.LogError("[VolumePrefs] AudioMixer ÂüÁ¶°¡ null ÀÔ´Ï´Ù."); return false; }
+        if (mixer == null) { GameLog.Error("[VolumePrefs] AudioMixer  null Ô´Ï´."); return false; }
 
         float bgm = Load(KeyBgm, 0f);
         float sfx = Load(KeySfx, 0f);
@@ -56,7 +56,7 @@ public static class VolumePrefs
         ok &= SetParam(mixer, "Master", master);
 
         if (!string.IsNullOrEmpty(where))
-            Debug.Log($"[VolumePrefs] {where} Àû¿ëµÊ (BGM={bgm}, SFX={sfx}, Master={master})");
+            GameLog.Info($"[VolumePrefs] {where}  (BGM={bgm}, SFX={sfx}, Master={master})");
 
         return ok;
     }

@@ -48,7 +48,7 @@ public class EventScriptableObject : ScriptableObject
         {
             var match = stages.FirstOrDefault(s => string.Equals(s.stageId, stageId, StringComparison.Ordinal));
             if (match != null) return match;
-            Debug.LogWarning($"[EventSO] Stage '{stageId}' not found in event '{eventId}'. Falling back to first stage.");
+            GameLog.Warn($"[EventSO] Stage '{stageId}' not found in event '{eventId}'. Falling back to first stage.");
         }
         return stages.FirstOrDefault();
     }

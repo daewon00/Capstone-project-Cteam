@@ -18,8 +18,8 @@ public static class CardCatalogValidator
     public static void ValidateAllCardsFromMenu()
     {
         bool ok = RunValidation();
-        if (ok) Debug.Log("✅ 카드 카탈로그 검증 성공");
-        else Debug.LogWarning("❌ 카드 카탈로그 검증 실패 — Console 로그를 확인하세요.");
+        if (ok) GameLog.Info("✅ 카드 카탈로그 검증 성공");
+        else GameLog.Warn("❌ 카드 카탈로그 검증 실패 — Console 로그를 확인하세요.");
     }
 
     /// <summary>
@@ -49,13 +49,13 @@ public static class CardCatalogValidator
             string id = card.CardId;
             if (string.IsNullOrEmpty(id))
             {
-                Debug.LogError("[카드 검증 실패] CardId가 비어있습니다.", card);
+                GameLog.Error("[카드 검증 실패] CardId가 비어있습니다.", card);
                 allValid = false;
                 continue;
             }
             if (!seen.Add(id))
             {
-                Debug.LogError($"[카드 검증 실패] CardId 중복: '{id}'", card);
+                GameLog.Error($"[카드 검증 실패] CardId 중복: '{id}'", card);
                 allValid = false;
             }
         }

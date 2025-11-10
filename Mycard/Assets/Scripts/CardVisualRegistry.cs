@@ -16,7 +16,7 @@ public static class CardVisualRegistry
                 _profile = Resources.Load<CardVisualProfile>("Cards/CardVisualProfile");
                 if (_profile == null)
                 {
-                    Debug.LogWarning("[CardVisualRegistry] Resources/Cards/CardVisualProfile.asset 을 찾을 수 없습니다. 비주얼이 기본값으로 표시됩니다.");
+                    GameLog.Warn("[CardVisualRegistry] Resources/Cards/CardVisualProfile.asset 을 찾을 수 없습니다. 비주얼이 기본값으로 표시됩니다.");
                 }
             }
             return _profile;

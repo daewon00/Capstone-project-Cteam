@@ -192,7 +192,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (cardSO == null)
         {
-            Debug.LogWarning("[Card] SetupCard called without cardSO", this);
+            GameLog.Warn("[Card] SetupCard called without cardSO", this);
             return;
         }
 
@@ -323,7 +323,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
     {
         if (string.IsNullOrEmpty(instanceId) || so == null || deckService == null)
         {
-            Debug.LogError($"[Card] Initialize 실패: id={instanceId}, so={(so==null?"null":so.name)}, svc={(deckService==null?"null":"ok")}", this);
+            GameLog.Error($"[Card] Initialize 실패: id={instanceId}, so={(so==null?"null":so.name)}, svc={(deckService==null?"null":"ok")}", this);
             gameObject.SetActive(false);
             return;
         }
@@ -398,7 +398,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         // 카드 반납 시 카메라 원위치
         CameraController.instance.MoveTo(CameraController.instance.homeTransform);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] ReturnToHand: instance={InstanceId}, handPos={handPosition}");
+        GameLog.Info($"[Card] ReturnToHand: instance={InstanceId}, handPos={handPosition}");
 #endif
         SetBoardPreviewState(false, false);
     }
@@ -416,7 +416,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (mitigation.BlockedDamage > 0)
             {
-                Debug.Log($"[Card] Damage fully blocked by effects. instance={InstanceId}, blocked={mitigation.BlockedDamage}");
+                GameLog.Info($"[Card] Damage fully blocked by effects. instance={InstanceId}, blocked={mitigation.BlockedDamage}");
             }
 #endif
             effectService?.HandleCardDamaged(this, attacker, 0, sourceKind);
@@ -825,7 +825,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 
         var id = BuildTutorialTargetId();
         #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] EnsureTutorialTarget id='{id}' inHand={inHand} handPos={handPosition} focusRect='{(rect!=null?rect.name:"<null>")}' instance={InstanceId}", this);
+        GameLog.Info($"[Card] EnsureTutorialTarget id='{id}' inHand={inHand} handPos={handPosition} focusRect='{(rect!=null?rect.name:"<null>")}' instance={InstanceId}", this);
         #endif
         _tutorialTarget.SetId(id);
         _tutorialTarget.SetFocusRect(rect);
@@ -928,7 +928,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (_debugFieldTooltip)
         {
-            Debug.Log($"[Card] FieldTooltipCollider {(enable ? "ENABLED" : "DISABLED")} card={name}");
+            GameLog.Info($"[Card] FieldTooltipCollider {(enable ? "ENABLED" : "DISABLED")} card={name}");
         }
 #endif
         if (!enable)
@@ -950,7 +950,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (_debugFieldTooltip)
         {
-            Debug.Log($"[Card] ShowPressTooltip invoked card={name} inHand={inHand} shouldAllowField={ShouldAllowFieldTooltip()}");
+            GameLog.Info($"[Card] ShowPressTooltip invoked card={name} inHand={inHand} shouldAllowField={ShouldAllowFieldTooltip()}");
         }
 #endif
         var tooltipService = ServiceRegistry.Get<ICardTooltipService>();
@@ -1000,7 +1000,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (logReasons && _debugFieldTooltip)
         {
-            Debug.Log($"[Card] FieldTooltipCheck card={name} assigned={assigned} battleActive={battleActive} camPresent={camValid} atBattleView={atBattleView} allowed={allowed}");
+            GameLog.Info($"[Card] FieldTooltipCheck card={name} assigned={assigned} battleActive={battleActive} camPresent={camValid} atBattleView={atBattleView} allowed={allowed}");
         }
 #endif
 
@@ -1118,7 +1118,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         HidePressTooltip();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] BeginDrag instance={InstanceId} pendingCameraMove={(CameraController.instance != null ? CameraController.instance.battleTransform != null : false)} camTarget={CameraController.instance?.CurrentTarget?.name}");
+        GameLog.Info($"[Card] BeginDrag instance={InstanceId} pendingCameraMove={(CameraController.instance != null ? CameraController.instance.battleTransform != null : false)} camTarget={CameraController.instance?.CurrentTarget?.name}");
 #endif
         SetBoardPreviewState(false, false);
         _isDragging = true;
@@ -1157,11 +1157,11 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_pendingCameraMove)
             {
-                Debug.Log($"[Card] TryActivateDragCamera pending; travelled={Vector2.Distance(_dragStartScreenPos, eventData.position)} threshold={HandController.instance?.GetDragCameraActivationDistance()} camTarget={CameraController.instance?.CurrentTarget?.name}");
+                GameLog.Info($"[Card] TryActivateDragCamera pending; travelled={Vector2.Distance(_dragStartScreenPos, eventData.position)} threshold={HandController.instance?.GetDragCameraActivationDistance()} camTarget={CameraController.instance?.CurrentTarget?.name}");
             }
             else
             {
-                Debug.Log($"[Card] Drag camera activated instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
+                GameLog.Info($"[Card] Drag camera activated instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
             }
 #endif
             if (_pendingCameraMove)
@@ -1205,7 +1205,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         ClearHoverHighlight();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] EndDrag instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
+        GameLog.Info($"[Card] EndDrag instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
 #endif
         // 1) 유효한 배치 포인트 검사 + 플레이 가능성 선검사
         Ray ray = Camera.main.ScreenPointToRay(eventData.position);
@@ -1216,7 +1216,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             if (selectedPoint != null && selectedPoint.activeCard == null && selectedPoint.isPlayerPoint)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[Card] EndDrag slot hit instance={InstanceId} slot={selectedPoint.name}");
+                GameLog.Info($"[Card] EndDrag slot hit instance={InstanceId} slot={selectedPoint.name}");
 #endif
                 // 플레이 가능성(턴/마나) 선검사
                 var playable = BattleController.instance.EvaluatePlayability(this);
@@ -1257,7 +1257,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                     }
                     UpdateCardDisplay();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[Card] Placed: instance={InstanceId}, parent={(transform.parent != null ? transform.parent.name : "<none>")}, pos={transform.position}");
+                    GameLog.Info($"[Card] Placed: instance={InstanceId}, parent={(transform.parent != null ? transform.parent.name : "<none>")}, pos={transform.position}");
 #endif
                     SetInteractable(false);
                     CameraController.instance.MoveTo(CameraController.instance.homeTransform);
@@ -1311,7 +1311,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
                 _sortingBinder.RestoreAfterDrag();
             UIController.instance?.SetDragModeUIVisibility(true);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Card] EndDrag miss; return to hand instance={InstanceId} camTarget(before)={CameraController.instance?.CurrentTarget?.name}");
+            GameLog.Info($"[Card] EndDrag miss; return to hand instance={InstanceId} camTarget(before)={CameraController.instance?.CurrentTarget?.name}");
 #endif
             ReturnToHand();
         }
@@ -1328,7 +1328,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (duration < TapTimeThreshold && dist < TapDistanceThreshold)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Card] Tapped: instance={InstanceId}, name={cardSO?.cardName}");
+            GameLog.Info($"[Card] Tapped: instance={InstanceId}, name={cardSO?.cardName}");
 #endif
             // TODO: 카드 상세보기 등 탭 행동 연결 가능
         }
@@ -1344,7 +1344,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
             return;
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] PointerUp instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
+        GameLog.Info($"[Card] PointerUp instance={InstanceId} camTarget={CameraController.instance?.CurrentTarget?.name}");
 #endif
         if (theHC != null)
         {
@@ -1516,7 +1516,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (hand == null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] TryActivateDragCamera abort: no hand instance instance={InstanceId}");
+        GameLog.Info($"[Card] TryActivateDragCamera abort: no hand instance instance={InstanceId}");
 #endif
             _pendingCameraMove = false;
             return;
@@ -1533,7 +1533,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (travelled >= threshold)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[Card] TryActivateDragCamera exceeded threshold instance={InstanceId} travelled={travelled} threshold={threshold}");
+        GameLog.Info($"[Card] TryActivateDragCamera exceeded threshold instance={InstanceId} travelled={travelled} threshold={threshold}");
 #endif
             ActivateDragCameraNow();
         }
@@ -1545,7 +1545,7 @@ public class Card : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IB
         if (CameraController.instance != null && CameraController.instance.battleTransform != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Card] ActivateDragCameraNow instance={InstanceId} camTarget(before)={CameraController.instance.CurrentTarget?.name} -> {CameraController.instance.battleTransform.name}");
+            GameLog.Info($"[Card] ActivateDragCameraNow instance={InstanceId} camTarget(before)={CameraController.instance.CurrentTarget?.name} -> {CameraController.instance.battleTransform.name}");
 #endif
             CameraController.instance.MoveTo(CameraController.instance.battleTransform);
         }

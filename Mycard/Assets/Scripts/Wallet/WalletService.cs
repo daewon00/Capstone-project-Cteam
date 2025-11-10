@@ -39,7 +39,7 @@ public sealed class WalletService : IWalletService
             }
             catch (Exception e)
             {
-            Debug.LogError($"[WalletService] LoadCurrentRun 실패: {e.Message}");
+            GameLog.Error($"[WalletService] LoadCurrentRun 실패: {e.Message}");
             newGold = 0;
         }
         }
@@ -82,7 +82,7 @@ public sealed class WalletService : IWalletService
             }
             catch (Exception e)
             {
-                Debug.LogError($"[WalletService] DB UpdateRunGold 실패: {e.Message}");
+                GameLog.Error($"[WalletService] DB UpdateRunGold 실패: {e.Message}");
                 return false;
             }
         }

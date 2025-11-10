@@ -45,7 +45,7 @@ public sealed class AchievementService : IAchievementService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[AchievementService] Legacy migration failed: {e.Message}");
+            GameLog.Warn($"[AchievementService] Legacy migration failed: {e.Message}");
         }
     }
 
@@ -256,7 +256,7 @@ public sealed class AchievementService : IAchievementService
 
         if (!string.IsNullOrEmpty(tier.reward.rewardType))
         {
-            Debug.Log($"[AchievementService] Tier reward hook pending: id={def.Id}, type={tier.reward.rewardType}, payload={tier.reward.rewardPayload}");
+            GameLog.Info($"[AchievementService] Tier reward hook pending: id={def.Id}, type={tier.reward.rewardType}, payload={tier.reward.rewardPayload}");
         }
     }
 
@@ -342,7 +342,7 @@ public sealed class AchievementService : IAchievementService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[AchievementService] SO load failed: {e.Message}");
+            GameLog.Warn($"[AchievementService] SO load failed: {e.Message}");
         }
 
         var dict = new Dictionary<string, AchievementDefinition>(StringComparer.OrdinalIgnoreCase);

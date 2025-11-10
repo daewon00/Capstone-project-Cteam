@@ -27,7 +27,7 @@ public static class CardUpgradeRules
 
         if (catalog == null)
         {
-            Debug.LogWarning("[CardUpgradeRules] CardCatalog가 없어 강화 가능 여부를 판별할 수 없습니다.");
+            GameLog.Warn("[CardUpgradeRules] CardCatalog가 없어 강화 가능 여부를 판별할 수 없습니다.");
             return false;
         }
 

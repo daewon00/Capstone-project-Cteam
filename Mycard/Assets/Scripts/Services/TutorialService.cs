@@ -200,11 +200,11 @@ public sealed class TutorialService : ITutorialService
     {
         if (!CanAdvanceViaOverlay)
         {
-            Debug.Log($"[TutorialService] TryAdvanceOverlayStep blocked: isActive={IsActive} cfgNull={CurrentConfig==null} req={CurrentConfig?.RequiredAction} allowTap={CurrentConfig?.AllowTapToContinue}");
+            GameLog.Info($"[TutorialService] TryAdvanceOverlayStep blocked: isActive={IsActive} cfgNull={CurrentConfig==null} req={CurrentConfig?.RequiredAction} allowTap={CurrentConfig?.AllowTapToContinue}");
             return false;
         }
 
-        Debug.Log($"[TutorialService] TryAdvanceOverlayStep advancing: step={CurrentStep}");
+        GameLog.Info($"[TutorialService] TryAdvanceOverlayStep advancing: step={CurrentStep}");
         AdvanceStep();
         return true;
     }
@@ -251,7 +251,7 @@ public sealed class TutorialService : ITutorialService
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[TutorialService] Failed to clear tutorial flag on run: {e.Message}");
+                GameLog.Warn($"[TutorialService] Failed to clear tutorial flag on run: {e.Message}");
             }
         }
     }
@@ -291,7 +291,7 @@ public sealed class TutorialService : ITutorialService
 
         _targets[target.TargetId] = target;
         #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[TutorialService] RegisterTarget id='{target.TargetId}' focusRect={(target.FocusRect!=null?target.FocusRect.name:"<null>")} currentStep={CurrentStep} currentHighlightId='{CurrentConfig?.HighlightTargetId}'");
+        GameLog.Info($"[TutorialService] RegisterTarget id='{target.TargetId}' focusRect={(target.FocusRect!=null?target.FocusRect.name:"<null>")} currentStep={CurrentStep} currentHighlightId='{CurrentConfig?.HighlightTargetId}'");
         #endif
         if (CurrentConfig != null && string.Equals(CurrentConfig.HighlightTargetId, target.TargetId, StringComparison.OrdinalIgnoreCase))
         {
@@ -310,7 +310,7 @@ public sealed class TutorialService : ITutorialService
         {
             _targets.Remove(target.TargetId);
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[TutorialService] UnregisterTarget id='{target.TargetId}'");
+            GameLog.Info($"[TutorialService] UnregisterTarget id='{target.TargetId}'");
             #endif
             if (CurrentConfig != null && string.Equals(CurrentConfig.HighlightTargetId, target.TargetId, StringComparison.OrdinalIgnoreCase))
             {
@@ -327,7 +327,7 @@ public sealed class TutorialService : ITutorialService
             return target.FocusRect;
         }
         #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[TutorialService] GetTargetRect MISS id='{targetId}'. Registered={_targets.Count}");
+        GameLog.Info($"[TutorialService] GetTargetRect MISS id='{targetId}'. Registered={_targets.Count}");
         #endif
         return null;
     }
@@ -345,7 +345,7 @@ public sealed class TutorialService : ITutorialService
         int idx = IndexOfStep(newStep);
         if (idx < 0)
         {
-            Debug.LogWarning($"[TutorialService] No configuration found for step {newStep}. Skipping.");
+            GameLog.Warn($"[TutorialService] No configuration found for step {newStep}. Skipping.");
             return;
         }
         SetIndex(idx);
@@ -489,7 +489,7 @@ public sealed class TutorialService : ITutorialService
         PersistProgress();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[TutorialService] Index -> {_currentIndex} step={cfg.Step} (run={_activeRunId})");
+        GameLog.Info($"[TutorialService] Index -> {_currentIndex} step={cfg.Step} (run={_activeRunId})");
 #endif
 
         OnStepChanged?.Invoke(cfg.Step);
@@ -521,7 +521,7 @@ public sealed class TutorialService : ITutorialService
         _sequence = Resources.Load<TutorialSequenceDefinition>(resourcePath);
         if (_sequence == null)
         {
-            Debug.LogWarning($"[TutorialService] Tutorial sequence not found at Resources/{resourcePath}. Using empty configuration.");
+            GameLog.Warn($"[TutorialService] Tutorial sequence not found at Resources/{resourcePath}. Using empty configuration.");
         }
         _stepLookup.Clear();
     }

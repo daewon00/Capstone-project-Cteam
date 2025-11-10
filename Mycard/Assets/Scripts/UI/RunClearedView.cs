@@ -21,7 +21,7 @@ public class RunClearedView : MonoBehaviour
     private void Awake()
     {
         if (rootPanel != null) rootPanel.SetActive(false);
-        Debug.Log("[BossFlow][RunClearedView] Awake: subscribing to MetaEvents.OnRunEnded");
+        GameLog.Info("[BossFlow][RunClearedView] Awake: subscribing to MetaEvents.OnRunEnded");
         MetaEvents.OnRunEnded += HandleRunEnded;
     }
 
@@ -33,7 +33,7 @@ public class RunClearedView : MonoBehaviour
     private void HandleRunEnded(MetaEvents.RunEndedPayload payload)
     {
         // 보스전 승리(클리어) 상황에서만 표시
-        Debug.Log($"[BossFlow][RunClearedView] HandleRunEnded: cleared={payload.Cleared}, runId={payload.RunId}");
+        GameLog.Info($"[BossFlow][RunClearedView] HandleRunEnded: cleared={payload.Cleared}, runId={payload.RunId}");
         if (!payload.Cleared) return;
 
         try
@@ -47,12 +47,12 @@ public class RunClearedView : MonoBehaviour
         if (rootPanel != null)
         {
             rootPanel.SetActive(true);
-            Debug.Log("[BossFlow][RunClearedView] rootPanel.SetActive(true)");
+            GameLog.Info("[BossFlow][RunClearedView] rootPanel.SetActive(true)");
         }
         else
         {
             gameObject.SetActive(true);
-            Debug.Log("[BossFlow][RunClearedView] rootPanel is null; activated self GameObject");
+            GameLog.Info("[BossFlow][RunClearedView] rootPanel is null; activated self GameObject");
         }
     }
 
@@ -120,7 +120,7 @@ public class RunClearedView : MonoBehaviour
         }
 
         listText.text = sb.ToString();
-        Debug.Log($"[BossFlow][RunClearedView] Populated {newlyAchievements.Count} achievements + {newlyTiers.Count} tiers");
+        GameLog.Info($"[BossFlow][RunClearedView] Populated {newlyAchievements.Count} achievements + {newlyTiers.Count} tiers");
     }
 
     // UI의 '메인 메뉴로' 버튼에 연결

@@ -26,27 +26,27 @@ public class GameInitializer : MonoBehaviour
         // 새 게임을 시작하거나 씬을 다시 로드할 때를 대비해, 보관소를 항상 깨끗하게 비웁니다.
         ServiceRegistry.ClearAll();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[BossFlow][GI] ServiceRegistry cleared. Bootstrapping...");
+        GameLog.Info("[BossFlow][GI] ServiceRegistry cleared. Bootstrapping...");
 #endif
 
         // 1. [기반 시스템 준비] 데이터베이스에 먼저 연결합니다.
         DatabaseManager.Instance.Connect();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[BossFlow][GI] DB connected.");
+        GameLog.Info("[BossFlow][GI] DB connected.");
 #endif
 
         // 1.5. 카드 카탈로그 서비스 등록 (Resources/Cards)
         var cardCatalog = new CardCatalog("Cards");
         if (cardCatalog.Count == 0)
         {
-            Debug.LogWarning("[GameInitializer] CardCatalog가 비어있습니다. Resources/Cards 경로 또는 에셋 구성을 확인하세요.");
+            GameLog.Warn("[GameInitializer] CardCatalog가 비어있습니다. Resources/Cards 경로 또는 에셋 구성을 확인하세요.");
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[GameInitializer] CardCatalog load complete. count={cardCatalog.Count}");
+        GameLog.Info($"[GameInitializer] CardCatalog load complete. count={cardCatalog.Count}");
 #endif
         ServiceRegistry.Register<ICardCatalog>(cardCatalog);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BossFlow][GI] Registered ICardCatalog (count={cardCatalog.Count}).");
+        GameLog.Info($"[BossFlow][GI] Registered ICardCatalog (count={cardCatalog.Count}).");
 #endif
 
         // 2. [부품 생성] '가벽' 역할을 할 DatabaseFacade를 생성합니다.
@@ -55,7 +55,7 @@ public class GameInitializer : MonoBehaviour
         ServiceRegistry.Register<IDatabase>(dbFacade);
         _db = dbFacade;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[BossFlow][GI] Registered IDatabase.");
+        GameLog.Info("[BossFlow][GI] Registered IDatabase.");
 #endif
 
         // 3. 러닝 컨텍스트(runId) 확보
@@ -69,7 +69,7 @@ public class GameInitializer : MonoBehaviour
                 runData = DatabaseManager.Instance.LoadCurrentRun(runId);
                 if (runData == null || runData.Run == null)
                 {
-                    Debug.LogWarning($"[GameInitializer] lastRunId에 해당하는 CurrentRun이 없어 초기화합니다: {runId}");
+                    GameLog.Warn($"[GameInitializer] lastRunId에 해당하는 CurrentRun이 없어 초기화합니다: {runId}");
                     PlayerPrefs.DeleteKey("lastRunId");
                     PlayerPrefs.Save();
                     runId = string.Empty;
@@ -78,14 +78,14 @@ public class GameInitializer : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[GameInitializer] lastRunId 확인 중 오류: {e.Message}");
+                GameLog.Warn($"[GameInitializer] lastRunId 확인 중 오류: {e.Message}");
             }
         }
 
         var lifecycleService = new RunLifecycleService(dbFacade);
         ServiceRegistry.Register<IRunLifecycleService>(lifecycleService);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BossFlow][GI] Registered IRunLifecycleService (runId='{runId}').");
+        GameLog.Info($"[BossFlow][GI] Registered IRunLifecycleService (runId='{runId}').");
 #endif
         if (!string.IsNullOrEmpty(runId))
         {
@@ -113,21 +113,21 @@ public class GameInitializer : MonoBehaviour
         }
         ServiceRegistry.Register<IRngService>(_rng);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[BossFlow][GI] Registered IRngService.");
+        GameLog.Info("[BossFlow][GI] Registered IRngService.");
 #endif
 
         // 5. 월렛(지갑) 서비스 등록: DB-우선 골드 관리 + 브로드캐스트
         var wallet = new WalletService(dbFacade, runId);
         ServiceRegistry.Register<IWalletService>(wallet);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BossFlow][GI] Registered IWalletService (runId='{runId}').");
+        GameLog.Info($"[BossFlow][GI] Registered IWalletService (runId='{runId}').");
 #endif
 
         var stageService = new RunStageService(dbFacade);
         stageService.RebindRun(runId);
         ServiceRegistry.Register<IRunStageService>(stageService);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BossFlow][GI] Registered IRunStageService (runId='{runId}').");
+        GameLog.Info($"[BossFlow][GI] Registered IRunStageService (runId='{runId}').");
 #endif
 
         // 5.5 특전/모디파이어/업적 서비스 등록
@@ -140,7 +140,7 @@ public class GameInitializer : MonoBehaviour
         achievementService.RebindProfile(GameContext.I != null ? GameContext.I.ProfileId : "P1");
         ServiceRegistry.Register<IAchievementService>(achievementService);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log("[BossFlow][GI] Registered Perk/Modifier/Achievement services.");
+        GameLog.Info("[BossFlow][GI] Registered Perk/Modifier/Achievement services.");
 #endif
 
         // [Tutorial] 서비스 비활성화: 안정적으로 튜토리얼 전역 기능을 끕니다.
@@ -155,7 +155,7 @@ public class GameInitializer : MonoBehaviour
         // }
         // ServiceRegistry.Register<ITutorialService>(tutorialService);
         // #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // Debug.Log($"[BossFlow][GI] Registered ITutorialService (runId='{runId}', tutorialRun={isTutorialRun}).");
+        // GameLog.Info($"[BossFlow][GI] Registered ITutorialService (runId='{runId}', tutorialRun={isTutorialRun}).");
         // #endif
 
         // 5.6 업적 이벤트 구독: 게임 이벤트 허브 → 업적 서비스
@@ -168,7 +168,7 @@ public class GameInitializer : MonoBehaviour
                 ach?.ReportProgress("ACH_FIRST_BATTLE", 1);
                 ach?.UnlockIfEligible("ACH_FIRST_BATTLE");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[BossFlow][GI] OnCombatVictory handler executed.");
+                GameLog.Info("[BossFlow][GI] OnCombatVictory handler executed.");
 #endif
             }
             catch { }
@@ -181,7 +181,7 @@ public class GameInitializer : MonoBehaviour
             {
                 var ach = ServiceRegistry.Get<IAchievementService>();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[BossFlow][GI] OnRunEnded handler: cleared={payload.Cleared}");
+                GameLog.Info($"[BossFlow][GI] OnRunEnded handler: cleared={payload.Cleared}");
 #endif
                 if (payload.Cleared)
                 {
@@ -202,7 +202,7 @@ public class GameInitializer : MonoBehaviour
                 ach?.ReportProgress("ACH_DESTROY_ENEMY_CARDS", 1);
                 ach?.UnlockIfEligible("ACH_DESTROY_ENEMY_CARDS");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log("[BossFlow][GI] OnEnemyCardDestroyed handler executed.");
+                GameLog.Info("[BossFlow][GI] OnEnemyCardDestroyed handler executed.");
 #endif
             }
             catch { }
@@ -239,7 +239,7 @@ public class GameInitializer : MonoBehaviour
             runService.RebindRun(runId);
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BossFlow][GI] Registered IRunService (runId='{runId}').");
+        GameLog.Info($"[BossFlow][GI] Registered IRunService (runId='{runId}').");
 #endif
 
         // 8. 초기화 과정 중 변경되었을 수 있는 RNG 상태를 한 번 더 저장하여 정합성 보장
@@ -248,7 +248,7 @@ public class GameInitializer : MonoBehaviour
             _db.UpsertRngStates(runId, rngService.GetStatesForSave());
         }
 
-        Debug.Log("GameInitializer: 모든 시스템 조립 및 등록이 완료되었습니다.");
+        GameLog.Info("GameInitializer: 모든 시스템 조립 및 등록이 완료되었습니다.");
 
         // 9. 업적 토스트 컨트롤러를 보장(중복 생성 방지용으로 1개만 유지)
         try
@@ -314,6 +314,6 @@ public class GameInitializer : MonoBehaviour
         var states = _rng?.GetStatesForSave();
         if (states == null) return;
         _db?.UpsertRngStates(runId, states);
-        Debug.Log("[GameInitializer] RNG states persisted.");
+        GameLog.Info("[GameInitializer] RNG states persisted.");
     }
 }

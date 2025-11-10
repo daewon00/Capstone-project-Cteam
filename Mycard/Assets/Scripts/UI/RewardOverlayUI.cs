@@ -46,7 +46,7 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
 
         if (rewards == null)
         {
-            Debug.LogWarning("[RewardOverlayUI] rewards is null");
+            GameLog.Warn("[RewardOverlayUI] rewards is null");
             goldText?.SetText(string.Empty);
         }
         else
@@ -96,7 +96,7 @@ public class RewardOverlayUI : MonoBehaviour, IRewardUI
     {
         if (_deckService == null)
         {
-            Debug.LogWarning("[RewardOverlayUI] IDeckService not available; cannot add card.");
+            GameLog.Warn("[RewardOverlayUI] IDeckService not available; cannot add card.");
         }
         else if (selected != null && !string.IsNullOrEmpty(selected.CardId))
         {

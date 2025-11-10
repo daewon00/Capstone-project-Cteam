@@ -322,7 +322,7 @@ public sealed class CardEffectService : ICardEffectService
     {
         if (string.IsNullOrEmpty(effect.PayloadId))
         {
-            Debug.LogWarning("[CardEffectService] Summon 효과에 PayloadId가 설정되지 않았습니다.");
+            GameLog.Warn("[CardEffectService] Summon 효과에 PayloadId가 설정되지 않았습니다.");
             return;
         }
 
@@ -333,7 +333,7 @@ public sealed class CardEffectService : ICardEffectService
         var tokenData = catalog?.GetCardData(effect.PayloadId);
         if (tokenData == null)
         {
-            Debug.LogWarning($"[CardEffectService] Summon 대상 카드 데이터를 찾을 수 없습니다: {effect.PayloadId}");
+            GameLog.Warn($"[CardEffectService] Summon 대상 카드 데이터를 찾을 수 없습니다: {effect.PayloadId}");
             return;
         }
 
@@ -354,7 +354,7 @@ public sealed class CardEffectService : ICardEffectService
         var prefab = HandServiceBinder.SharedCardPrefab;
         if (deck == null || prefab == null)
         {
-            Debug.LogWarning("[CardEffectService] 토큰 소환에 필요한 Deck 또는 Card Prefab이 없습니다.");
+            GameLog.Warn("[CardEffectService] 토큰 소환에 필요한 Deck 또는 Card Prefab이 없습니다.");
             return;
         }
 

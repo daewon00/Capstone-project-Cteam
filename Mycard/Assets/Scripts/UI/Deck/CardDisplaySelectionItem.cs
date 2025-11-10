@@ -22,7 +22,7 @@ public class CardDisplaySelectionItem : MonoBehaviour, IPointerClickHandler
         _cardDisplay = GetComponent<CardDisplay>();
         if (_cardDisplay == null)
         {
-            Debug.LogError("[CardDisplaySelectionItem] CardDisplay 컴포넌트를 찾을 수 없습니다.", this);
+            GameLog.Error("[CardDisplaySelectionItem] CardDisplay 컴포넌트를 찾을 수 없습니다.", this);
         }
 
         _button = GetComponent<Button>();
@@ -36,7 +36,7 @@ public class CardDisplaySelectionItem : MonoBehaviour, IPointerClickHandler
         _button.onClick.AddListener(HandleClick);
         _baseScale = transform.localScale == Vector3.zero ? Vector3.one : transform.localScale;
         SetSelected(false, true);
-        Debug.Log($"[CardDisplaySelectionItem] Awake on {gameObject.name}", this);
+        GameLog.Info($"[CardDisplaySelectionItem] Awake on {gameObject.name}", this);
     }
 
     private void OnDestroy()
@@ -71,7 +71,7 @@ public class CardDisplaySelectionItem : MonoBehaviour, IPointerClickHandler
 
     private void HandleClick()
     {
-        Debug.Log($"[CardDisplaySelectionItem] Clicked instance={(RuntimeState != null ? RuntimeState.InstanceId : "null")}", this);
+        GameLog.Info($"[CardDisplaySelectionItem] Clicked instance={(RuntimeState != null ? RuntimeState.InstanceId : "null")}", this);
         Clicked?.Invoke(this);
     }
 

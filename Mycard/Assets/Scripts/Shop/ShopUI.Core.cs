@@ -158,13 +158,13 @@ public partial class ShopUI : MonoBehaviour
         if (_cardIdMap.Count == 0) LoadAllCardData();
         
         // [CCTV] 함수가 어떤 데이터로 시작하는지 확인
-        Debug.Log($"<color=purple>[CCTV] ImportSession 시작. 현재 '카드 전화번호부'에 등록된 카드 수: {_cardIdMap.Count}개</color>", this);
+        GameLog.Info($"<color=purple>[CCTV] ImportSession 시작. 현재 '카드 전화번호부'에 등록된 카드 수: {_cardIdMap.Count}개</color>", this);
 
 
         if (dto == null || dto.slots == null || dto.slots.Length == 0)
         {
             // [CCTV] 유효하지 않은 데이터로 리셋되는지 확인
-            Debug.LogWarning($"<color=yellow>[Import] DTO 데이터가 비어있어 상점을 리셋합니다.</color>", this);
+            GameLog.Warn($"<color=yellow>[Import] DTO 데이터가 비어있어 상점을 리셋합니다.</color>", this);
             ResetSession();
             return;
         }
@@ -173,7 +173,7 @@ public partial class ShopUI : MonoBehaviour
         _dummy = new List<ShopSlotVM>(dto.slots.Length);
 
         // [CCTV] 복원할 아이템 개수와 리롤 횟수 확인
-        Debug.Log($"<color=lightblue>[Import] 복원 시작: 총 {dto.slots.Length}개의 아이템, 리롤 횟수 {_rerollCount}</color>", this);
+        GameLog.Info($"<color=lightblue>[Import] 복원 시작: 총 {dto.slots.Length}개의 아이템, 리롤 횟수 {_rerollCount}</color>", this);
 
         // 리롤 로직에 필요한 카드 소스 데이터를 초기화합니다.
         for (int i = 0; i < _cardSources.Length; i++) _cardSources[i] = null;
@@ -187,7 +187,7 @@ public partial class ShopUI : MonoBehaviour
             ShopSlotVM vm;
 
             // [CCTV] 각 슬롯의 원본 데이터 확인
-            Debug.Log($" - 슬롯 #{i} 복원 시도: itemId='{slotData.itemId}', soldOut={slotData.soldOut}");
+            GameLog.Info($" - 슬롯 #{i} 복원 시도: itemId='{slotData.itemId}', soldOut={slotData.soldOut}");
 
             // --- 1. 카드/비카드 판별 ---
             CardScriptableObject so = null;
@@ -245,7 +245,7 @@ public partial class ShopUI : MonoBehaviour
         }
 
         // [CCTV] 최종 복원된 아이템 수 확인
-        Debug.Log($"<color=lightblue>[Import] 최종 복원된 아이템 수: {_dummy.Count}개</color>", this);
+        GameLog.Info($"<color=lightblue>[Import] 최종 복원된 아이템 수: {_dummy.Count}개</color>", this);
 
 
         _sessionInitialized = true;
@@ -342,7 +342,7 @@ public partial class ShopUI : MonoBehaviour
     }
 
     /// <summary>
-    /// verboseLogs가 true일 때만 Debug.Log를 출력하는 헬퍼 함수입니다.
+    /// verboseLogs가 true일 때만 GameLog.Info를 출력하는 헬퍼 함수입니다.
     /// </summary>
     /// <param name="message">출력할 메시지</param>
     private void VLog(string message)
@@ -351,7 +351,7 @@ public partial class ShopUI : MonoBehaviour
         if (!verboseLogs) return;
 
         // 스위치가 켜져있을 때만 아래 코드가 실행됩니다.
-        Debug.Log(message, this);
+        GameLog.Info(message, this);
     }
 
     // 노드에서 떠나면 진입중에서 벗어남

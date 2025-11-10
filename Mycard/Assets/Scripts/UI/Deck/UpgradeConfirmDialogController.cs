@@ -85,7 +85,7 @@ public class UpgradeConfirmDialogController : MonoBehaviour
         {
             bool before = panelRoot.activeSelf;
             panelRoot.SetActive(true);
-            Debug.Log($"[UpgradeConfirmDialog] Show (active: {before} -> {panelRoot.activeSelf}) state={(state!=null?state.InstanceId:"null")} card={(so!=null?so.CardId:"null")}", this);
+            GameLog.Info($"[UpgradeConfirmDialog] Show (active: {before} -> {panelRoot.activeSelf}) state={(state!=null?state.InstanceId:"null")} card={(so!=null?so.CardId:"null")}", this);
         }
     }
 

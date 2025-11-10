@@ -26,7 +26,7 @@ public sealed class RunLifecycleService : IRunLifecycleService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"{LogTag} HasActiveRun check failed: {e.Message}");
+            GameLog.Warn($"{LogTag} HasActiveRun check failed: {e.Message}");
             return false;
         }
     }
@@ -83,7 +83,7 @@ public sealed class RunLifecycleService : IRunLifecycleService
     {
         if (string.IsNullOrEmpty(runId))
         {
-            Debug.LogWarning($"{LogTag} RegisterNewRun called with empty runId.");
+            GameLog.Warn($"{LogTag} RegisterNewRun called with empty runId.");
             return;
         }
 
@@ -112,7 +112,7 @@ public sealed class RunLifecycleService : IRunLifecycleService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"{LogTag} PlayerPrefs.Save failed: {e.Message}");
+            GameLog.Warn($"{LogTag} PlayerPrefs.Save failed: {e.Message}");
         }
     }
 
@@ -133,7 +133,7 @@ public sealed class RunLifecycleService : IRunLifecycleService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"{LogTag} PlayerPrefs.Save failed while clearing: {e.Message}");
+            GameLog.Warn($"{LogTag} PlayerPrefs.Save failed while clearing: {e.Message}");
         }
     }
 
@@ -145,7 +145,7 @@ public sealed class RunLifecycleService : IRunLifecycleService
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"{LogTag} {label} threw: {e.Message}");
+            GameLog.Warn($"{LogTag} {label} threw: {e.Message}");
         }
     }
 }

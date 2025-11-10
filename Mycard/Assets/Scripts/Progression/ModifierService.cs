@@ -42,7 +42,7 @@ public sealed class ModifierService : IModifierService
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[ModifierService] Snapshot load failed: {e.Message}");
+                GameLog.Warn($"[ModifierService] Snapshot load failed: {e.Message}");
             }
         }
     }

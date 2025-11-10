@@ -178,7 +178,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
             ServiceRegistry.Get<IDatabase>()?.UpsertCurrentRun(run);
             PlayerPrefs.SetString("lastRunId", runId);
             PlayerPrefs.Save();
-            Debug.Log($"[ProgressionDebug] New run created: {runId} with starting gold {run.Gold}");
+            GameLog.Info($"[ProgressionDebug] New run created: {runId} with starting gold {run.Gold}");
         }
 
         GUILayout.Space(6);
@@ -237,7 +237,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogWarning("[ProgressionDebug] DELETE 확인 입력이 필요합니다.");
+                        GameLog.Warn("[ProgressionDebug] DELETE 확인 입력이 필요합니다.");
                     }
                 }
             }
@@ -318,7 +318,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
                 DatabaseManager.Instance.DeleteActiveEventSession(runId);
                 // 런 관련 행을 삭제합니다.
                 DatabaseManager.Instance.DeleteCurrentRun(runId);
-                Debug.Log($"[ProgressionDebug] Current run deleted: {runId}");
+                GameLog.Info($"[ProgressionDebug] Current run deleted: {runId}");
             }
             PlayerPrefs.DeleteKey("lastRunId");
             PlayerPrefs.DeleteKey("selectedCompanionId");
@@ -326,7 +326,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[ProgressionDebug] DeleteCurrentRun failed: {e.Message}");
+            GameLog.Error($"[ProgressionDebug] DeleteCurrentRun failed: {e.Message}");
         }
     }
 
@@ -391,7 +391,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
         catch (System.Exception e) { sb.AppendLine($"Reconnect failed: {e.Message}"); }
 
         _lastWipeLog = $"[Wipe] files deleted={deleted}\n" + sb.ToString();
-        Debug.Log($"[ProgressionDebug] Full data wipe complete. Deleted files={deleted}\n{_lastWipeLog}");
+        GameLog.Info($"[ProgressionDebug] Full data wipe complete. Deleted files={deleted}\n{_lastWipeLog}");
     }
 
     /// <summary>
@@ -406,7 +406,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[ProgressionDebug] Failed to load Main Menu: {e.Message}");
+            GameLog.Warn($"[ProgressionDebug] Failed to load Main Menu: {e.Message}");
         }
     }
 }

@@ -20,7 +20,7 @@ public static class RunCacheSynchronizer
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[RunCacheSynchronizer] LoadCurrentRun failed: {e.Message}");
+            GameLog.Warn($"[RunCacheSynchronizer] LoadCurrentRun failed: {e.Message}");
             return;
         }
 

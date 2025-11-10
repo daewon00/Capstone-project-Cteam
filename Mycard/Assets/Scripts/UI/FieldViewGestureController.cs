@@ -47,7 +47,7 @@ public class FieldViewGestureController : MonoBehaviour
     {
         _cardDragSuppression = Mathf.Clamp(_cardDragSuppression + 1, 0, int.MaxValue);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[FieldViewGesture] Suppress ++ => count={_cardDragSuppression}");
+        GameLog.Info($"[FieldViewGesture] Suppress ++ => count={_cardDragSuppression}");
 #endif
     }
 
@@ -55,7 +55,7 @@ public class FieldViewGestureController : MonoBehaviour
     {
         _cardDragSuppression = Mathf.Max(0, _cardDragSuppression - 1);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[FieldViewGesture] Suppress -- => count={_cardDragSuppression}");
+        GameLog.Info($"[FieldViewGesture] Suppress -- => count={_cardDragSuppression}");
 #endif
     }
 
@@ -203,7 +203,7 @@ public class FieldViewGestureController : MonoBehaviour
         if (UIController.instance != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[FieldViewGesture] SwitchToFieldView via UIController.FieldButton");
+            GameLog.Info("[FieldViewGesture] SwitchToFieldView via UIController.FieldButton");
 #endif
             UIController.instance.FieldButton();
             SyncCameraTarget(CameraController.instance != null ? CameraController.instance.battleTransform : null);
@@ -213,7 +213,7 @@ public class FieldViewGestureController : MonoBehaviour
         if (CameraController.instance != null && CameraController.instance.battleTransform != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[FieldViewGesture] SwitchToFieldView direct MoveTo battleTransform");
+            GameLog.Info("[FieldViewGesture] SwitchToFieldView direct MoveTo battleTransform");
 #endif
             CameraController.instance.MoveTo(CameraController.instance.battleTransform);
             SyncCameraTarget(CameraController.instance.battleTransform);
@@ -228,7 +228,7 @@ public class FieldViewGestureController : MonoBehaviour
         if (UIController.instance != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[FieldViewGesture] SwitchToHandView via UIController.FieldBack");
+            GameLog.Info("[FieldViewGesture] SwitchToHandView via UIController.FieldBack");
 #endif
             UIController.instance.FieldBack();
             SyncCameraTarget(CameraController.instance != null ? CameraController.instance.homeTransform : null);
@@ -238,7 +238,7 @@ public class FieldViewGestureController : MonoBehaviour
         if (CameraController.instance != null && CameraController.instance.homeTransform != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[FieldViewGesture] SwitchToHandView direct MoveTo homeTransform");
+            GameLog.Info("[FieldViewGesture] SwitchToHandView direct MoveTo homeTransform");
 #endif
             CameraController.instance.MoveTo(CameraController.instance.homeTransform);
             SyncCameraTarget(CameraController.instance.homeTransform);
@@ -348,7 +348,7 @@ public class FieldViewGestureController : MonoBehaviour
     {
         if (verboseLogging)
         {
-            Debug.Log($"[FieldViewGestureController] {message}");
+            GameLog.Info($"[FieldViewGestureController] {message}");
         }
     }
 

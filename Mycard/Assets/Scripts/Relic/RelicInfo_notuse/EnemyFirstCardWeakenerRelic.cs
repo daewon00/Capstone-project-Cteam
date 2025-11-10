@@ -26,7 +26,7 @@ public sealed class EnemyFirstCardWeakenerRelic : Relic
         card.UpdateCardDisplay();                 
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[EnemyFirstCardWeakener] {card.cardSO?.cardName}: {before} → {card.attackPower} (-{reduce})");
+        GameLog.Info($"[EnemyFirstCardWeakener] {card.cardSO?.cardName}: {before} → {card.attackPower} (-{reduce})");
 #endif
         _usedThisTurn = true;
     }

@@ -55,7 +55,7 @@ public class HandController : MonoBehaviour
         {
             _layoutPending = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[HandController] Layout is globally locked; skipping SetCardPositionsInHand()");
+            GameLog.Info("[HandController] Layout is globally locked; skipping SetCardPositionsInHand()");
 #endif
             return;
         }
@@ -87,7 +87,7 @@ public class HandController : MonoBehaviour
             if (_layoutLocked.Contains(card))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[HandController] Layout locked card skipped: {card.GetBattleInstanceId()} index={i}");
+                GameLog.Info($"[HandController] Layout locked card skipped: {card.GetBattleInstanceId()} index={i}");
 #endif
                 continue;
             }
@@ -118,7 +118,7 @@ public class HandController : MonoBehaviour
         _layoutLocked.Add(card);
         _lockedCard = card;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandController] SuspendLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
+        GameLog.Info($"[HandController] SuspendLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
 #endif
     }
 
@@ -128,13 +128,13 @@ public class HandController : MonoBehaviour
         if (card == null) return;
         _layoutLocked.Remove(card);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
+        GameLog.Info($"[HandController] ResumeLayoutFor {card.GetBattleInstanceId()} lockCount={_layoutLocked.Count}");
 #endif
         if (_lockedCard == card)
         {
             _lockedCard = null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[HandController] ResumeLayoutFor cleared global lock");
+            GameLog.Info("[HandController] ResumeLayoutFor cleared global lock");
 #endif
         }
         if (_lockedCard == null && _layoutPending)
@@ -151,7 +151,7 @@ public class HandController : MonoBehaviour
         if (_lockedCard != null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[HandController] ResumeLayout global; was locked by={_lockedCard.GetBattleInstanceId()}");
+        GameLog.Info($"[HandController] ResumeLayout global; was locked by={_lockedCard.GetBattleInstanceId()}");
 #endif
             _layoutLocked.Remove(_lockedCard);
             _lockedCard = null;
@@ -170,7 +170,7 @@ public class HandController : MonoBehaviour
         int before = heldCards.Count;
         string rmCardName = cardToRemove != null ? cardToRemove.name : "<null>";
         string rmInstanceId = cardToRemove != null ? cardToRemove.InstanceId : "<null>";
-        Debug.Log($"[HandController] RemoveCardFromHand begin: target={rmCardName}, instance={rmInstanceId}, beforeCount={before}");
+        GameLog.Info($"[HandController] RemoveCardFromHand begin: target={rmCardName}, instance={rmInstanceId}, beforeCount={before}");
 #endif
         // 우선 위치 인덱스 기반 제거 시도
         if (cardToRemove != null && cardToRemove.handPosition >= 0 && cardToRemove.handPosition < heldCards.Count && heldCards[cardToRemove.handPosition] == cardToRemove)
@@ -187,14 +187,14 @@ public class HandController : MonoBehaviour
             }
             else
             {
-                Debug.LogError("Card at position" + (cardToRemove!=null?cardToRemove.handPosition:-1) + " is not the card being removed from hand");
+                GameLog.Error("Card at position" + (cardToRemove!=null?cardToRemove.handPosition:-1) + " is not the card being removed from hand");
             }
         }
 
         SetCardPositionsInHand();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         int after = heldCards.Count;
-        Debug.Log($"[HandController] RemoveCardFromHand end: afterCount={after}");
+        GameLog.Info($"[HandController] RemoveCardFromHand end: afterCount={after}");
 #endif
     }
 
@@ -213,7 +213,7 @@ public class HandController : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         string addCardName = cardToAdd != null ? cardToAdd.name : "<null>";
         string addInstanceId = cardToAdd != null ? cardToAdd.InstanceId : "<null>";
-        Debug.Log($"[HandController] AddCardToHand: added={addCardName}, instance={addInstanceId}, count={heldCards.Count}");
+        GameLog.Info($"[HandController] AddCardToHand: added={addCardName}, instance={addInstanceId}, count={heldCards.Count}");
 #endif
     }
 

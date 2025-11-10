@@ -75,7 +75,7 @@ public static class GameEvents
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[GameEvents] Rarity weight modifier threw exception: {ex.Message}");
+                GameLog.Error($"[GameEvents] Rarity weight modifier threw exception: {ex.Message}");
             }
         }
 
@@ -100,7 +100,7 @@ public static class GameEvents
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[GameEvents] Modifier handler threw exception: {ex.Message}");
+                GameLog.Error($"[GameEvents] Modifier handler threw exception: {ex.Message}");
             }
         }
         return value;
@@ -120,7 +120,7 @@ public static class GameEvents
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[GameEvents] Card stat modifier handler threw exception: {ex.Message}");
+                GameLog.Error($"[GameEvents] Card stat modifier handler threw exception: {ex.Message}");
             }
         }
         return value;

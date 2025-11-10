@@ -141,7 +141,7 @@ public class NodeGoScene : MonoBehaviour
     {
         if (string.IsNullOrWhiteSpace(sceneName))
         {
-            Debug.LogWarning("로드할 씬 이름이 비어있습니다. 인스펙터에서 씬 이름을 설정하세요.");
+            GameLog.Warn("로드할 씬 이름이 비어있습니다. 인스펙터에서 씬 이름을 설정하세요.");
             return;
         }
         SafePlayClickSfx();

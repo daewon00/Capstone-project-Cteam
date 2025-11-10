@@ -23,7 +23,7 @@ public class CardTooltipPresenter : MonoBehaviour
 
         if (tooltipUI == null)
         {
-            Debug.LogWarning("[CardTooltipPresenter] TooltipUI reference missing.", this);
+            GameLog.Warn("[CardTooltipPresenter] TooltipUI reference missing.", this);
         }
 
         _rect = GetComponent<RectTransform>();
@@ -70,7 +70,7 @@ public class CardTooltipPresenter : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[CardTooltipPresenter] Could not locate a Canvas to parent to. Tooltip may not render.", this);
+            GameLog.Warn("[CardTooltipPresenter] Could not locate a Canvas to parent to. Tooltip may not render.", this);
         }
     }
 

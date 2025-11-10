@@ -92,7 +92,7 @@ public class ShopOverlayController : MonoBehaviour
         }
 
         _currentKey = (floor, index);
-        Debug.Log($"<color=cyan>OPENING shop for ({floor},{index})...</color>", this);
+        GameLog.Info($"<color=cyan>OPENING shop for ({floor},{index})...</color>", this);
 
         if (_currentRun == null)
         {
@@ -112,21 +112,21 @@ public class ShopOverlayController : MonoBehaviour
             if (!string.IsNullOrEmpty(savedSession.Json))
             {
                 try { dto = JsonUtility.FromJson<ShopSessionDTO>(savedSession.Json); }
-                catch (System.Exception e) { Debug.LogWarning($"[Shop] JSON parse fail: {e.Message}", this); }
+                catch (System.Exception e) { GameLog.Warn($"[Shop] JSON parse fail: {e.Message}", this); }
             }
         }
         // DB에 데이터가 있었지만 위치가 다른 경우에는 즉시 삭제해 동기화를 맞춥니다.
         else if (savedSession != null)
         {
             // DB에 저장된 정보가 '이전 상점'의 낡은 정보라면, 즉시 삭제하여 DB를 깨끗하게 유지합니다.
-            Debug.LogWarning($"[Shop] 이전 상점({savedSession.Floor},{savedSession.Index})의 데이터가 감지되어 DB에서 삭제합니다.");
+            GameLog.Warn($"[Shop] 이전 상점({savedSession.Floor},{savedSession.Index})의 데이터가 감지되어 DB에서 삭제합니다.");
             DatabaseManager.Instance.DeleteActiveShopSession(_currentRun.RunId);
         }
 
         // DB 데이터가 dto로 옮겨졌다면 해당 정보로 상점을 복원합니다.
         if (dto != null)
         {
-            Debug.Log($"<color=green>SUCCESS: Loaded from DATABASE.</color>", this);
+            GameLog.Info($"<color=green>SUCCESS: Loaded from DATABASE.</color>", this);
             _sessionMemory[_currentKey] = dto; // 메모리 캐시도 최신 정보로 갱신해줍니다.
             shopUI.ImportSession(dto);  // 상점에 정보를 넣는다.
         }
@@ -134,14 +134,14 @@ public class ShopOverlayController : MonoBehaviour
         else if (_sessionMemory.TryGetValue(_currentKey, out var memDto))
         {
             // 같은 게임 세션 내에서 재방문한 경우, 메모리 정보로 상점을 복원합니다.
-            Debug.Log($"<color=green>SUCCESS: Loaded from MEMORY CACHE.</color>", this);
+            GameLog.Info($"<color=green>SUCCESS: Loaded from MEMORY CACHE.</color>", this);
             shopUI.ImportSession(memDto);
         }
         // DB와 메모리 두 곳 모두에 데이터가 없으면 새 세션을 초기화합니다.
         else
         {
             // '완전 최초 방문'이므로, 새로운 상점으로 초기화합니다.
-            Debug.Log($"<color=yellow>INFO: Nothing found in DB or Memory. Resetting session.</color>", this);
+            GameLog.Info($"<color=yellow>INFO: Nothing found in DB or Memory. Resetting session.</color>", this);
             shopUI.ResetSession();
         }
 
@@ -165,7 +165,7 @@ public class ShopOverlayController : MonoBehaviour
         if (dto == null && !_sessionMemory.ContainsKey(_currentKey))
         {
             // 두 조건이 모두 참일 때만, 방금 생성된 초기 상태를 DB에 저장합니다.
-            Debug.Log($"<color=orange>First visit detected. Saving initial state to DB...</color>", this);
+            GameLog.Info($"<color=orange>First visit detected. Saving initial state to DB...</color>", this);
             SaveCurrentShopSession();
         }
     }
@@ -178,14 +178,14 @@ public class ShopOverlayController : MonoBehaviour
         if (_currentRun == null)
         {
             // [CCTV] 저장 실패: _currentRun이 없음
-            Debug.LogError($"<color=red>SAVE FAILED:</color> _currentRun is null. Cannot save shop state.", this);
+            GameLog.Error($"<color=red>SAVE FAILED:</color> _currentRun is null. Cannot save shop state.", this);
             return;
         }
 
         var dto = shopUI.ExportSession();
         var json = JsonUtility.ToJson(dto);
 
-        Debug.Log($"<color=orange>SAVING shop state for ({_currentKey.floor},{_currentKey.index}):</color>\n{json}", this);
+        GameLog.Info($"<color=orange>SAVING shop state for ({_currentKey.floor},{_currentKey.index}):</color>\n{json}", this);
 
         // 1) DB에 RunId 단일 세션으로 upsert
         DatabaseManager.Instance.UpsertActiveShopSession(_currentRun.RunId, json, _currentKey.floor,  _currentKey.index);
@@ -210,7 +210,7 @@ public class ShopOverlayController : MonoBehaviour
     {
         if (string.IsNullOrEmpty(cardId))
         {
-            Debug.LogError("[Shop] TryAddCardToDeckProxy: cardId가 비어 있습니다.", this);
+            GameLog.Error("[Shop] TryAddCardToDeckProxy: cardId가 비어 있습니다.", this);
             return false;
         }
 
@@ -219,7 +219,7 @@ public class ShopOverlayController : MonoBehaviour
             _deckService = SafeGetDeckService();
             if (_deckService == null)
             {
-                Debug.LogError($"[Shop] 덱 서비스가 등록되어 있지 않습니다. cardId={cardId}", this);
+                GameLog.Error($"[Shop] 덱 서비스가 등록되어 있지 않습니다. cardId={cardId}", this);
                 return false;
             }
         }
@@ -231,7 +231,7 @@ public class ShopOverlayController : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogError($"[Shop] 덱 추가 실패: cardId={cardId}, error={e.Message}", this);
+            GameLog.Error($"[Shop] 덱 추가 실패: cardId={cardId}, error={e.Message}", this);
             return false;
         }
     }
@@ -250,6 +250,6 @@ public class ShopOverlayController : MonoBehaviour
     public void ClearCachedSession()
     {
         _sessionMemory.Clear();
-        Debug.Log("[Shop] 메모리 캐시가 초기화되었습니다.");
+        GameLog.Info("[Shop] 메모리 캐시가 초기화되었습니다.");
     }
 }

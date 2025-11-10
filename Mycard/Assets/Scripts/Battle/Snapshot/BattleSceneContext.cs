@@ -43,7 +43,7 @@ public class BattleSceneContext
     /// </summary>
     public void ClearHand()
     {
-        Debug.Log($"[BattleSceneContext] ClearHand (before) count={(Hand != null ? Hand.heldCards.Count : -1)}");
+        GameLog.Info($"[BattleSceneContext] ClearHand (before) count={(Hand != null ? Hand.heldCards.Count : -1)}");
         if (Hand == null) return;
         foreach (var card in Hand.heldCards)
         {
@@ -53,7 +53,7 @@ public class BattleSceneContext
         Hand.heldCards.Clear();
         Hand.SetCardPositionsInHand();
         HandBinder?.ResetViewCache();
-        Debug.Log("[BattleSceneContext] ClearHand completed");
+        GameLog.Info("[BattleSceneContext] ClearHand completed");
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public class BattleSceneContext
         var so = CardCatalog.GetCardData(state.CardId);
         if (so == null)
         {
-            Debug.LogWarning($"[BattleSceneContext] Missing SO for hand card {state.CardId}");
+            GameLog.Warn($"[BattleSceneContext] Missing SO for hand card {state.CardId}");
             return;
         }
         bool isUpgraded = state.IsUpgraded();
@@ -79,7 +79,7 @@ public class BattleSceneContext
         Hand.SetCardPositionsInHand();
         HandBinder?.RegisterExistingCard(card);
         BattleDeckRuntimeSync.UpdateCardState(card);
-        Debug.Log($"[BattleSceneContext] SpawnCardInHand -> heldCards={Hand.heldCards.Count}");
+        GameLog.Info($"[BattleSceneContext] SpawnCardInHand -> heldCards={Hand.heldCards.Count}");
     }
 
     /// <summary>
@@ -111,13 +111,13 @@ public class BattleSceneContext
         int slotIndex = slotState.slotIndex;
         if (slotIndex < 0 || slotIndex >= Board.playerCardPoints.Length)
         {
-            Debug.LogWarning($"[BattleSceneContext] Invalid slot index {slotIndex}");
+            GameLog.Warn($"[BattleSceneContext] Invalid slot index {slotIndex}");
             return;
         }
         var slot = Board.playerCardPoints[slotIndex];
         if (slot == null)
         {
-            Debug.LogWarning($"[BattleSceneContext] Slot {slotIndex} missing");
+            GameLog.Warn($"[BattleSceneContext] Slot {slotIndex} missing");
             return;
         }
         if (slot.activeCard != null)
@@ -129,7 +129,7 @@ public class BattleSceneContext
         var so = CardCatalog.GetCardData(runtime.CardId);
         if (so == null)
         {
-            Debug.LogWarning($"[BattleSceneContext] Missing SO for field card {runtime.CardId}");
+            GameLog.Warn($"[BattleSceneContext] Missing SO for field card {runtime.CardId}");
             return;
         }
         var metadata = runtime.GetMetadata();
@@ -172,8 +172,6 @@ public class BattleSceneContext
 
         _effectService?.RegisterBoardCard(card, true, effectSnapshot);
         BattleDeckRuntimeSync.UpdateCardState(card);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.Log($"[BattleSceneContext] SpawnPlayerFieldCard index={slotIndex} pos={card.transform.position} rot={card.transform.rotation.eulerAngles}");
-#endif
+        GameLog.Info($"[BattleSceneContext] SpawnPlayerFieldCard index={slotIndex} pos={card.transform.position} rot={card.transform.rotation.eulerAngles}");
     }
 }

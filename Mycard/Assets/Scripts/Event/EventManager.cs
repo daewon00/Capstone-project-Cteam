@@ -26,7 +26,7 @@ public sealed class EventManager : IEventManager
         _db = db;
         _runId = runId;
         _run = _db.LoadCurrentRun(_runId)?.Run;
-        if (_run == null) Debug.LogError("[EventManager] 현재 런 정보를 찾을 수 없습니다.");
+        if (_run == null) GameLog.Error("[EventManager] 현재 런 정보를 찾을 수 없습니다.");
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public sealed class EventManager : IEventManager
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[EventManager] 활성 이벤트 세션 JSON 파싱 실패 - 기존 데이터를 삭제합니다. {e.Message}");
+                GameLog.Warn($"[EventManager] 활성 이벤트 세션 JSON 파싱 실패 - 기존 데이터를 삭제합니다. {e.Message}");
                 _db.DeleteActiveEventSession(_run.RunId);
             }
         }
@@ -57,14 +57,14 @@ public sealed class EventManager : IEventManager
         var eventSO = LoadEventAsset(string.IsNullOrEmpty(eventIdFallback) ? null : eventIdFallback);
         if (eventSO == null)
         {
-            Debug.LogError($"[EventManager] 이벤트 원본 파일 없음: {eventIdFallback}");
+            GameLog.Error($"[EventManager] 이벤트 원본 파일 없음: {eventIdFallback}");
             return null;
         }
 
         var initialStage = eventSO.GetFirstStage();
         if (initialStage == null)
         {
-            Debug.LogError($"[EventManager] 이벤트 '{eventSO.eventId}'에 유효한 스테이지가 없습니다.");
+            GameLog.Error($"[EventManager] 이벤트 '{eventSO.eventId}'에 유효한 스테이지가 없습니다.");
             return null;
         }
 
@@ -94,7 +94,7 @@ public sealed class EventManager : IEventManager
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[EventManager] 활성 이벤트 JSON 파싱 실패 - 기존 데이터를 삭제합니다. {e.Message}");
+            GameLog.Warn($"[EventManager] 활성 이벤트 JSON 파싱 실패 - 기존 데이터를 삭제합니다. {e.Message}");
             _db.DeleteActiveEventSession(_run.RunId);
             return null;
         }
@@ -104,7 +104,7 @@ public sealed class EventManager : IEventManager
     {
         if (string.IsNullOrEmpty(instanceId))
             return;
-        Debug.Log($"[EventManager] QueueUpgradeSelection {instanceId}");
+        GameLog.Info($"[EventManager] QueueUpgradeSelection {instanceId}");
         _pendingUpgradeSelections.Enqueue(instanceId);
     }
 
@@ -112,7 +112,7 @@ public sealed class EventManager : IEventManager
     {
         if (string.IsNullOrEmpty(instanceId))
             return;
-        Debug.Log($"[EventManager] QueueRemovalSelection {instanceId}");
+        GameLog.Info($"[EventManager] QueueRemovalSelection {instanceId}");
         _pendingRemovalSelections.Enqueue(instanceId);
     }
 
@@ -153,7 +153,7 @@ public sealed class EventManager : IEventManager
                 var maxHp = _run.MaxHpBase + _run.MaxHpFromPerks + _run.MaxHpFromRelics;
                 _run.CurrentHp = Mathf.Clamp(targetHp, 0, Mathf.Max(1, maxHp));
                 _run.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
-                Debug.Log($"[EventManager] Applied HpDelta {effect.amount} → targetHp={_run.CurrentHp}");
+                GameLog.Info($"[EventManager] Applied HpDelta {effect.amount} → targetHp={_run.CurrentHp}");
                 handled = true;
             }
             else if (effect.type == EventEffectType.GoldDelta)
@@ -164,7 +164,7 @@ public sealed class EventManager : IEventManager
                 {
                     wallet.Add(effect.amount);
                     _run.Gold = Mathf.Max(0, wallet.Gold);
-                    Debug.Log($"[EventManager] Applied GoldDelta {effect.amount} via WalletService");
+                    GameLog.Info($"[EventManager] Applied GoldDelta {effect.amount} via WalletService");
                 }
                 else
                 {
@@ -172,7 +172,7 @@ public sealed class EventManager : IEventManager
                     var newGold = _run.Gold + effect.amount;
                     _db.UpdateRunGold(_run.RunId, newGold);
                     _run.Gold = Mathf.Max(0, newGold);
-                    Debug.Log($"[EventManager] Applied GoldDelta {effect.amount} directly to DB");
+                    GameLog.Info($"[EventManager] Applied GoldDelta {effect.amount} directly to DB");
                 }
                 _run.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
                 handled = true;
@@ -183,7 +183,7 @@ public sealed class EventManager : IEventManager
                 int delta = effect.amount;
                 if (delta == 0)
                 {
-                    Debug.Log("[EventManager] MaxHpDelta 효과가 0이므로 변동 없음");
+                    GameLog.Info("[EventManager] MaxHpDelta 효과가 0이므로 변동 없음");
                 }
                 else
                 {
@@ -206,7 +206,7 @@ public sealed class EventManager : IEventManager
                     _run.MaxHpBase = newBase;
                     _run.CurrentHp = newCurrent;
                     _run.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
-                    Debug.Log($"[EventManager] MaxHpDelta {delta} 적용: max {oldMax} → {newMax}, current={newCurrent}");
+                    GameLog.Info($"[EventManager] MaxHpDelta {delta} 적용: max {oldMax} → {newMax}, current={newCurrent}");
                 }
             }
             else if (effect.type == EventEffectType.AddCard)
@@ -214,7 +214,7 @@ public sealed class EventManager : IEventManager
                 handled = true;
                 if (!TryAddCards(effect, isCurse: false))
                 {
-                    Debug.LogWarning("[EventManager] AddCard 효과 적용 중 문제가 발생했습니다.");
+                    GameLog.Warn("[EventManager] AddCard 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.AddCurse)
@@ -222,7 +222,7 @@ public sealed class EventManager : IEventManager
                 handled = true;
                 if (!TryAddCards(effect, isCurse: true))
                 {
-                    Debug.LogWarning("[EventManager] AddCurse 효과 적용 중 문제가 발생했습니다.");
+                    GameLog.Warn("[EventManager] AddCurse 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.AddRelic)
@@ -230,7 +230,7 @@ public sealed class EventManager : IEventManager
                 handled = true;
                 if (!TryAddRelic(effect))
                 {
-                    Debug.LogWarning("[EventManager] AddRelic 효과 적용 중 문제가 발생했습니다.");
+                    GameLog.Warn("[EventManager] AddRelic 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.HealPercent)
@@ -238,7 +238,7 @@ public sealed class EventManager : IEventManager
                 handled = true;
                 if (!TryApplyHealPercent(effect))
                 {
-                    Debug.LogWarning("[EventManager] HealPercent 효과 적용 중 문제가 발생했습니다.");
+                    GameLog.Warn("[EventManager] HealPercent 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.TransformCard)
@@ -246,37 +246,37 @@ public sealed class EventManager : IEventManager
                 handled = true;
                 if (!TryTransformCards(effect))
                 {
-                    Debug.LogWarning("[EventManager] TransformCard 효과 적용 중 문제가 발생했습니다.");
+                    GameLog.Warn("[EventManager] TransformCard 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.UpgradeRandomCard)
             {
                 handled = true;
-                Debug.Log("[EventManager] UpgradeRandomCard 효과 처리 시작");
+                GameLog.Info("[EventManager] UpgradeRandomCard 효과 처리 시작");
                 if (!TryUpgradeRandomCards(effect, tokenReplacements))
                 {
-                    Debug.LogWarning("[EventManager] UpgradeRandomCard 효과 적용 중 문제가 발생했습니다.");
+                    GameLog.Warn("[EventManager] UpgradeRandomCard 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.RemoveCard)
             {
                 handled = true;
-                Debug.Log("[EventManager] RemoveCard 효과 처리 시작");
+                GameLog.Info("[EventManager] RemoveCard 효과 처리 시작");
                 if (!TryRemoveSelectedCards(effect, tokenReplacements))
                 {
-                    Debug.LogWarning("[EventManager] RemoveCard 효과 적용 중 문제가 발생했습니다.");
+                    GameLog.Warn("[EventManager] RemoveCard 효과 적용 중 문제가 발생했습니다.");
                 }
             }
             else if (effect.type == EventEffectType.ReturnToMap)
             {
                 shouldReturnToMap = true;
-                Debug.Log("[EventManager] ReturnToMap 플래그 적용됨");
+                GameLog.Info("[EventManager] ReturnToMap 플래그 적용됨");
                 handled = true;
             }
 
             if (!handled)
             {
-                Debug.LogError($"[EventManager] Unknown event effect type '{effect.type}' (eventId={session.eventId}, choiceId={choice.id})");
+                GameLog.Error($"[EventManager] Unknown event effect type '{effect.type}' (eventId={session.eventId}, choiceId={choice.id})");
             }
         }
 
@@ -327,7 +327,7 @@ public sealed class EventManager : IEventManager
             var eventSO = LoadEventAsset(session.eventId);
             if (eventSO == null)
             {
-                Debug.LogError($"[EventManager] 이벤트 원본을 찾을 수 없어 다음 스테이지로 이동할 수 없습니다: {session.eventId}");
+                GameLog.Error($"[EventManager] 이벤트 원본을 찾을 수 없어 다음 스테이지로 이동할 수 없습니다: {session.eventId}");
                 _db.DeleteActiveEventSession(_run.RunId);
                 return true; // 안전하게 이벤트 종료
             }
@@ -335,7 +335,7 @@ public sealed class EventManager : IEventManager
             var nextStage = eventSO.GetStageOrFirst(choice.nextStageId);
             if (nextStage == null)
             {
-                Debug.LogError($"[EventManager] 이벤트 '{session.eventId}'에서 스테이지 '{choice.nextStageId}'를 찾을 수 없습니다. 맵으로 복귀합니다.");
+                GameLog.Error($"[EventManager] 이벤트 '{session.eventId}'에서 스테이지 '{choice.nextStageId}'를 찾을 수 없습니다. 맵으로 복귀합니다.");
                 _db.DeleteActiveEventSession(_run.RunId);
                 return true;
             }
@@ -350,7 +350,7 @@ public sealed class EventManager : IEventManager
             return false;
         }
 
-        Debug.LogWarning($"[EventManager] 선택지 '{choice.id}'에 ReturnToMap 효과나 nextStageId가 없어 자동으로 맵으로 복귀합니다.");
+        GameLog.Warn($"[EventManager] 선택지 '{choice.id}'에 ReturnToMap 효과나 nextStageId가 없어 자동으로 맵으로 복귀합니다.");
         _db.DeleteActiveEventSession(_run.RunId);
         RunCacheSynchronizer.Sync();
         NotifyRunOverlay();
@@ -359,7 +359,7 @@ public sealed class EventManager : IEventManager
 
     private bool TryUpgradeRandomCards(EventEffectDTO effect, Dictionary<string, string> tokenReplacements)
     {
-        Debug.Log($"[EventManager] TryUpgradeRandomCards 시작 - pendingQueue={_pendingUpgradeSelections.Count}");
+        GameLog.Info($"[EventManager] TryUpgradeRandomCards 시작 - pendingQueue={_pendingUpgradeSelections.Count}");
         var deckService = ServiceRegistry.Get<IDeckService>();
         if (deckService == null)
         {
@@ -415,13 +415,13 @@ public sealed class EventManager : IEventManager
             var match = candidates.FirstOrDefault(c => string.Equals(c.InstanceId, requestedId, StringComparison.Ordinal));
             if (match != null)
             {
-                Debug.Log($"[EventManager] 선택한 카드와 일치: {match.InstanceId}");
+                GameLog.Info($"[EventManager] 선택한 카드와 일치: {match.InstanceId}");
                 toUpgrade.Add(match);
                 candidates.Remove(match);
             }
             else
             {
-                Debug.LogWarning($"[EventManager] 요청된 카드({requestedId})를 강화 후보에서 찾을 수 없어 무작위로 대체합니다.");
+                GameLog.Warn($"[EventManager] 요청된 카드({requestedId})를 강화 후보에서 찾을 수 없어 무작위로 대체합니다.");
             }
         }
 
@@ -441,13 +441,13 @@ public sealed class EventManager : IEventManager
 
             if (!catalog.TryGetCardData(selected.CardId, out var cardData) || cardData == null)
             {
-                Debug.LogWarning($"[EventManager] 카드 데이터 없음: {selected.CardId}");
+                GameLog.Warn($"[EventManager] 카드 데이터 없음: {selected.CardId}");
                 continue;
             }
 
             if (!deckService.SetCardUpgradeState(selected.InstanceId, true))
             {
-                Debug.LogWarning($"[EventManager] SetCardUpgradeState 실패: {selected.InstanceId}");
+                GameLog.Warn($"[EventManager] SetCardUpgradeState 실패: {selected.InstanceId}");
                 continue;
             }
 
@@ -524,14 +524,14 @@ public sealed class EventManager : IEventManager
             int index = candidates.FindIndex(c => string.Equals(c.state.InstanceId, requestedId, StringComparison.Ordinal));
             if (index < 0)
             {
-                Debug.LogWarning($"[EventManager] QueueRemovalSelection 대상({requestedId})을 제거 후보에서 찾을 수 없습니다.");
+                GameLog.Warn($"[EventManager] QueueRemovalSelection 대상({requestedId})을 제거 후보에서 찾을 수 없습니다.");
                 continue;
             }
 
             var candidate = candidates[index];
             if (!deckService.RemoveCardFromRun(candidate.state.InstanceId))
             {
-                Debug.LogWarning($"[EventManager] RemoveCardFromRun 실패: {candidate.state.InstanceId}");
+                GameLog.Warn($"[EventManager] RemoveCardFromRun 실패: {candidate.state.InstanceId}");
                 candidates.RemoveAt(index);
                 continue;
             }
@@ -555,7 +555,7 @@ public sealed class EventManager : IEventManager
 
                     if (!deckService.RemoveCardFromRun(candidate.state.InstanceId))
                     {
-                        Debug.LogWarning($"[EventManager] 무작위 제거 실패: {candidate.state.InstanceId}");
+                        GameLog.Warn($"[EventManager] 무작위 제거 실패: {candidate.state.InstanceId}");
                         continue;
                     }
 
@@ -621,7 +621,7 @@ public sealed class EventManager : IEventManager
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[EventManager] RNG 시드 설정 실패(domain={domain}): {e.Message}");
+            GameLog.Warn($"[EventManager] RNG 시드 설정 실패(domain={domain}): {e.Message}");
         }
     }
 
@@ -719,7 +719,7 @@ public sealed class EventManager : IEventManager
 
         if (string.IsNullOrEmpty(dto.eventId))
         {
-            Debug.LogWarning("[EventManager] 이벤트 ID가 지정되지 않은 세션입니다.");
+            GameLog.Warn("[EventManager] 이벤트 ID가 지정되지 않은 세션입니다.");
             return;
         }
 
@@ -732,7 +732,7 @@ public sealed class EventManager : IEventManager
         var stage = eventSO.GetStageOrFirst(dto.stageId);
         if (stage == null)
         {
-            Debug.LogWarning($"[EventManager] 이벤트 '{dto.eventId}'에서 stage '{dto.stageId}'를 찾을 수 없어 첫 번째 스테이지로 대체합니다.");
+            GameLog.Warn($"[EventManager] 이벤트 '{dto.eventId}'에서 stage '{dto.stageId}'를 찾을 수 없어 첫 번째 스테이지로 대체합니다.");
             stage = eventSO.GetFirstStage();
         }
 
@@ -811,7 +811,7 @@ public sealed class EventManager : IEventManager
         var so = Resources.Load<EventScriptableObject>($"Events/{eventId}");
         if (so == null)
         {
-            Debug.LogError($"[EventManager] 이벤트 원본 파일을 불러올 수 없습니다: {eventId}");
+            GameLog.Error($"[EventManager] 이벤트 원본 파일을 불러올 수 없습니다: {eventId}");
             EventCache.Remove(eventId);
             return null;
         }
@@ -825,14 +825,14 @@ public sealed class EventManager : IEventManager
     {
         if (string.IsNullOrEmpty(effect.refId))
         {
-            Debug.LogWarning("[EventManager] AddCard/AddCurse 효과에 refId가 비어 있습니다.");
+            GameLog.Warn("[EventManager] AddCard/AddCurse 효과에 refId가 비어 있습니다.");
             return false;
         }
 
         var deckService = ServiceRegistry.Get<IDeckService>();
         if (deckService == null)
         {
-            Debug.LogError("[EventManager] IDeckService가 등록되지 않아 카드를 추가할 수 없습니다.");
+            GameLog.Error("[EventManager] IDeckService가 등록되지 않아 카드를 추가할 수 없습니다.");
             return false;
         }
 
@@ -846,7 +846,7 @@ public sealed class EventManager : IEventManager
             deckService.AddCardToDeckById(effect.refId, effect.upgrade);
         }
 
-        Debug.Log($"[EventManager] {(isCurse ? "AddCurse" : "AddCard")} 적용: cardId={effect.refId}, qty={quantity}, upgrade={effect.upgrade}");
+        GameLog.Info($"[EventManager] {(isCurse ? "AddCurse" : "AddCard")} 적용: cardId={effect.refId}, qty={quantity}, upgrade={effect.upgrade}");
         return true;
     }
 
@@ -854,14 +854,14 @@ public sealed class EventManager : IEventManager
     {
         if (string.IsNullOrEmpty(effect.refId))
         {
-            Debug.LogWarning("[EventManager] AddRelic 효과에 relicId(refId)가 비어 있습니다.");
+            GameLog.Warn("[EventManager] AddRelic 효과에 relicId(refId)가 비어 있습니다.");
             return false;
         }
 
         var relicSystem = RelicSystem.Instance;
         if (relicSystem == null)
         {
-            Debug.LogError("[EventManager] RelicSystem 인스턴스를 찾을 수 없어 유물을 지급할 수 없습니다.");
+            GameLog.Error("[EventManager] RelicSystem 인스턴스를 찾을 수 없어 유물을 지급할 수 없습니다.");
             return false;
         }
 
@@ -873,11 +873,11 @@ public sealed class EventManager : IEventManager
         bool granted = relicSystem.AddRelicById(effect.refId, stacks, save: true);
         if (!granted)
         {
-            Debug.LogWarning($"[EventManager] 유물 지급에 실패했습니다. relicId={effect.refId}");
+            GameLog.Warn($"[EventManager] 유물 지급에 실패했습니다. relicId={effect.refId}");
         }
         else
         {
-            Debug.Log($"[EventManager] AddRelic 적용: relicId={effect.refId}, stacks={stacks}");
+            GameLog.Info($"[EventManager] AddRelic 적용: relicId={effect.refId}, stacks={stacks}");
         }
 
         return granted;
@@ -902,7 +902,7 @@ public sealed class EventManager : IEventManager
         _db.UpdateRunHp(_run.RunId, targetHp);
         _run.CurrentHp = targetHp;
         _run.UpdatedAtUtc = DateTime.UtcNow.ToString("o");
-        Debug.Log($"[EventManager] HealPercent {effect.amount}% → delta={hpDelta}, hp={_run.CurrentHp}/{maxHp}");
+        GameLog.Info($"[EventManager] HealPercent {effect.amount}% → delta={hpDelta}, hp={_run.CurrentHp}/{maxHp}");
         return true;
     }
 
@@ -910,14 +910,14 @@ public sealed class EventManager : IEventManager
     {
         if (string.IsNullOrEmpty(effect.refId))
         {
-            Debug.LogWarning("[EventManager] TransformCard 효과에 target cardId(refId)가 비어 있습니다.");
+            GameLog.Warn("[EventManager] TransformCard 효과에 target cardId(refId)가 비어 있습니다.");
             return false;
         }
 
         var deckService = ServiceRegistry.Get<IDeckService>();
         if (deckService == null)
         {
-            Debug.LogError("[EventManager] IDeckService가 등록되지 않아 카드를 변환할 수 없습니다.");
+            GameLog.Error("[EventManager] IDeckService가 등록되지 않아 카드를 변환할 수 없습니다.");
             return false;
         }
 
@@ -929,11 +929,11 @@ public sealed class EventManager : IEventManager
         int transformed = deckService.TransformCards(effect.refId, count, effect.upgrade);
         if (transformed <= 0)
         {
-            Debug.LogWarning($"[EventManager] TransformCard 효과 적용 결과 변환된 카드가 없습니다. target={effect.refId}");
+            GameLog.Warn($"[EventManager] TransformCard 효과 적용 결과 변환된 카드가 없습니다. target={effect.refId}");
             return false;
         }
 
-        Debug.Log($"[EventManager] TransformCard 적용: target={effect.refId}, requested={count}, applied={transformed}, upgrade={effect.upgrade}");
+        GameLog.Info($"[EventManager] TransformCard 적용: target={effect.refId}, requested={count}, applied={transformed}, upgrade={effect.upgrade}");
         return true;
     }
 
@@ -962,13 +962,13 @@ public sealed class EventManager : IEventManager
     {
         if (freshRun == null)
         {
-            Debug.LogWarning("[EventManager] RebindRunCache called with null run; ignoring.");
+            GameLog.Warn("[EventManager] RebindRunCache called with null run; ignoring.");
             return;
         }
 
         if (!string.Equals(freshRun.RunId, _runId, StringComparison.Ordinal))
         {
-            Debug.LogWarning($"[EventManager] RebindRunCache runId mismatch. expected={_runId}, provided={freshRun.RunId}");
+            GameLog.Warn($"[EventManager] RebindRunCache runId mismatch. expected={_runId}, provided={freshRun.RunId}");
         }
 
         if (_run != null && string.Equals(_run.UpdatedAtUtc, freshRun.UpdatedAtUtc, StringComparison.Ordinal))

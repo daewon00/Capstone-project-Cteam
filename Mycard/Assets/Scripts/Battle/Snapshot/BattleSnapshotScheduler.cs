@@ -58,17 +58,17 @@ public class BattleSnapshotScheduler : MonoBehaviour
     public void RequestSnapshot(string reason)
     {
         if (!_initialized) Initialize();
-        Debug.Log($"[BattleSnapshotScheduler] RequestSnapshot reason={reason}, resolving={_isResolving}");
+        GameLog.Info($"[BattleSnapshotScheduler] RequestSnapshot reason={reason}, resolving={_isResolving}");
         if (_isResolving)
         {
-            Debug.Log("[BattleSnapshotScheduler] Snapshot request ignored: combat resolving.");
+            GameLog.Info("[BattleSnapshotScheduler] Snapshot request ignored: combat resolving.");
             return;
         }
 
         if (cooldownSeconds > 0f && Time.unscaledTime - _lastSnapshotTime < cooldownSeconds)
         {
             _pendingReason = reason;
-            Debug.Log($"[BattleSnapshotScheduler] Snapshot deferred (cooldown). reason={reason}");
+            GameLog.Info($"[BattleSnapshotScheduler] Snapshot deferred (cooldown). reason={reason}");
             return;
         }
 
@@ -97,7 +97,7 @@ public class BattleSnapshotScheduler : MonoBehaviour
         var runId = ResolveRunId();
         if (string.IsNullOrEmpty(runId))
         {
-            Debug.LogWarning("[BattleSnapshotScheduler] Capture skipped: no runId");
+            GameLog.Warn("[BattleSnapshotScheduler] Capture skipped: no runId");
             return;
         }
 
@@ -108,12 +108,12 @@ public class BattleSnapshotScheduler : MonoBehaviour
             _lastSnapshotTime = Time.unscaledTime;
             MaintainStage(runId, snapshot);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[BattleSnapshotScheduler] Snapshot saved ({reason}) runId={runId}");
+            GameLog.Info($"[BattleSnapshotScheduler] Snapshot saved ({reason}) runId={runId}");
 #endif
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[BattleSnapshotScheduler] Capture failed: {e.Message}");
+            GameLog.Warn($"[BattleSnapshotScheduler] Capture failed: {e.Message}");
         }
     }
 
@@ -128,7 +128,7 @@ public class BattleSnapshotScheduler : MonoBehaviour
             sceneName.IndexOf("Battle", StringComparison.OrdinalIgnoreCase) < 0)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[BattleSnapshotScheduler] MaintainStage skipped outside battle scene (scene='{sceneName}')");
+            GameLog.Info($"[BattleSnapshotScheduler] MaintainStage skipped outside battle scene (scene='{sceneName}')");
 #endif
             return;
         }
