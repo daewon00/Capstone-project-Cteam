@@ -208,6 +208,7 @@ public class MainMenu : MonoBehaviour
         // PlayerPrefs 키 정리
         PlayerPrefs.DeleteKey("lastRunId");
         PlayerPrefs.DeleteKey("selectedCompanionId");
+        PlayerPrefs.DeleteKey("preferredCompanionId");
         PlayerPrefs.Save();
 
         // UI 갱신(컨티뉴/삭제 버튼 숨김)

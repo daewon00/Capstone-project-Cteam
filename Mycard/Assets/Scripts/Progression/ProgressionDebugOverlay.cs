@@ -322,6 +322,7 @@ public class ProgressionDebugOverlay : MonoBehaviour
             }
             PlayerPrefs.DeleteKey("lastRunId");
             PlayerPrefs.DeleteKey("selectedCompanionId");
+            PlayerPrefs.DeleteKey("preferredCompanionId");
             PlayerPrefs.Save();
         }
         catch (System.Exception e)
@@ -376,9 +377,10 @@ public class ProgressionDebugOverlay : MonoBehaviour
             {
                 PlayerPrefs.DeleteKey("lastRunId");
                 PlayerPrefs.DeleteKey("selectedCompanionId");
+                PlayerPrefs.DeleteKey("preferredCompanionId");
                 PlayerPrefs.DeleteKey(ScalePrefsKey);
                 PlayerPrefs.Save();
-                sb.AppendLine("PlayerPrefs keys cleared (lastRunId, selectedCompanionId, dbg.overlay.scale)");
+                sb.AppendLine("PlayerPrefs keys cleared (lastRunId, selectedCompanionId, preferredCompanionId, dbg.overlay.scale)");
             }
             catch (System.Exception e)
             {

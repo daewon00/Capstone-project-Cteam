@@ -55,9 +55,16 @@ public class CompanionSelectController : MonoBehaviour
         int initialIndex = 0;
         if (_all != null && _all.Length > 0)
         {
-            var previouslySelectedId = GameContext.I != null
-                ? GameContext.I.SelectedCompanionId
-                : PlayerPrefs.GetString("selectedCompanionId", string.Empty);
+            string previouslySelectedId = string.Empty;
+            if (GameContext.I != null && !string.IsNullOrEmpty(GameContext.I.SelectedCompanionId))
+            {
+                previouslySelectedId = GameContext.I.SelectedCompanionId;
+            }
+            else
+            {
+                previouslySelectedId = PlayerPrefs.GetString("selectedCompanionId",
+                    PlayerPrefs.GetString("preferredCompanionId", string.Empty));
+            }
 
             if (!string.IsNullOrEmpty(previouslySelectedId))
             {
@@ -120,6 +127,8 @@ public class CompanionSelectController : MonoBehaviour
         {
             GameContext.I.SelectedCompanionId = data.CompanionId;
         }
+        PlayerPrefs.SetString("preferredCompanionId", data.CompanionId);
+        PlayerPrefs.Save();
         if (_allowTutorialSelectionReport)
         {
             ServiceRegistry.Get<ITutorialService>()?.ReportAction(TutorialRequiredActionType.ButtonClick, $"companion-select:{data.CompanionId}");
