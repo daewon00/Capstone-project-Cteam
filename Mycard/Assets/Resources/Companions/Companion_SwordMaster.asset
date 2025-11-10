@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e4e51ebb68bed044857706078ea19bc, type: 3}
-  m_Name: Companion_RareTest
+  m_Name: Companion_SwordMaster
   m_EditorClassIdentifier: 
-  CompanionId: COMP_rare_test
-  DisplayName: "\uB808\uC5B4 \uD14C\uC2A4\uD2B8"
-  Description: "\uC0C8\uB85C \uB9CC\uB4E0 \uB808\uC5B4 \uCE74\uB4DC\uB9CC \uD3EC\uD568\uD55C
-    \uD14C\uC2A4\uD2B8 \uB3D9\uB8CC."
+  CompanionId: COMP_rare_SwordMaster
+  DisplayName: "\uC804\uC0AC"
+  Description: "\uACF5\uACA9\uACFC \uBC29\uC5B4 \uAE30\uBCF8\uAE30\uC5D0 \uCDA9\uC2E4\uD55C
+    \uB3D9\uB8CC"
   Portrait: {fileID: 21300000, guid: 72105e70a97dca84599545fcd386d7fa, type: 3}
   StartingCardIds:
   - CARD_VETERAN_SPEARMAN
@@ -31,6 +31,6 @@ MonoBehaviour:
   - CARD_BANNER_CAPTAIN
   StartingRelicIds: []
   StartingPotionIds: []
-  MaxHpBonus: 100
-  GoldBonus: 1000
-  EnergyMaxBonus: 20
+  MaxHpBonus: 30
+  GoldBonus: 0
+  EnergyMaxBonus: 0

@@ -10,11 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e4e51ebb68bed044857706078ea19bc, type: 3}
-  m_Name: Companion_Test
+  m_Name: Companion_Rogue
   m_EditorClassIdentifier: 
-  CompanionId: COMP_test
-  DisplayName: test
-  Description: Test companion for effect cards.
+  CompanionId: COMP_Rogue
+  DisplayName: "\uB3C4\uC801"
+  Description: "\uBE60\uB978 \uC6C0\uC9C1\uC784\uACFC \uC554\uC0B4 \uAE30\uC220\uC744
+    \uAC00\uC9C4 \uB3D9\uB8CC"
   Portrait: {fileID: 21300000, guid: b28af2083b374e647b61c5ed13098124, type: 3}
   StartingCardIds:
   - CARD_VENOM_ASSASSIN
@@ -29,6 +30,6 @@ MonoBehaviour:
   - CARD_BANNER_BEARER
   StartingRelicIds: []
   StartingPotionIds: []
-  MaxHpBonus: 100
-  GoldBonus: 1000
-  EnergyMaxBonus: 20
+  MaxHpBonus: 0
+  GoldBonus: 200
+  EnergyMaxBonus: 0
