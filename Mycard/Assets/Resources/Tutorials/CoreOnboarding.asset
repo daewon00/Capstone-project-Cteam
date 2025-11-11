@@ -57,7 +57,7 @@ MonoBehaviour:
     HighlightTargetId: companion-carousel
     HighlightOptional: 0
     SecondaryHighlightIds: []
-    InteractionGate: 0
+    InteractionGate: 2
     RequiredAction: 1
     ActionId: 
     TargetAct: -1
@@ -151,8 +151,7 @@ MonoBehaviour:
     AutoAdvance: 0
   - Step: 23
     Message: "\uD544\uB4DC\uB97C \uC544\uB798\uB85C \uB4DC\uB798\uADF8\uD558\uBA74
-      \uD654\uBA74\uC744 \uC804\uD658\uD574\uC11C \uD544\uB4DC \uC0C1\uD669\uC744
-      \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+      \uD544\uB4DC \uC0C1\uD669\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4."
     PrimaryAnchor: 3
     FallbackAnchor: 3
     PreferFallback: 0
