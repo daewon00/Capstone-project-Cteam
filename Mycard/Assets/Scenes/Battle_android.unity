@@ -366,7 +366,7 @@ RectTransform:
   m_GameObject: {fileID: 321847887}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1931784018}
@@ -1051,6 +1051,7 @@ MonoBehaviour:
   overlayCanvasGroup: {fileID: 0}
   overlayIgnoreRoot: {fileID: 0}
   allowedRegion: {fileID: 0}
+  tutorialTargetId: field-swipe-zone
 --- !u!114 &618804037
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1065,6 +1066,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetId: field-swipe-zone
   explicitRect: {fileID: 618804033}
+  aliasIds: []
 --- !u!114 &618804038
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6887,7 +6889,7 @@ RectTransform:
   m_GameObject: {fileID: 7065249698696049939}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2895287590436847258}
