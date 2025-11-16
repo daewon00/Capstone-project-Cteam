@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 
-public class RelicIconUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class RelicIconUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
 {
     [SerializeField] private Image icon;
     [SerializeField] private TMP_Text stackText;
@@ -25,20 +25,12 @@ public class RelicIconUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         stackText.gameObject.SetActive(show);
         if (show) stackText.text = stacks.ToString();
     }
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        if (!relicData)
-        {
-            return;
-        }
+    public void OnPointerEnter(PointerEventData eventData) => ShowTooltip();
+    public void OnPointerExit(PointerEventData eventData) => TooltipManager.Instance?.HideTooltip();
 
-        TooltipManager.Instance?.ShowRelicTooltip(relicData);
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        TooltipManager.Instance?.HideTooltip();
-    }
+    // 터치 단말에서도 툴팁을 볼 수 있도록 탭/꾹 누르기 입력을 처리한다.
+    public void OnPointerDown(PointerEventData eventData) => ShowTooltip();
+    public void OnPointerUp(PointerEventData eventData) => TooltipManager.Instance?.HideTooltip();
 
     private void OnDisable()
     {
@@ -46,5 +38,15 @@ public class RelicIconUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             TooltipManager.Instance.HideTooltip();
         }
+    }
+
+    private void ShowTooltip()
+    {
+        if (!relicData)
+        {
+            return;
+        }
+
+        TooltipManager.Instance?.ShowRelicTooltip(relicData);
     }
 }

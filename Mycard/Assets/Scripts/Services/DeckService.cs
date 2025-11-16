@@ -54,9 +54,20 @@ public class DeckService : IDeckService
         {
             _runtimeDeck = existingCards;
             BuildInternalCache(_runtimeDeck);
+            bool broadcasted = false;
+            int removedTemps = RemoveTemporaryCards();
+            if (removedTemps > 0)
+            {
+                GameLog.Warn($"[DeckService] removeAfterCombat 카드 {removedTemps}장을 로드시 정리했습니다.");
+                PersistAndBroadcast();
+                broadcasted = true;
+            }
             GameLog.Info($"[DeckService] 런({_currentRunId}) 덱 런타임 상태 로드 완료: {_runtimeDeck.Count}장");
             // 초기 카운트 방송으로 UI가 정확히 시작하도록 보장
-            OnPileCountsChanged?.Invoke(GetPileCounts());
+            if (!broadcasted)
+            {
+                OnPileCountsChanged?.Invoke(GetPileCounts());
+            }
             return;
         }
 
@@ -219,15 +230,15 @@ public class DeckService : IDeckService
             }
         }
 
-        RemoveTemporaryCards();
+        int removedTemps = RemoveTemporaryCards();
         PersistAndBroadcast();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         var counts = GetCurrentPileCounts();
-        GameLog.Info($"[DeckService] CleanupAfterCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}");
+        GameLog.Info($"[DeckService] CleanupAfterCombat: draw={counts.Draw}, discard={counts.Discard}, hand={counts.Hand}, exhaust={counts.Exhaust}, tempRemoved={removedTemps}");
 #endif
     }
 
-    private void RemoveTemporaryCards()
+    private int RemoveTemporaryCards()
     {
         var catalog = ServiceRegistry.Get<ICardCatalog>();
         if (catalog == null)
@@ -235,7 +246,7 @@ public class DeckService : IDeckService
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             GameLog.Warn("[DeckService] RemoveTemporaryCards: ICardCatalog를 찾을 수 없어 정리를 건너뜁니다.");
 #endif
-            return;
+            return 0;
         }
 
         var toRemove = new List<string>();
@@ -249,7 +260,7 @@ public class DeckService : IDeckService
             }
         }
 
-        if (toRemove.Count == 0) return;
+        if (toRemove.Count == 0) return 0;
 
         foreach (var id in toRemove)
         {
@@ -263,6 +274,7 @@ public class DeckService : IDeckService
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         GameLog.Info($"[DeckService] RemoveTemporaryCards: {toRemove.Count}장 제거 완료");
 #endif
+        return toRemove.Count;
     }
 
     /// <summary>

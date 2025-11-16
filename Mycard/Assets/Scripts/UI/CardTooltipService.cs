@@ -176,7 +176,16 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     private CardTooltipPresenter EnsurePresenter()
     {
         if (_presenter != null)
+        {
+            // 씬이 리로드되거나 Canvas가 파괴된 뒤에도 재부착해준다.
+            var rect = _presenter.GetComponent<RectTransform>();
+            var hasCanvas = rect != null && rect.GetComponentInParent<Canvas>() != null;
+            if (!hasCanvas)
+            {
+                AttachPresenterToCanvas(_presenter);
+            }
             return _presenter;
+        }
 
         if (presenterOverride != null)
         {
