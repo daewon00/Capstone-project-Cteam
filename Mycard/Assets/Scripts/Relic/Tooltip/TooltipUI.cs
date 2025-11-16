@@ -35,6 +35,14 @@ public class TooltipUI : MonoBehaviour
 
     private void Awake()
     {
+        RebindCanvasRefs();
+        _activeOffset = mouseOffset;
+        ApplyStyle(_currentMode);
+        HideImmediate();
+    }
+
+    public void RebindCanvasRefs()
+    {
         if (!root)
             root = transform as RectTransform;
         if (!canvasGroup)
@@ -47,10 +55,11 @@ public class TooltipUI : MonoBehaviour
         parentCanvas = GetComponentInParent<Canvas>();
         if (parentCanvas)
             canvasRect = parentCanvas.transform as RectTransform;
+    }
 
-        _activeOffset = mouseOffset;
-        ApplyStyle(_currentMode);
-        HideImmediate();
+    private void OnTransformParentChanged()
+    {
+        RebindCanvasRefs();
     }
 
     private void Update()

@@ -177,20 +177,15 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     {
         if (_presenter != null)
         {
-            // 씬이 리로드되거나 Canvas가 파괴된 뒤에도 재부착해준다.
-            var rect = _presenter.GetComponent<RectTransform>();
-            var hasCanvas = rect != null && rect.GetComponentInParent<Canvas>() != null;
-            if (!hasCanvas)
-            {
-                AttachPresenterToCanvas(_presenter);
-            }
+            // 씬 리로드 후에도 항상 현재 씬의 유효한 Canvas에 붙여둔다.
+            AttachPresenterToCanvas(_presenter);
             return _presenter;
         }
 
         if (presenterOverride != null)
         {
             _presenter = presenterOverride;
-            _presenter.EnsureParentCanvas();
+            AttachPresenterToCanvas(_presenter);
             return _presenter;
         }
 

@@ -37,6 +37,7 @@ public class CardTooltipPresenter : MonoBehaviour
 
         parentCanvasOverride = canvas;
         _rect.SetParent(canvas.transform, false);
+        tooltipUI?.RebindCanvasRefs();
     }
 
     public void EnsureParentCanvas()
