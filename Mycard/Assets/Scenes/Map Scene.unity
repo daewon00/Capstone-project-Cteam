@@ -4213,6 +4213,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetId: reward-overlay
   explicitRect: {fileID: 1147842947}
+  aliasIds: []
 --- !u!1 &1188832144
 GameObject:
   m_ObjectHideFlags: 0
@@ -6905,12 +6906,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 72
+  m_fontSize: 80
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMax: 80
   m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -7553,6 +7554,10 @@ PrefabInstance:
     - target: {fileID: 4137936864166319295, guid: 486ecfe51442c574981120cc7cbef282, type: 3}
       propertyPath: m_Name
       value: Optionpanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 4137936864166319295, guid: 486ecfe51442c574981120cc7cbef282, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5427659281334943932, guid: 486ecfe51442c574981120cc7cbef282, type: 3}
       propertyPath: m_Pivot.x
