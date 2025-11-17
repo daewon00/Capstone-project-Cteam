@@ -27,6 +27,8 @@ public class ShopSlotView : MonoBehaviour
     public TMP_Text priceText;           // 최종 가격 텍스트
 
     private string _logName;
+    private Action _onClickAction;
+    private ShopSlotTooltipTrigger _tooltipTrigger;
 
     [SerializeField, Range(0f, 1f)]
     private float dealDiscountVisual = 0.20f;
@@ -132,14 +134,21 @@ public class ShopSlotView : MonoBehaviour
 
         // 7) 클릭 핸들러
         button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(() =>
+        _onClickAction = () =>
         {
             if (vm.soldOut || !canBuy)
                 return;
 
+            if (_tooltipTrigger != null && _tooltipTrigger.ShouldBlockClick)
+                return;
+
             button.interactable = false;   // 즉시 잠금(더블클릭 방지)
             onClick?.Invoke();
-        });
+        };
+        button.onClick.AddListener(() => _onClickAction?.Invoke());
+
+        // 8) 롱프레스 툴팁 트리거 설정
+        ConfigureTooltipTrigger(vm, isCardSlot, !isCardSlot && string.Equals(vm.detail, "Relic", StringComparison.OrdinalIgnoreCase));
     }
 
     private void EnsureCardDisplay()
@@ -169,6 +178,38 @@ public class ShopSlotView : MonoBehaviour
         }
 
         cardDisplay.gameObject.SetActive(false);
+    }
+
+    private void ConfigureTooltipTrigger(in ShopSlotVM vm, bool isCardSlot, bool isRelicSlot)
+    {
+        if (_tooltipTrigger == null)
+        {
+            _tooltipTrigger = GetComponent<ShopSlotTooltipTrigger>();
+            if (_tooltipTrigger == null)
+            {
+                _tooltipTrigger = gameObject.AddComponent<ShopSlotTooltipTrigger>();
+            }
+        }
+
+        RelicData relicData = null;
+        if (isRelicSlot && RelicSystem.Instance != null && !string.IsNullOrEmpty(vm.itemId))
+        {
+            relicData = RelicSystem.Instance.GetRelicData(vm.itemId);
+        }
+
+        // 유물 슬롯의 경우, 아이콘 RectTransform을 앵커로 넘겨 툴팁 위치를 아이콘 주변에 고정한다.
+        RectTransform relicAnchor = isRelicSlot && icon != null ? icon.rectTransform : null;
+        _tooltipTrigger.Configure(vm, isCardSlot, isRelicSlot, cardDisplay, relicData, _onClickAction, relicAnchor);
+
+        // 카드 표시 오브젝트에 기존 CardTooltipTriggerUI가 붙어 있다면 상점용 롱프레스 처리와 충돌하므로 비활성화한다.
+        if (cardDisplay != null)
+        {
+            var legacyCardTriggers = cardDisplay.GetComponentsInChildren<CardTooltipTriggerUI>(true);
+            for (int i = 0; i < legacyCardTriggers.Length; i++)
+            {
+                legacyCardTriggers[i].enabled = false;
+            }
+        }
     }
 
     private void Reset()

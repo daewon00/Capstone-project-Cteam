@@ -93,8 +93,19 @@ public class CardPointsController : MonoBehaviour
 
             yield return new WaitForSeconds(timeBetweenAttacks);
 
+            if (BattleController.instance.HasPendingBattleEnd)
+            {
+                BattleController.instance.TryFinalizePendingBattleEnd();
+                break;
+            }
+
             if (BattleController.instance.battleEnded)
                 break;
+        }
+
+        if (BattleController.instance.HasPendingBattleEnd)
+        {
+            BattleController.instance.TryFinalizePendingBattleEnd();
         }
 
         CheckAssignedCards();
@@ -168,8 +179,19 @@ public class CardPointsController : MonoBehaviour
 
             yield return new WaitForSeconds(timeBetweenAttacks);
 
+            if (BattleController.instance.HasPendingBattleEnd)
+            {
+                BattleController.instance.TryFinalizePendingBattleEnd();
+                break;
+            }
+
             if (BattleController.instance.battleEnded)
                 break;
+        }
+
+        if (BattleController.instance.HasPendingBattleEnd)
+        {
+            BattleController.instance.TryFinalizePendingBattleEnd();
         }
 
         CheckAssignedCards();

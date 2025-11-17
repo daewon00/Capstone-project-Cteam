@@ -207,6 +207,29 @@ public class RelicSystem : MonoBehaviour
         return data;
     }
 
+    /// <summary>
+    /// 표시 이름(displayName)으로 유물 데이터를 찾습니다.
+    /// 과거 버전에서 잘못 저장된 세이브(표시 이름을 ID로 저장) 호환용입니다.
+    /// </summary>
+    public RelicData FindRelicByDisplayName(string displayName)
+    {
+        if (string.IsNullOrEmpty(displayName)) return null;
+
+        foreach (var kv in dbById)
+        {
+            var data = kv.Value;
+            if (data == null) continue;
+            if (string.IsNullOrEmpty(data.displayName)) continue;
+
+            if (string.Equals(data.displayName, displayName, StringComparison.Ordinal))
+            {
+                return data;
+            }
+        }
+
+        return null;
+    }
+
     public bool HasRelic(string relicId)
     {
         if (string.IsNullOrEmpty(relicId)) return false;
