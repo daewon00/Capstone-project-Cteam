@@ -138,6 +138,7 @@ public class BattleController : MonoBehaviour
     public int enemyHealth { get; set; }    //적 체력
 
     private bool _playerStatsInitialized;
+    private bool _pendingBattleEnd; // 데미지 계산 중 전투 종료를 늦추기 위한 플래그
 
     public enum TurnOrder { playerActive, playerCardAttacks, enemyActive, enemyCardAttacks }    //전투 단계
     public TurnOrder currentPhase;  // 지금 단계 저장
@@ -661,7 +662,7 @@ public class BattleController : MonoBehaviour
         if (playerHealth <= 0)
         {
             playerHealth = 0;
-            EndBattle();
+            _pendingBattleEnd = true;
         }
 
         UIController.instance.setPlayerHealthText(playerHealth);
@@ -695,7 +696,7 @@ public class BattleController : MonoBehaviour
         if (enemyHealth <= 0)
         {
             enemyHealth = 0;
-            EndBattle();
+            _pendingBattleEnd = true;
         }
 
         UIController.instance.setEnemyHealthText(enemyHealth);
@@ -726,10 +727,25 @@ public class BattleController : MonoBehaviour
         }
     }
 
+    public bool HasPendingBattleEnd => _pendingBattleEnd;
+
+    /// <summary>
+    /// 공격 애니메이션 이후에 호출되어야 하는 전투 종료 처리.
+    /// </summary>
+    public void TryFinalizePendingBattleEnd()
+    {
+        if (!_pendingBattleEnd || battleEnded)
+            return;
+
+        _pendingBattleEnd = false;
+        EndBattle();
+    }
+
     //전투 종료
     void EndBattle()
     {
         battleEnded = true;
+        _pendingBattleEnd = false;
         GameEvents.RaiseBattleEnd();      // +++ 전투 종료 알림
         // 덱 서비스 측 상태 정리(남은 핸드 → Discard 등)
         try { _deckService?.CleanupAfterCombat(); } catch { }

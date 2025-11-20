@@ -13,6 +13,7 @@ public class RelicsUI : MonoBehaviour
 
     void Awake()
     {
+        BindCanvasCameraIfNeeded();
         // 
         if (RelicSystem.Instance != null)
             RelicSystem.Instance.AttachUI(this);
@@ -91,5 +92,18 @@ public class RelicsUI : MonoBehaviour
         if (relics == null) return;
         for (int i = 0; i < relics.Count; i++)
             AddOrStack(relics[i]);
+    }
+
+    /// <summary>
+    /// ScreenSpace-Camera 캔버스에서 worldCamera가 비어 있으면 모바일 레이캐스트가 실패한다.
+    /// 런타임에 메인 카메라를 채워준다(배치에는 영향 없음).
+    /// </summary>
+    private void BindCanvasCameraIfNeeded()
+    {
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera && canvas.worldCamera == null)
+        {
+            canvas.worldCamera = Camera.main;
+        }
     }
 }

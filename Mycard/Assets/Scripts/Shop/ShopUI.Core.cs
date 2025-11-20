@@ -120,10 +120,23 @@ public partial class ShopUI : MonoBehaviour
         {
             var vm = _dummy[i];
 
-            // itemId는 반드시 카드의 고유 ID('CardId')로 저장
-            string itemId = (vm.cardData != null && !string.IsNullOrEmpty(vm.cardData.CardId))
-                ? vm.cardData.CardId
-                : (vm.title ?? string.Empty);
+            // itemId는
+            //  - 카드 슬롯: 반드시 카드의 고유 ID('CardId')
+            //  - 그 외 슬롯(유물 등): 내부 itemId(유물 ID 등)를 우선으로 저장합니다.
+            string itemId;
+            if (vm.cardData != null && !string.IsNullOrEmpty(vm.cardData.CardId))
+            {
+                itemId = vm.cardData.CardId;
+            }
+            else if (!string.IsNullOrEmpty(vm.itemId))
+            {
+                itemId = vm.itemId;
+            }
+            else
+            {
+                // 레거시/비상 케이스: ID 정보가 비어 있으면 표시 이름을 마지막 수단으로 사용
+                itemId = vm.title ?? string.Empty;
+            }
             
             // 기준가 보정 로직 (vm.price가 0/미설정인 레거시/초기 상태 대비)
             int basePrice = vm.price;
@@ -209,7 +222,37 @@ public partial class ShopUI : MonoBehaviour
                 // DTO에 타입 정보가 있으면 그걸 쓰고, 없으면 추론합니다.
                 string detail = !string.IsNullOrEmpty(slotData.detail) ? slotData.detail : "Relic";
                 var rarity = slotData.rarity;
-                vm = new ShopSlotVM { title = id, detail = detail, rarity = rarity };
+                vm = new ShopSlotVM { itemId = id, title = id, detail = detail, rarity = rarity };
+
+                // 유물 재구성: RelicSystem에서 ID/표시 이름/아이콘을 다시 채웁니다.
+                if (string.Equals(detail, "Relic", StringComparison.OrdinalIgnoreCase) &&
+                    RelicSystem.Instance != null &&
+                    !string.IsNullOrEmpty(id))
+                {
+                    // 1순위: ID로 직접 매칭
+                    var relicData = RelicSystem.Instance.GetRelicData(id);
+
+                    // 2순위(호환성): 과거 버전에서 itemId에 표시 이름이 저장된 세이브를 위해
+                    //                displayName으로 역검색하여 실제 relicId를 복원합니다.
+                    if (relicData == null)
+                    {
+                        relicData = RelicSystem.Instance.FindRelicByDisplayName(id);
+                        if (relicData != null && !string.IsNullOrEmpty(relicData.relicId))
+                        {
+                            id = relicData.relicId;
+                        }
+                    }
+
+                    if (relicData != null)
+                    {
+                        vm.title = !string.IsNullOrEmpty(relicData.displayName)
+                            ? relicData.displayName
+                            : relicData.relicId;
+                        vm.icon = relicData.icon;
+                        vm.itemId = relicData.relicId;
+                        vm.detail = "Relic";
+                    }
+                }
             }
 
             // --- 2. 가격/특가 복원 (가장 정교한 부분) ---
@@ -360,5 +403,20 @@ public partial class ShopUI : MonoBehaviour
         _sessionInitialized = false;
     }
 
+    /// <summary>
+    /// 상점에서 사용 중인 모든 툴팁(카드/유물)을 즉시 숨깁니다.
+    /// 리롤 등으로 슬롯 구성이 변경될 때 호출하여, 오래된 설명이 화면에 남지 않도록 합니다.
+    /// </summary>
+    private void HideAllShopTooltips()
+    {
+        // 카드 툴팁(상점 카드/배틀 카드 공용)
+        var cardTooltipService = ServiceRegistry.Get<ICardTooltipService>();
+        cardTooltipService?.HideAll();
 
+        // 유물/기타 툴팁
+        if (TooltipManager.Instance != null)
+        {
+            TooltipManager.Instance.HideTooltipImmediate();
+        }
+    }
 }

@@ -17,6 +17,13 @@ public static class BattleDeckRuntimeSync
         // 이 메서드를 다시 호출하도록 해야 합니다. 반대로 플레이어 카드가 적에게 넘어가는 기능을 만들면 덱 서비스에서
         // 해당 카드를 제외하는 별도 처리도 함께 필요합니다.
         if (!card.isPlayer) return;
+        if (card.cardSO != null && card.cardSO.removeAfterCombat)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[BattleDeckRuntimeSync] removeAfterCombat 카드 무시: {card.cardSO.CardId}");
+#endif
+            return;
+        }
         var deckService = ServiceRegistry.Get<IDeckService>();
         var effectService = ServiceRegistry.Get<ICardEffectService>();
         if (deckService == null) return;

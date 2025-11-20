@@ -176,12 +176,16 @@ public class CardTooltipService : MonoBehaviour, ICardTooltipService
     private CardTooltipPresenter EnsurePresenter()
     {
         if (_presenter != null)
+        {
+            // 씬 리로드 후에도 항상 현재 씬의 유효한 Canvas에 붙여둔다.
+            AttachPresenterToCanvas(_presenter);
             return _presenter;
+        }
 
         if (presenterOverride != null)
         {
             _presenter = presenterOverride;
-            _presenter.EnsureParentCanvas();
+            AttachPresenterToCanvas(_presenter);
             return _presenter;
         }
 

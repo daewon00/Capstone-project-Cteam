@@ -258,6 +258,9 @@ public partial class ShopUI : MonoBehaviour
         _isRerollCooling = true;
         if (rerollButton) rerollButton.interactable = false;
 
+        // 실제 리롤이 진행되기 직전에, 상점에서 떠 있는 모든 카드/유물 툴팁을 정리합니다.
+        HideAllShopTooltips();
+
         if (!TrySpendGold(cost))
         {
             _isRerollCooling = false;
